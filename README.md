@@ -87,6 +87,18 @@ API_KEY=$(openssl rand -hex 24)
 - API clients send `Authorization: Bearer <key>` (or `X-API-Key: <key>`).
 - Photo files (`/uploads/...`) are not behind the key; their names are random UUIDs.
 
+## Publish the images
+
+The `api` and `web` services are named for the Azure Container Registry
+(`acuraproject.azurecr.io/acura-api` and `acura-web`, built for `linux/amd64`). Change
+`IMAGE_REGISTRY` or `IMAGE_TAG` in `.env` to publish elsewhere.
+
+```sh
+az acr login -n acuraproject
+docker compose build
+docker compose push api web     # name the services: the local db image isn't yours to push
+```
+
 ## Everyday commands
 
 ```sh

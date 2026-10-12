@@ -3,10 +3,15 @@ name: acura-project
 # The app: API + web. The database is NOT part of this file. Point DATABASE_URL at
 # any Postgres (a managed provider in production). For local development, add the
 # bundled Postgres with docker-compose.localdb.yml (the default in .env.example).
+#
+# Images are named for the Azure Container Registry, so `docker compose build` then
+# `docker compose push api web` publishes them. Override with IMAGE_REGISTRY / IMAGE_TAG.
 
 services:
   api:
     build: ./api
+    image: ${IMAGE_REGISTRY:-acuraproject.azurecr.io}/acura-api:${IMAGE_TAG:-latest}
+    platform: linux/amd64
     restart: unless-stopped
     environment:
       DATABASE_URL: ${DATABASE_URL:-}
@@ -29,6 +34,8 @@ services:
 
   web:
     build: ./web
+    image: ${IMAGE_REGISTRY:-acuraproject.azurecr.io}/acura-web:${IMAGE_TAG:-latest}
+    platform: linux/amd64
     restart: unless-stopped
     ports:
       - "${WEB_PORT:-8080}:80"
