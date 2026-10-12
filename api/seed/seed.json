@@ -1,0 +1,2259 @@
+{
+ "version": 3,
+ "containers": [
+  {
+   "key": "box-engine",
+   "name": "Engine",
+   "location": "",
+   "notes": "Engine parts to keep: Injen intake (filter packed alongside), K20 coil cover plus the spare Acura PRB and silver PNC coil covers, Injen washer reservoir, cruise control actuator, both A/C hoses, the Yamashita pipe/hose and the black pipe assembly.",
+   "parent": null,
+   "icon": "engine",
+   "order": 1,
+   "photos": [
+    "3a51d01267dee2adf85536051ae5e9bc.jpg"
+   ],
+   "createdAt": "2026-10-08T00:11:00-05:00"
+  },
+  {
+   "key": "box-interior",
+   "name": "Body / Trim",
+   "location": "",
+   "notes": "Large Trim is the big inner bin and Small Trim is the small bin inside it. Body parts (fender fairings, wiper arms, bumper bracket, sash garnishes) lie loose in the main bin.",
+   "parent": null,
+   "icon": "trim",
+   "order": 2,
+   "photos": [
+    "dddce5364cf7dc1d791b37f32afb2ea2.jpg"
+   ],
+   "createdAt": "2026-10-08T00:20:00-05:00"
+  },
+  {
+   "key": "box-electrical",
+   "name": "Electrical",
+   "location": "",
+   "notes": "Small Electrical is the small bin inside (window switches). Harnesses, fuse boxes and the 2002 owner's manual are loose in the main bin.",
+   "parent": null,
+   "icon": "electrical",
+   "order": 3,
+   "photos": [
+    "0263fd23f5217e5860a006ae2ad319dd.jpg"
+   ],
+   "createdAt": "2026-10-08T00:30:00-05:00"
+  },
+  {
+   "key": "box-spare-unid",
+   "name": "Other",
+   "location": "",
+   "notes": "For Sale is the small bin on the left and Small Other is the small bin on the right. The airbox and larger spare pieces are loose in the main bin.",
+   "parent": null,
+   "icon": "other",
+   "order": 4,
+   "photos": [
+    "d1f603dad805aab39faa520167149099.jpg"
+   ],
+   "createdAt": "2026-10-08T00:51:00-05:00"
+  },
+  {
+   "key": "box-hw",
+   "name": "Hardware",
+   "location": "",
+   "notes": "Black Husky bin. Hardware is the gray tray of loose hardware; Ask Cody is the clear bin of bagged hardware.",
+   "parent": null,
+   "icon": "hardware",
+   "order": 5,
+   "photos": [
+    "87da47650ad212ec7edfbb16751d76c7.jpg"
+   ],
+   "createdAt": "2026-10-12T03:25:06-05:00"
+  },
+  {
+   "key": "box-large-body",
+   "name": "None",
+   "location": "Against the garage wall",
+   "notes": "Too big for a bin, leaning against the garage wall: driver door panel and windshield side molding in front, with the front lip and rear spoiler behind the door panel.",
+   "parent": null,
+   "icon": "none",
+   "order": 6,
+   "photos": [
+    "4983145db2b4d422d4162e47cd43180a.jpg"
+   ],
+   "createdAt": "2026-10-11T21:20:00-05:00"
+  },
+  {
+   "key": "box-electrical-small",
+   "name": "Small Electrical",
+   "location": "",
+   "notes": "",
+   "parent": "box-electrical",
+   "icon": "box",
+   "order": 1,
+   "photos": [],
+   "createdAt": "2026-10-12T03:25:03-05:00"
+  },
+  {
+   "key": "box-hardware-ask-cody",
+   "name": "Ask Cody",
+   "location": "",
+   "notes": "Hardware to review with Cody before reuse: chrome lug nuts (4), castle nuts (9), long black 10.9 bolts, short GA 10.9 bolts with washers (3), large hex plug with O-ring, suspension bushing hardware set, large fine-thread flange nuts (3), wheel studs (3) and 12-point flange bolts (7), split rubber bushing, exhaust-style springs with long bolts.",
+   "parent": "box-hw",
+   "icon": "askcody",
+   "order": 1,
+   "photos": [],
+   "createdAt": "2026-10-09T12:00:00-05:00"
+  },
+  {
+   "key": "box-other-small",
+   "name": "Small Other",
+   "location": "",
+   "notes": "",
+   "parent": "box-spare-unid",
+   "icon": "box",
+   "order": 1,
+   "photos": [],
+   "createdAt": "2026-10-12T03:25:04-05:00"
+  },
+  {
+   "key": "box-trim-large",
+   "name": "Large Trim",
+   "location": "",
+   "notes": "",
+   "parent": "box-interior",
+   "icon": "box",
+   "order": 1,
+   "photos": [],
+   "createdAt": "2026-10-12T03:25:00-05:00"
+  },
+  {
+   "key": "box-for-sale",
+   "name": "For Sale",
+   "location": "",
+   "notes": "",
+   "parent": "box-spare-unid",
+   "icon": "box",
+   "order": 2,
+   "photos": [],
+   "createdAt": "2026-10-12T03:25:05-05:00"
+  },
+  {
+   "key": "box-hardware",
+   "name": "Hardware",
+   "location": "",
+   "notes": "Large bin of loose hardware: unidentified bolts, nuts, washers, screws, studs, small brackets, generic plastic fasteners/clips and crimp connectors. Logged item: gold zinc and black brackets.",
+   "parent": "box-hw",
+   "icon": "hardware",
+   "order": 2,
+   "photos": [],
+   "createdAt": "2026-10-08T00:50:00-05:00"
+  },
+  {
+   "key": "box-trim-small",
+   "name": "Small Trim",
+   "location": "",
+   "notes": "",
+   "parent": "box-interior",
+   "icon": "box",
+   "order": 2,
+   "photos": [],
+   "createdAt": "2026-10-12T03:25:01-05:00"
+  },
+  {
+   "key": "box-body",
+   "name": "Body",
+   "location": "",
+   "notes": "",
+   "parent": "box-interior",
+   "icon": "box",
+   "order": 3,
+   "photos": [],
+   "createdAt": "2026-10-12T03:25:02-05:00"
+  }
+ ],
+ "parts": [
+  {
+   "key": "windshield-molding-lh",
+   "label": "Windshield side molding, driver side",
+   "partNumber": "L 73162-S6M",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 30,
+   "valueHigh": 60,
+   "notes": "A-pillar trim between windshield and body. Three clips on the back, no cracks or tears, some surface flaking near the stamped end. Replaces the driver A-pillar molding if it's missing or lifting. New pair lists around $230.",
+   "container": "box-large-body",
+   "photos": [
+    "7c06d2a6daf08d6af211e9cebee0de0b.jpg",
+    "3f11044f94dd5c6dc700db2ec10aca9a.jpg",
+    "865b6076b4a9c2472f8e2c4fa642dfda.jpg"
+   ],
+   "createdAt": "2026-10-05T22:16:00-05:00"
+  },
+  {
+   "key": "injen-intake",
+   "label": "Injen cold air intake",
+   "partNumber": "Injen, RSX Type-S fitment",
+   "fits": "",
+   "status": "Verified",
+   "tags": [
+    "Intake"
+   ],
+   "valueLow": 100,
+   "valueHigh": 200,
+   "notes": "Goes on the car; it currently has no intake. Includes the black resonator hose, attached to the intake pipe but a separate piece. Filter removed for storage and packed in the same box; reattach and tighten its clamp when installing. Install with the IAT sensor plugged in and the breather hose on the valve cover fitting.",
+   "container": "box-engine",
+   "photos": [
+    "b427d9662ec7993ff3cf0e2ee293a02f.jpg"
+   ],
+   "createdAt": "2026-10-05T22:20:00-05:00"
+  },
+  {
+   "key": "stock-airbox",
+   "label": "Factory airbox",
+   "partNumber": "HONDA, TR (Toyo Roki), FC1, PP-TD40",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Intake",
+    "Spare"
+   ],
+   "valueLow": 40,
+   "valueHigh": 75,
+   "notes": "Genuine Honda housing by Toyo Roki; markings don't name the model. Test-fit or find the 17xxx number to confirm it's the RSX box. Inside clean, outside scuffed, bolts on it.",
+   "container": "box-spare-unid",
+   "photos": [
+    "e2fabdf9b8db63deefd5abed174cc32e.jpg",
+    "e727691192e3c3320f05488e719062ca.jpg",
+    "f0bbc1319e77ec271167ab5a65020763.jpg",
+    "aa745bba4c2a2ee7a1e8eafcb805a0ab.jpg",
+    "7a3829feb2ab0fdaed25a1dc89ee1dc7.jpg",
+    "1e58d95094144c3c454f7659fe11c479.jpg"
+   ],
+   "createdAt": "2026-10-05T22:21:00-05:00"
+  },
+  {
+   "key": "engine-coil-cover",
+   "label": "K20 coil cover",
+   "partNumber": "Honda K20 (i-VTEC 2.0L DOHC)",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Engine"
+   ],
+   "valueLow": 25,
+   "valueHigh": 60,
+   "notes": "Main cover with attached side piece; covers the coils on the valve cover, held by two 10mm nuts. Reinstall if the engine is missing it.",
+   "container": "box-engine",
+   "photos": [
+    "68682f77530408b0f6d46b5c851d5c77.jpg"
+   ],
+   "createdAt": "2026-10-06T00:43:00-05:00"
+  },
+  {
+   "key": "front-splash-strip",
+   "label": "Front fender fairings, pair (L + R)",
+   "partNumber": "74105-S6M-0000 (R), 74155-S6M-0000 (L)",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 15,
+   "valueHigh": 30,
+   "notes": "Run along the top inside edge of each front fender, sealing the gap under the hood. Surface wear and stress-crack lines, no breaks. Check whether the car's fenders still have them (front end was swapped).",
+   "container": "box-body",
+   "photos": [
+    "fd4e966bb9bd2a496b08915d6ec3e7b5.jpg",
+    "e6999804a5dbfd8539f0eddd9e321c18.jpg",
+    "21b11c8464074af4ab0814a0e4661c9f.jpg",
+    "b014762f97fd65556f08622ce9e88c4e.jpg"
+   ],
+   "createdAt": "2026-10-06T00:45:00-05:00"
+  },
+  {
+   "key": "suspension-bushing-hardware",
+   "label": "Suspension bushing hardware set",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Suspension",
+    "Spare",
+    "Ask Cody"
+   ],
+   "valueLow": 10,
+   "valueHigh": 30,
+   "notes": "Four rubber bushings, two metal sleeves, two flange nuts, two cup washers, plus a small bolt and washer. Likely shock or end link hardware from the aftermarket suspension. Keep bagged.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "7371a2c3220ad27213b0529ee482b184.jpg",
+    "c0dfac33b35e9fc9dfbbeef08e532741.jpg"
+   ],
+   "createdAt": "2026-10-06T00:58:00-05:00"
+  },
+  {
+   "key": "hasport-ekk-lh",
+   "label": "Hasport EKK left-hand engine mount",
+   "partNumber": "EKKLHB",
+   "fits": "Civic",
+   "status": "Unverified",
+   "tags": [
+    "K-swap",
+    "For sale"
+   ],
+   "valueLow": 100,
+   "valueHigh": 150,
+   "notes": "Transmission-side mount for K-swapping a 1996–2000 Civic (EK). Billet bracket with bushing; note bushing condition in the listing.",
+   "container": "box-for-sale",
+   "photos": [
+    "67b3a8f3a2f77a655592c545f1d176af.jpg",
+    "6e3dfcc68d9bf0ec382a9a62d6aed1a3.jpg",
+    "ff734f56e37beffab925a50ddc57ae81.jpg"
+   ],
+   "createdAt": "2026-10-06T01:20:00-05:00"
+  },
+  {
+   "key": "ktuned-immobilizer-bypass",
+   "label": "K-Tuned immobilizer / multiplexor bypass",
+   "partNumber": "KTD-KID-001",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "K-swap",
+    "For sale"
+   ],
+   "valueLow": 100,
+   "valueHigh": 150,
+   "notes": "Lets a stock K-series ECU run in a swap. Compatible ECUs: PRB (A01–A12 & 305), PND (A01–A09), PNF, PRA, PRD, PPA. All four wires have terminals and connectors. About $200 new.",
+   "container": "box-for-sale",
+   "photos": [
+    "0ff34f977e564ee3de77ffc224449203.jpg"
+   ],
+   "createdAt": "2026-10-06T01:21:00-05:00"
+  },
+  {
+   "key": "adapter-pigtail",
+   "label": "OBD2 diagnostic adapter cable",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "For sale"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "16-pin OBD2 female to a small white sealed connector. Scan-tool adapter, likely for a motorcycle or powersports port, not a K-swap part. Fine to toss in with the lot as a freebie.",
+   "container": "box-for-sale",
+   "photos": [
+    "0ad77d679830ec26d0d56093ede3b535.jpg"
+   ],
+   "createdAt": "2026-10-06T01:22:00-05:00"
+  },
+  {
+   "key": "gplus-hose-long",
+   "label": "G-Plus silicone coolant hose, long",
+   "partNumber": "G-Plus",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Cooling"
+   ],
+   "valueLow": 15,
+   "valueHigh": 30,
+   "notes": "Black silicone hose with an offset S-bend, spring clamp on one end. Likely from a G-Plus radiator hose kit; match to the car's coolant hoses by shape and diameter.",
+   "container": "box-engine",
+   "photos": [
+    "3595d15cee327963a8d1f56e08d96028.jpg"
+   ],
+   "createdAt": "2026-10-06T01:56:00-05:00"
+  },
+  {
+   "key": "gplus-hose-short",
+   "label": "G-Plus silicone coolant hose, short",
+   "partNumber": "G-Plus",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Cooling"
+   ],
+   "valueLow": 10,
+   "valueHigh": 20,
+   "notes": "Short black silicone S-bend hose, likely from the same kit. Match to the car's coolant hoses by shape and diameter.",
+   "container": "box-engine",
+   "photos": [
+    "1b3e28c0db3f5730d128fb1c592617c4.jpg"
+   ],
+   "createdAt": "2026-10-06T01:56:30-05:00"
+  },
+  {
+   "key": "cruise-actuator",
+   "label": "Cruise control actuator with cable",
+   "partNumber": "Denso 030100-1330 (12V)",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Electrical"
+   ],
+   "valueLow": 20,
+   "valueHigh": 50,
+   "notes": "Honda cruise actuator by Denso, with bracket and throttle cable. Check whether the throttle body has a cruise cable and cruise works to know if this goes on or stays a spare.",
+   "container": "box-engine",
+   "photos": [
+    "f65bd3041f15ee68053f6360d758b22a.jpg",
+    "ff73a01544147afd67131ab1171ffc14.jpg"
+   ],
+   "createdAt": "2026-10-06T02:14:00-05:00"
+  },
+  {
+   "key": "front-turn-sockets",
+   "label": "Turn signal sockets with amber bulbs (pair)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Electrical"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Two Honda-style twist-lock sockets with amber wedge bulbs, extended with homemade red/black wiring (one black lead frayed). Front turn signals currently don't work; these are likely what was pulled. Check against the loose wires near the power steering reservoir.",
+   "container": "box-electrical",
+   "photos": [
+    "d331e540e65b715f6911a78580e6214b.jpg"
+   ],
+   "createdAt": "2026-10-06T02:37:00-05:00"
+  },
+  {
+   "key": "mirror-garnish-r",
+   "label": "Door mirror garnish, passenger side",
+   "partNumber": "76220-S6M-000",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Interior triangle trim over the passenger mirror mount; metal clip on the back. Check the passenger door's inside front corner; if missing, this goes back on.",
+   "container": "box-trim-small",
+   "photos": [
+    "c51b72bd87bdafc5bdd906ee99a212b0.jpg",
+    "671e7cfe5bfea62b5add7267ecabd189.jpg"
+   ],
+   "createdAt": "2026-10-06T17:24:00-05:00"
+  },
+  {
+   "key": "cover-l-unknown",
+   "label": "Steering column cover, left side",
+   "partNumber": "S6M-L",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 10,
+   "valueHigh": 20,
+   "notes": "Textured black plastic with three clips and a corner notch; small damaged spot near the notch.",
+   "container": "box-trim-large",
+   "photos": [
+    "04bd592f996b74156f384d2bdf8487e7.jpg",
+    "ebc75d536b745f143a587c29996be2e8.jpg"
+   ],
+   "createdAt": "2026-10-06T17:26:00-05:00"
+  },
+  {
+   "key": "s2000-cap-a",
+   "label": "Trim caps, pair (Cap A + Cap B)",
+   "partNumber": "S2A, CAP A; S2A, CAP B; HONDA >PP<",
+   "fits": "S2000",
+   "status": "Unverified",
+   "tags": [
+    "Body & trim",
+    "For sale"
+   ],
+   "valueLow": 10,
+   "valueHigh": 30,
+   "notes": "Pair of black leather-grain interior trim caps: the larger Cap A has clips along its edges, and the smaller Cap B has a slotted tab and clips. Both are molded S2A (Honda S2000 code), so they are not RSX parts. Sell as a set.",
+   "container": "box-for-sale",
+   "photos": [
+    "5425ee15af007d42802d45fa1a3a3898.jpg",
+    "7b9e488c2668e5d9115522339962c533.jpg",
+    "214c9bd3a40bb81ee11ed7323f964f09.jpg"
+   ],
+   "createdAt": "2026-10-06T17:30:00-05:00"
+  },
+  {
+   "key": "geared-levers-unknown",
+   "label": "Pair of geared flip levers",
+   "partNumber": "Molded 6 and 7 (mold cavity numbers)",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Two identical black plastic levers: toothed gear with keyed hole on one end, flat paddle on the other, clips on the back. Not the RSX cupholder (that one is fixed). From the interior hardware box.",
+   "container": "box-trim-small",
+   "photos": [
+    "c21933d96e00f1ef958bd072270987f2.jpg",
+    "45ff5cfb052a7dfd4ae617a6289e9966.jpg"
+   ],
+   "createdAt": "2026-10-06T17:50:00-05:00"
+  },
+  {
+   "key": "gray-clips-pair",
+   "label": "Pair of gray clip-in holders",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Left/right pair: square socket with latch, side slot, clip-in tab on the back. Guess: headliner sun visor clips. Check the inner end of each sun visor for empty square holes.",
+   "container": "box-trim-small",
+   "photos": [
+    "69122a18baf0218a04bdbc5e1ea3408c.jpg",
+    "9916dc7da2a326d0698b46b4dca6425f.jpg"
+   ],
+   "createdAt": "2026-10-06T19:10:00-05:00"
+  },
+  {
+   "key": "s5a-brackets-pair",
+   "label": "Pair of steel brackets with rubber bushings",
+   "partNumber": "S5A",
+   "fits": "Civic",
+   "status": "Unverified",
+   "tags": [],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Matching black steel brackets, each with a rubber bushing (molded number possibly 140) and a bolt hole. S5A is the 2001–05 Civic code. Function unknown. One has rust around the bolt hole.",
+   "container": "box-spare-unid",
+   "photos": [
+    "7af945e4c1d343f542f125e316d28868.jpg",
+    "a04f7e66e05fe5ba547768e363fde39b.jpg"
+   ],
+   "createdAt": "2026-10-06T19:13:00-05:00"
+  },
+  {
+   "key": "door-panel-driver",
+   "label": "Door panel, driver side",
+   "partNumber": "Foam pad stamped L, S6M",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 40,
+   "valueHigh": 80,
+   "notes": "Driver door is missing its panel, so this goes on the car. Black suede insert, curved armrest, round speaker grille. Clips in place (check every slot), armrest bracket and bezel mount attached, some adhesive residue, armrest edge scuffed. Replace the torn vapor barrier first. Plastic treated with Mothers Back to Black; strip it with a prep cleaner before any paint or dye during the interior refinish.",
+   "container": "box-large-body",
+   "photos": [
+    "ed63037c251e703c4fe869d50bd8c803.jpg",
+    "90a6dccc85e82de5597e5377ed9b498d.jpg",
+    "368e79e4a430526feada845ccd5b308a.jpg"
+   ],
+   "createdAt": "2026-10-07T18:35:00-05:00"
+  },
+  {
+   "key": "rsx-spoiler-black",
+   "label": "Rear spoiler, black",
+   "partNumber": "Honda label, Made in Japan",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "RSX OEM",
+    "For sale"
+   ],
+   "valueLow": 75,
+   "valueHigh": 150,
+   "notes": "Genuine RSX wing with molded RSX emblem. Studs, nuts and foam gaskets included. Top scratched and scuffed but not peeling; no cracks; hardware has surface rust. Polish the top before listing.",
+   "container": "box-large-body",
+   "photos": [
+    "1b34cb5c41b7b32aa9f9c5ff37f99b0b.jpg",
+    "e692a5800cfb34ca9294635945cf9c45.jpg"
+   ],
+   "createdAt": "2026-10-07T18:41:00-05:00"
+  },
+  {
+   "key": "injen-washer-reservoir",
+   "label": "Injen washer fluid reservoir with filler neck",
+   "partNumber": "X-6027 (Injen)",
+   "fits": "RSX",
+   "status": "Unverified",
+   "tags": [
+    "Intake"
+   ],
+   "valueLow": 15,
+   "valueHigh": 40,
+   "notes": "Washer fluid tank with white filler neck and blue cap. Three mounting holes, pump connectors on the side. The car has no washer reservoir, so this goes on with the Injen intake. Check the pump, its plug, and the hose to the sprayers.",
+   "container": "box-engine",
+   "photos": [
+    "65ed19ba282083048af8c5070f9418af.jpg",
+    "dd130f8be65c2304246b339a4a309ca3.jpg"
+   ],
+   "createdAt": "2026-10-07T18:49:00-05:00"
+  },
+  {
+   "key": "front-lip-black",
+   "label": "Front lip / under-bumper spoiler, black",
+   "partNumber": "Molded DF8CE01·FLFSX02",
+   "fits": "RSX",
+   "status": "Unverified",
+   "tags": [
+    "RSX aftermarket",
+    "For sale"
+   ],
+   "valueLow": 25,
+   "valueHigh": 75,
+   "notes": "Black flexible urethane lip. Shape fits the RSX bumper; mounting holes not yet checked. No brand marking. Bulky to ship; list for local pickup with photos on the car.",
+   "container": "box-large-body",
+   "photos": [
+    "015ab9fe5e8d008a2b39e96e69c5a44d.jpg",
+    "028df52e32dd54595904a9ed4a589e91.jpg",
+    "a4c7ffee01b05a94f696b905a7b4efd1.jpg"
+   ],
+   "createdAt": "2026-10-07T19:14:00-05:00"
+  },
+  {
+   "key": "wiper-arms-front",
+   "label": "Front wiper arms, pair",
+   "partNumber": "S6M A DR, S6M A AS",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 20,
+   "valueHigh": 40,
+   "notes": "Driver and passenger arms. Springs intact, J-hooks present, no blades. One arm's paint worn to bare metal; a scuff and satin black will refresh it. Both arms have the same kink where the rod leaves the arm, which is the factory offset, not a bend. Stamped 016 S6M A DR (driver) and 015 S6M A AS (passenger).",
+   "container": "box-body",
+   "photos": [
+    "8dfba48b997e0179fbd4115da4aa1ec5.jpg",
+    "96ef2511216d3e33c7cd0d3ec4e04dc9.jpg"
+   ],
+   "createdAt": "2026-10-07T19:32:00-05:00"
+  },
+  {
+   "key": "bracket-unmarked-steel",
+   "label": "Black steel bracket, square-slot feet",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Hand-sized black stamped steel bracket. Square slot in each foot, raised boss with a round hole, small hole on an end tab, bent tab on top. Paint worn, no rust-through. Check under-dash spots with open panels: below the column, radio opening, console side, passenger footwell module.",
+   "container": "box-trim-small",
+   "photos": [
+    "8c8c8036a267af15da0d45a620fa04f7.jpg",
+    "48689792e962093d81271e87a925ce44.jpg"
+   ],
+   "createdAt": "2026-10-07T20:00:00-05:00"
+  },
+  {
+   "key": "bar-unmarked-steel",
+   "label": "Steel bar with two-hole ends",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Black-painted stamped steel bar, rounded center and flat ends with two holes each. Rust on both ends, pitting along the bar. Look for matching two-bolt mounting points underneath or in the engine bay.",
+   "container": "box-other-small",
+   "photos": [
+    "061d5c489ec1fbe564807602fd87a2fa.jpg",
+    "a041400ceeac96cadc7f6efbfe5ee4ac.jpg"
+   ],
+   "createdAt": "2026-10-07T20:02:00-05:00"
+  },
+  {
+   "key": "cover-unmarked-a",
+   "label": "Black steel channel cover",
+   "partNumber": "Stamped A (twice)",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [],
+   "valueLow": 0,
+   "valueHigh": 10,
+   "notes": "Long channel-shaped stamped steel cover, open underneath, wider rounded end. Two mounting tabs, one with a rubber grommet. Riveted strip and curved cutout inside. Scuffs, light rust inside, no rust-through. Look for a matching spot in the engine bay or underneath.",
+   "container": "box-spare-unid",
+   "photos": [
+    "9f2c987af14335c2bdbad0c832c16a27.jpg",
+    "9abcbcfbb27779337709bb70d50072a8.jpg"
+   ],
+   "createdAt": "2026-10-07T20:05:00-05:00"
+  },
+  {
+   "key": "plate-bracket-a",
+   "label": "Black steel plate with bracket",
+   "partNumber": "Stamped A on tabs",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [],
+   "valueLow": 0,
+   "valueHigh": 10,
+   "notes": "Plate with a raised oval center and round holes, formed bracket with a rectangular opening on top. Square-hole side tabs, angled foot, two hook tabs. Paint flaking, rust at holes and edges. Guess: battery tray. The car already has one, so compare shape and bolt holes to the installed tray.",
+   "container": "box-spare-unid",
+   "photos": [
+    "7e48766d0f73cf6b38c035bbab55b3f6.jpg",
+    "1b5e4cbf49d6b2e6254c037b192cc897.jpg"
+   ],
+   "createdAt": "2026-10-07T20:07:00-05:00"
+  },
+  {
+   "key": "fusebox-underhood-spare",
+   "label": "Under-hood fuse/relay box with lid",
+   "partNumber": "S6M-A0",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical",
+    "Spare"
+   ],
+   "valueLow": 20,
+   "valueHigh": 50,
+   "notes": "Fully populated (100A main, 40A IG1, cartridge and mini fuses, relays). Lid diagram readable, clips intact, housing scuffed. Car has its own installed. Use to swap-test fuses and relays, e.g. hazard fuse 5 (15A) for the front turn signals.",
+   "container": "box-electrical",
+   "photos": [
+    "20bbb6f224bb6a98ce43ac1fa1e4f892.jpg",
+    "d042f4fa3623b7cbfc07e7e90d1b20b6.jpg",
+    "fe6950a387416fc4935a42c24e123736.jpg",
+    "b99bbb0ac39768d26357e37539569eec.jpg"
+   ],
+   "createdAt": "2026-10-07T20:35:00-05:00"
+  },
+  {
+   "key": "fusebox-underdash-spare",
+   "label": "Under-dash fuse/relay box",
+   "partNumber": "S6M-A3? 000 (last digit faded); label J2NX1V / A58",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical",
+    "Spare",
+    "Potential sale"
+   ],
+   "valueLow": 40,
+   "valueHigh": 100,
+   "notes": "Mini fuses (7.5–20A), three black relays, one orange relay, harness sockets. Stamped PA. Car has a working one installed. Backup while sorting the turn signals and unplugged under-dash connectors. Buyers want the full part number; the last digit is faded.",
+   "container": "box-electrical",
+   "photos": [
+    "c453eb8f2894bd31b3727bee8a0150ca.jpg",
+    "53d54863af2cdf2348ef2384e27e4b8d.jpg",
+    "4218f6de27b7a8bb321e73980bb368a0.jpg",
+    "00bbbf4a5ea1eef98ae3863aa53237c9.jpg"
+   ],
+   "createdAt": "2026-10-07T20:43:00-05:00"
+  },
+  {
+   "key": "dash-lower-cover-driver",
+   "label": "Driver lower dash cover (fuse panel)",
+   "partNumber": "77300-S6MA-A010-20; fuse label S6M-A0",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Missing from the car, so this goes back on. Both quarter-turn fasteners present. Crack from the top notch through the fuse label (repair from the back with a plastic welder or polyolefin primer + glue). Fuse 19 = TURN LIGHT 7.5A, 11 = ABS 7.5A.",
+   "container": "box-trim-large",
+   "photos": [
+    "7a74331120cf6cd5c2bb9c77d5f6e6d2.jpg",
+    "4962da67a7d10804af4f85f3eb368620.jpg",
+    "75b47a877ede08f8a0298ff26cea1ffe.jpg"
+   ],
+   "createdAt": "2026-10-07T20:48:00-05:00"
+  },
+  {
+   "key": "mudguards-front-pair",
+   "label": "Front mud guards, pair (L + R)",
+   "partNumber": "S6M FR-L, S6M FR-R",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "RSX OEM",
+    "For sale"
+   ],
+   "valueLow": 30,
+   "valueHigh": 60,
+   "notes": "Scuffs and road grime; mounting holes intact, no cracks. Clean before photographing. If the rears turn up, sell all four as a set.",
+   "container": "box-for-sale",
+   "photos": [
+    "9e73f63d7559228c318b2550493709ba.jpg",
+    "737c3ba4f3ee5e86d62c42321f355541.jpg",
+    "c015ff1194abd59a41f395e648b76d86.jpg"
+   ],
+   "createdAt": "2026-10-07T22:03:00-05:00"
+  },
+  {
+   "key": "column-cover-lower-unknown",
+   "label": "Steering column covers, upper + lower set",
+   "partNumber": "Upper 77350-S5A (HONDA >PP-T<); lower HONDA >PP-1<",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 20,
+   "valueHigh": 40,
+   "notes": "Upper and lower clip together and fit the column. Upper is stamped S5A (Civic code) but fits the RSX. Lower has a steel plate inside with surface rust (wire brush and paint) and the OBD II location sticker. Goes on with the S6M-L left column cover.",
+   "container": "box-trim-large",
+   "photos": [
+    "b24f0bbeb96a6ffaeff6c2726c4ec485.jpg",
+    "2ed66a3217f07d66c3d7c48dc45fcb52.jpg",
+    "de5b95f46869074558899898c0c2fc1f.jpg",
+    "338f9d91777829130c3c9621f4f8de53.jpg",
+    "5be092e6d29cd7c1cae74f1f31aaebe5.jpg",
+    "54111ffdeb03660015abad96f6237944.jpg",
+    "0f154664cc47b61d2927e3afbcc3e3fb.jpg"
+   ],
+   "createdAt": "2026-10-07T22:07:00-05:00"
+  },
+  {
+   "key": "door-handles-inner-pair",
+   "label": "Interior door handles, pair (L + R)",
+   "partNumber": "S6M-L, S6M-R",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim",
+    "Potential sale"
+   ],
+   "valueLow": 40,
+   "valueHigh": 70,
+   "notes": "Silver pulls in black bezels with lock tabs. Light finish wear; tabs, bosses and springs present, no cracks. Left likely goes on with the driver door panel; check whether the driver door still has a handle. Right is a spare unless the passenger handle is broken.",
+   "container": "box-trim-small",
+   "photos": [
+    "7db9ad0e698f7b33ec8a176782571f2e.jpg",
+    "214b897a49a84ce9adefe9729defdd12.jpg"
+   ],
+   "createdAt": "2026-10-07T22:23:00-05:00"
+  },
+  {
+   "key": "bracket-gold-forked",
+   "label": "Gold bracket with two forked tabs",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Gold zinc-plated stamped steel bracket. Two forked U-slot tabs, a flat tab, and a flanged base with three bolt holes. Light grime, no rust-through. Look for three matching bolt holes in the engine bay or near the transmission.",
+   "container": "box-other-small",
+   "photos": [
+    "4c72f13d8e813aa30175dc6a4972798c.jpg",
+    "9d8f2b86f8c32eb64439b18bf122ab88.jpg"
+   ],
+   "createdAt": "2026-10-07T22:50:00-05:00"
+  },
+  {
+   "key": "trim-u-cover-r",
+   "label": "U-shaped trim cover (R)",
+   "partNumber": ">PP<, R",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 10,
+   "notes": "Black grain-textured U-shaped piece with a rounded end and a clip slot on each arm; one clip damaged. Scuffs and residue on the back. Possibly a right-side seat rail end cover: check the seat rail ends for a missing cover.",
+   "container": "box-trim-small",
+   "photos": [
+    "37733dec8834e5571a5d0e7861de0854.jpg",
+    "58267640ff817fc2b66959129476ca30.jpg"
+   ],
+   "createdAt": "2026-10-07T22:52:00-05:00"
+  },
+  {
+   "key": "ac-hose",
+   "label": "A/C refrigerant hose",
+   "partNumber": "Printed INNER >IIR< OUTER >EPDM<",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Cooling"
+   ],
+   "valueLow": 15,
+   "valueHigh": 40,
+   "notes": "Rubber hose with crimped aluminum fittings: flare nut on one end, bent tube end on the other, small bracket near the middle bend. IIR/EPDM construction is what A/C hoses use (identified by material). Compare with the compressor-to-firewall line; if the car's A/C lines are all in place, this is a spare.",
+   "container": "box-engine",
+   "photos": [
+    "02bf7e78ea4d84beab7765d6940dfe84.jpg",
+    "cc420e3179e27e85fa546826cdd61767.jpg",
+    "034ec6629167e4429ff535ae6c28719c.jpg"
+   ],
+   "createdAt": "2026-10-07T23:01:00-05:00"
+  },
+  {
+   "key": "yamashita-pipe-hose",
+   "label": "Metal pipe with rubber hose (Yamashita)",
+   "partNumber": "Printed A1 YAMASHITA",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Cooling"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Bent metal pipe with two mounting brackets and a black clip, joined to a rubber hose with a white crimp collar; spring clamp near the open hose end. Yamashita Rubber is a Honda OEM hose supplier, so this is likely factory Honda; no model code to confirm which car. Match by shape to the engine bay pipes (e.g. coolant/heater lines).",
+   "container": "box-engine",
+   "photos": [
+    "d7f36f733eeddd794d98e7bf1ea26cab.jpg",
+    "8791ff57ac4bba35b1efd1257569087b.jpg"
+   ],
+   "createdAt": "2026-10-07T23:32:00-05:00"
+  },
+  {
+   "key": "ac-hose-nichirin",
+   "label": "A/C hose with block fittings (Nichirin)",
+   "partNumber": "Printed NICHIRIN JPN HYLAMMIT DSP-11HP 22-F-C-DJ",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Cooling"
+   ],
+   "valueLow": 15,
+   "valueHigh": 40,
+   "notes": "Rubber hose with crimped aluminum ends: a bent aluminum tube with a bolt-on block fitting on one end, a looped tube with a block fitting and O-ring on the other. Bolt-on block fittings and crimped ferrules are A/C refrigerant hose construction; Nichirin is a Japanese OEM hose maker. No model code. Second A/C hose in the pile along with the IIR/EPDM one; compare both with the car's A/C lines.",
+   "container": "box-engine",
+   "photos": [
+    "6b2fdee8eae865eee70ea8cb7c2f69f2.jpg",
+    "18efac9c1f1d2be4adb259ab3b68053b.jpg",
+    "df18c0bf58ddd25ce355e7ecba57f30d.jpg"
+   ],
+   "createdAt": "2026-10-07T23:36:00-05:00"
+  },
+  {
+   "key": "pipe-hose-assembly-black",
+   "label": "Black metal pipe assembly with hoses",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Cooling"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Black-painted steel pipes joined into one assembly with a short branch nipple. A long curved rubber hose on one end and a short rubber hose with spring clamps on the other, both with crimp collars. No markings visible in the photo; check the rubber for printing. Shape suggests a coolant or heater pipe (not confirmed). Match against the engine bay plumbing.",
+   "container": "box-engine",
+   "photos": [
+    "22adf2221403be2aab3fb88502d1bb31.jpg"
+   ],
+   "createdAt": "2026-10-07T23:41:00-05:00"
+  },
+  {
+   "key": "vacuum-hose-vl",
+   "label": "Brake booster vacuum hose (11/32\")",
+   "partNumber": "Printed DOT … 95 11/32 VL, with flow arrows",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Brakes",
+    "Spare"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Molded black rubber hose with several bends, clamps at both ends, flow-direction arrows and a yellow paint mark. DOT + VL marking is the federal labeling for vacuum brake hose (VL = light-duty vacuum), 11/32\" size, so this most likely runs from the intake manifold to the brake booster. No model code. Hard spot in the middle that feels like metal inside: either a check valve built into the hose or a metal joint pipe splicing two sections. Test by blowing through each end; a check valve passes air only one way (toward the engine). Inspect for cracks before any reuse; a new booster hose is cheap.",
+   "container": "box-spare-unid",
+   "photos": [
+    "f6bb7fb9e7d8ad61800712c9bb862d58.jpg",
+    "65a9a5a4d16c054d4f0143dbe0e57ab5.jpg",
+    "086770d6726726d6f99321493d796039.jpg"
+   ],
+   "createdAt": "2026-10-07T23:46:00-05:00"
+  },
+  {
+   "key": "booster-hose-check-valve",
+   "label": "Brake booster vacuum hose with check valve",
+   "partNumber": "Printed DOT … 11/32 V… SAE J1403, ENGINE ← arrow; dated 03 (2003)",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Brakes",
+    "Spare"
+   ],
+   "valueLow": 10,
+   "valueHigh": 20,
+   "notes": "Molded black rubber hose with an inline beige one-way check valve, clamps at both ends. SAE J1403 is the vacuum brake hose standard; the ENGINE arrow shows which way it installs. Runs from the intake manifold to the brake booster. Date code reads 2003, so it's newer than the car (likely a replacement at some point). Pairs with the other 11/32\" VL booster hose. Inspect for cracks before reuse.",
+   "container": "box-spare-unid",
+   "photos": [
+    "51c40a8bbdf32f7060d3dcc53dd144a9.jpg",
+    "522f19d1d199ebe1fefe22ab171d6353.jpg",
+    "73b797853cb26cf422e993a0c86fccba.jpg"
+   ],
+   "createdAt": "2026-10-07T23:50:00-05:00"
+  },
+  {
+   "key": "heater-hose-3-4",
+   "label": "Heater hose, 3/4\" (19 mm), straight length",
+   "partNumber": "Printed Heater Hose 3/4\" [19.0 mm] Made in Mexico RX102820 17:21",
+   "fits": "Universal",
+   "status": "Unverified",
+   "tags": [
+    "Cooling",
+    "Spare"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Straight cut length of universal aftermarket heater hose, about 18 inches, clean ends, looks unused or barely used. Bulk hose sold by the foot; handy for patching a coolant line in a pinch.",
+   "container": "box-spare-unid",
+   "photos": [
+    "2e75d3f48c916439f90322ecc61dcd09.jpg"
+   ],
+   "createdAt": "2026-10-07T23:52:00-05:00"
+  },
+  {
+   "key": "pcv-hose-armormark",
+   "label": "PCV hose, 15/32\" (12.7 mm), straight length",
+   "partNumber": "Printed ArmorMark 60291 15/32\" (12.7 MM) PCV HOSE SAE J30 R7, Made in Thailand, WP 3.4 bar",
+   "fits": "Universal",
+   "status": "Unverified",
+   "tags": [
+    "Engine",
+    "Spare"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Straight cut length of universal PCV/breather hose (SAE J30 R7 is oil- and fuel-vapor-resistant), about 2 feet. Clean, looks unused. Bulk hose; useful for a breather or PCV line, e.g. the Injen intake's valve cover breather.",
+   "container": "box-spare-unid",
+   "photos": [
+    "55237efd72417be7739579e649efc95f.jpg",
+    "550edac245411b05126124af6bfa378f.jpg"
+   ],
+   "createdAt": "2026-10-07T23:54:00-05:00"
+  },
+  {
+   "key": "molded-hose-small",
+   "label": "Small molded rubber hose with clamps",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Spare"
+   ],
+   "valueLow": 0,
+   "valueHigh": 10,
+   "notes": "Molded black rubber hose with an offset bend, spring clamps at both ends; one end has a ridged plastic or rubber fitting. Dirty but no visible cracks. No markings visible in the photo; check the rubber for printing. Likely a coolant, vacuum, or breather line (not confirmed).",
+   "container": "box-spare-unid",
+   "photos": [
+    "608a46bda1726b772d413f0ace1c898c.jpg"
+   ],
+   "createdAt": "2026-10-07T23:57:00-05:00"
+  },
+  {
+   "key": "hw-bag-a",
+   "label": "Hardware bag A (from small cardboard box)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Kept together as found. Bolts, flange nuts, castle nuts, chrome acorn/cap nuts, two tan and one gray bulb sockets with clear wedge bulbs, a black rod, a small bag of washers, a chrome ring. Owner's guess: goes with the door or the interior panels (one of the two bags each). The bulb sockets suggest interior lighting (courtesy/map light), not confirmed.",
+   "container": "box-hardware",
+   "photos": [
+    "46d51437f6e48a198522bab314590d46.jpg"
+   ],
+   "createdAt": "2026-10-08T00:57:00-05:00"
+  },
+  {
+   "key": "hw-bag-b",
+   "label": "Hardware bag B (from white crate)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Kept together as found. Flange bolts and nuts, washers, a castle nut, black plastic clips and push-pins, a zip tie with a mounting tab, a copper/brass fitting, a short white wire. Owner's guess: goes with the door or the interior panels (one of the two bags each).",
+   "container": "box-hardware",
+   "photos": [
+    "332842b2f68613feb89010ea9e7f1927.jpg"
+   ],
+   "createdAt": "2026-10-08T00:57:00-05:00"
+  },
+  {
+   "key": "honda-32118-plm-a01",
+   "label": "Corrugated tube holder, dark green (Honda bag)",
+   "partNumber": "32118-PLM-A01",
+   "fits": "Civic",
+   "status": "Unverified",
+   "tags": [
+    "Electrical",
+    "Honda genuine"
+   ],
+   "valueLow": 5,
+   "valueHigh": 8,
+   "notes": "Genuine Honda bag, label qty 1, assembled in USA. Honda lists it as Holder, Corrugated Tube (19mm) (Dark Green) for 2001-05 Civic and 2002-06 CR-V (description also says Element). RSX not on the visible fitment list. Clips harness corrugated sleeve to engine/body. Contents (green clips) seen through the back of the bag.",
+   "container": "box-electrical",
+   "photos": [
+    "42201dabf556eb02fccc09e738c333f5.jpg",
+    "5324283c1679782e3643e9ee77910fd7.jpg"
+   ],
+   "createdAt": "2026-10-08T22:21:00-05:00"
+  },
+  {
+   "key": "lug-nuts-chrome-4",
+   "label": "Chrome closed-end lug nuts (4)",
+   "partNumber": "",
+   "fits": "RSX",
+   "status": "Unverified",
+   "tags": [
+    "Wheels",
+    "Ask Cody"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Look identical to the closed-end nuts on the car (appearance match only). Car has one stud with no nut and one mismatched open-end nut on three wheels; these 4 cover all of that. Thread on by hand first; if one binds, stop. Torque spec to confirm (believed 80 lb-ft).",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "702f111239a462d10c01e86c66003e7a.jpg",
+    "94a21371cf6c546d4284c13c389dee72.jpg"
+   ],
+   "createdAt": "2026-10-08T22:28:00-05:00"
+  },
+  {
+   "key": "bolts-10-9-long",
+   "label": "Long black flange bolts, grade 10.9 (about 12)",
+   "partNumber": "Head stamp 10.9",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Long black flange-head bolts, some with washers. High-strength grade. Bag labeled 'likely aftermarket mounts'; use unknown.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "5b3e0dfceeacca111d2306e74909cfa1.jpg"
+   ],
+   "createdAt": "2026-10-08T22:34:00-05:00"
+  },
+  {
+   "key": "plug-hex-oring",
+   "label": "Large hex plug with O-ring",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 3,
+   "valueHigh": 10,
+   "notes": "Bright machined steel or aluminum, large hex head, short threaded shank with a flat end, black O-ring under the head. No markings seen. Guess: a port or drain/fill plug.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "efe0d2a0f8ae1f68cd53f9acc8b2c15d.jpg"
+   ],
+   "createdAt": "2026-10-08T22:37:00-05:00"
+  },
+  {
+   "key": "castle-nuts-5",
+   "label": "Castle nuts (9)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 8,
+   "valueHigh": 25,
+   "notes": "9 total: 5 flanged castle nuts (4 gray/silver, 1 brass-tinted; two flanges stamped with what looks like \"10\"), 2 large rusty castle nuts (one flanged, one plain), and 2 smaller black plain castle nuts. Slotted tops for a cotter pin. Guess: steering or suspension joint nuts, not trim hardware.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "0cb1091033abe805822951d0699912ce.jpg",
+    "2aab18535c4b2ae1ede5adfec8f63fa5.jpg"
+   ],
+   "createdAt": "2026-10-08T22:38:00-05:00"
+  },
+  {
+   "key": "bolts-ga-10-9-short",
+   "label": "Short zinc flange bolts with washers, grade 10.9 (3)",
+   "partNumber": "Head stamp GA 10.9",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 5,
+   "valueHigh": 12,
+   "notes": "3 zinc-plated flange bolts with fine threads and 3 large flat washers. Head stamped \"GA\" (likely the maker's mark) and 10.9 high-strength grade. Some surface rust on the washers.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "7e2a27b57babb1fdcaedee6fb69991e0.jpg",
+    "8c5b5dbc8b71f326e2af5de5b1f73b72.jpg"
+   ],
+   "createdAt": "2026-10-09T11:36:00-05:00"
+  },
+  {
+   "key": "s6m-pinned-pair",
+   "label": "S6M black plastic pieces with pins, L/R pair",
+   "partNumber": "Molded S6M; one side marked R",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Mirror-image pair of semi-flexible black plastic pieces with a row of molded push-in pins along one edge, two long slots, and small ribs. Function unknown. From the first hardware box.",
+   "container": "box-trim-small",
+   "photos": [
+    "f392b42d355a75d7b187f91693885610.jpg"
+   ],
+   "createdAt": "2026-10-09T11:47:00-05:00"
+  },
+  {
+   "key": "caps-n3225-pair",
+   "label": "Rounded black caps, pair",
+   "partNumber": "Molded N3225, PP",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 2,
+   "valueHigh": 8,
+   "notes": "Two matching domed caps, open on the back with a tab at the top edge and two clip legs inside. Stamped N3225 and PP (polypropylene). Found with the S6M pinned pair; no part number match found.",
+   "container": "box-spare-unid",
+   "photos": [
+    "854da2dfe09ffad65f781a28224b14a3.jpg"
+   ],
+   "createdAt": "2026-10-09T11:49:00-05:00"
+  },
+  {
+   "key": "plate-ribbed-channels",
+   "label": "Black plastic plate with two ribbed channels",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Flat stepped plate with two ribbed half-round channels and two small clip tabs on one edge. Molded marking present but unreadable. Found with the S6M pinned pair.",
+   "container": "box-spare-unid",
+   "photos": [
+    "fb59af858c53a6650fb54ba94d59b2ee.jpg"
+   ],
+   "createdAt": "2026-10-09T11:49:00-05:00"
+  },
+  {
+   "key": "rexka-door-trim-clips",
+   "label": "Rexka door trim panel clips (envelope)",
+   "partNumber": "Label X001RCTOSZ",
+   "fits": "Civic",
+   "status": "Unverified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 3,
+   "valueHigh": 8,
+   "notes": "Aftermarket envelope labeled \"Rexka 30pcs Door Tri...d Civic CR-V Odys...\" (title cut off), marked New. Gray push-in clip with two sealing disks shown. Count left inside unknown. RSX not on the visible label; test-fit one in the driver door panel.",
+   "container": "box-trim-small",
+   "photos": [
+    "e1012196b562112bbcd018483a2a9fdf.jpg"
+   ],
+   "createdAt": "2026-10-09T11:53:00-05:00"
+  },
+  {
+   "key": "plastic-fasteners-mixed",
+   "label": "Mixed black plastic push fasteners (about 29)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 3,
+   "valueHigh": 10,
+   "notes": "Assorted black push-in clips and push-rivets in several sizes: small fir-tree pins, split-leg push clips, larger wide-head push-rivets, a few two-piece rivets. One has a split head.",
+   "container": "box-trim-small",
+   "photos": [
+    "9dcb5ead0edaa1ddc8a366d498e248b9.jpg",
+    "55625d1ca5abd0113e3a7104c5fc14a5.jpg"
+   ],
+   "createdAt": "2026-10-09T11:59:00-05:00"
+  },
+  {
+   "key": "brackets-zinc-black-2",
+   "label": "Brackets: gold zinc slotted and small black (2)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware"
+   ],
+   "valueLow": 0,
+   "valueHigh": 5,
+   "notes": "Gold zinc bracket with slots and holes, and a smaller black metal bracket with a tab. No markings seen. Pulled from the large hardware bin.",
+   "container": "box-hardware",
+   "photos": [
+    "1b58677e8a731daffcfd429fdab06715.jpg",
+    "872a6669a52d86b989a344fa332f2281.jpg"
+   ],
+   "createdAt": "2026-10-09T12:10:00-05:00"
+  },
+  {
+   "key": "hose-clamps-stainless-2",
+   "label": "Stainless worm-drive hose clamps (2)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Spare"
+   ],
+   "valueLow": 2,
+   "valueHigh": 6,
+   "notes": "One large, one medium. Reusable. Pulled from the large hardware bin.",
+   "container": "box-spare-unid",
+   "photos": [
+    "b06038134bdddf415b3ad3e1a446816c.jpg",
+    "872a6669a52d86b989a344fa332f2281.jpg"
+   ],
+   "createdAt": "2026-10-09T12:10:00-05:00"
+  },
+  {
+   "key": "large-flange-nuts-3",
+   "label": "Large zinc flange nuts, fine thread (3)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 3,
+   "valueHigh": 15,
+   "notes": "Three large hex flange nuts with fine threads and a raised collar. Much larger than the rest of the bin. Guess: hub or axle nuts. Pulled from the large hardware bin.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "1728dba86afca957d265e3a00d7cfb42.jpg",
+    "9945102554a7cec70e10933807057e81.jpg"
+   ],
+   "createdAt": "2026-10-09T12:10:00-05:00"
+  },
+  {
+   "key": "rusty-flange-bolts-10",
+   "label": "Wheel studs (3) and 12-point flange bolts (7)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "3 press-in studs with a flat head and knurled (splined) shank, which look like wheel hub studs, plus 7 short heavy flange bolts with 12-point heads and fine threads. All rusty. Pulled from the large hardware bin.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "12c73b613039b3ab81877d4260a9edd8.jpg",
+    "bd16f92f366fbc114b9d18e8e46f346a.jpg"
+   ],
+   "createdAt": "2026-10-09T12:10:00-05:00"
+  },
+  {
+   "key": "split-rubber-bushing",
+   "label": "Black split rubber bushing",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Suspension",
+    "Ask Cody"
+   ],
+   "valueLow": 2,
+   "valueHigh": 10,
+   "notes": "Single split rubber bushing with ribs and locating tabs. Guess: sway bar bushing. Pulled from the large hardware bin.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "5df9f7bcce1a149f837b9882f9c43b85.jpg",
+    "872a6669a52d86b989a344fa332f2281.jpg"
+   ],
+   "createdAt": "2026-10-09T12:10:00-05:00"
+  },
+  {
+   "key": "springs-long-bolts",
+   "label": "Coil springs (2) and long bolts (2)",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Exhaust",
+    "Hardware",
+    "Ask Cody"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Two short heavy coil springs and two long flange bolts with a stepped shoulder partway down the shank. Guess: spring-loaded exhaust flange bolts. Keep the four together. Pulled from the large hardware bin.",
+   "container": "box-hardware-ask-cody",
+   "photos": [
+    "8c6942762cce747f837120442009b717.jpg",
+    "46a58d2198494fbb15b589f395930e4a.jpg"
+   ],
+   "createdAt": "2026-10-09T12:10:00-05:00"
+  },
+  {
+   "key": "relays-mitsuba-3",
+   "label": "Mitsuba relays (3)",
+   "partNumber": "RC-5001 (black, 12V NO, 25P); RC-5009 (brown, 12V NO, 44M); RC-5104 (blue, 12V 1T, 25K)",
+   "fits": "",
+   "status": "Unverified",
+   "tags": [
+    "Electrical",
+    "Spare"
+   ],
+   "valueLow": 10,
+   "valueHigh": 30,
+   "notes": "Three Mitsuba Japan plug-in relays of the type used in Honda fuse/relay boxes. NO = normally open; 1T likely a changeover type. Useful for swap-testing relays (e.g. while chasing the front turn signals); match the RC number exactly. Bagged in the Electrical box.",
+   "container": "box-electrical",
+   "photos": [
+    "3b2fc1b2306d98463202e11765ea7faa.jpg",
+    "77760c28fa5d2f5e245ac89816fa8db5.jpg",
+    "f8ce22d91b3353b6e3fcad1deaa3fbc8.jpg",
+    "c1eaef7179fae7653dbe791c1db77d35.jpg"
+   ],
+   "createdAt": "2026-10-09T22:30:00-05:00"
+  },
+  {
+   "key": "harness-1-dash-s6m",
+   "label": "Dash/under-dash harness 1",
+   "partNumber": "Tag showed S6M before it rubbed off; rest unreadable",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical"
+   ],
+   "valueLow": 40,
+   "valueHigh": 120,
+   "notes": "Large factory Honda interior harness with many color-coded connectors (two large green 30+ pin), yellow SRS connectors, a multi-ring ground point, and relays still plugged in. A large center section is out of its sleeve, but there are no loose ends: every wire splices to other wires or runs to a pigtail. Unclear whether the splices are factory or added; check before relying on it as a complete harness. Leave the yellow SRS connectors alone.",
+   "container": "box-electrical",
+   "photos": [
+    "359ae3fb56b9a950b2703a9518f4fc68.jpg",
+    "3c14f730b5d7e0aca60ac9b8177f16a4.jpg",
+    "6263561c567bdd089686c5111dbfc7b8.jpg",
+    "eacfc2d4fcb899bc91296e561288fc5e.jpg",
+    "bb78ee83098f7c9d71e2244c27e2ba45.jpg"
+   ],
+   "createdAt": "2026-10-09T22:36:00-05:00"
+  },
+  {
+   "key": "harness-2-dash-s6m",
+   "label": "Dash/under-dash harness 2",
+   "partNumber": "32117-S6M-A210-C1 (tag: EC, HNY, 003227)",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical"
+   ],
+   "valueLow": 40,
+   "valueHigh": 120,
+   "notes": "Factory Honda interior harness, same layout as harness 1: many green/gray/white/blue/brown connectors, several yellow SRS connectors, ground branch with ring terminal, relay block on one branch. Center section is out of its sleeve with taped splices; whether the splices are factory or added is unconfirmed. Tag readable; date grid printed 04 05 1-9 with what may be a mark near 04 (unconfirmed). Leave the yellow SRS connectors alone.",
+   "container": "box-electrical",
+   "photos": [
+    "6aa0d2381f6b21705b69990e086c856a.jpg",
+    "45c9130ef7d70fcfe84b59c7ef0fe3d2.jpg",
+    "ce7bda76cc659b128e54571c42c19e3b.jpg",
+    "9577010e55c2ce11f15b6137bb842f9c.jpg",
+    "6394371dccb3de99695dfbffa7fa97c9.jpg",
+    "00468b79e2bba444ab3cb335c51f2643.jpg"
+   ],
+   "createdAt": "2026-10-09T22:40:00-05:00"
+  },
+  {
+   "key": "carpet-panel-insulated-1",
+   "label": "Carpeted panel with insulation backing",
+   "partNumber": "Molded L2 on shell edge",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 20,
+   "notes": "Black carpet over a molded black plastic shell, white fiber insulation pad on the back. Molded post near one corner, mounting holes along one edge. Shell is stamped L2 under the pad edge; L often means left side, so a right-hand mate may exist (unconfirmed). No Honda part number found. Insulation stained but intact.",
+   "container": "box-trim-large",
+   "photos": [
+    "7c16c124629d6f5bc5c1674354b7d940.jpg",
+    "dff6159541b18caa0f1efa2dff208fd9.jpg",
+    "d65ec239d2e74318e467cf0b5e956f44.jpg"
+   ],
+   "createdAt": "2026-10-11T12:51:00-05:00"
+  },
+  {
+   "key": "carpet-lids-honda-3",
+   "label": "Carpeted Honda panels (pair + 1)",
+   "partNumber": "84601-S6M-… (suffix unreadable); HONDA >SURF PET< >BASE PP<",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 10,
+   "valueHigh": 30,
+   "notes": "Three carpeted panels with rounded tops: a mirror-image pair plus one odd panel. Molded black PP shell with PET carpet surface, tab at each end. Stamped 84601-S6M (RSX code; 84xxx is Honda's interior lining group); suffix after S6M unreadable. Number readable on one panel only; the other two have stamps that can't be made out, assumed RSX since they match the set. Exact location in the car not confirmed.",
+   "container": "box-trim-large",
+   "photos": [
+    "4f1d3a1db886f4526418c3512fe2ea11.jpg",
+    "edd1ffcc4df6e97b92da3858c218788c.jpg",
+    "ba243f59290c5bebccf79a19c96193aa.jpg",
+    "c2b5cb606bb83e85d11acb7a531c1f5b.jpg"
+   ],
+   "createdAt": "2026-10-11T12:57:00-05:00"
+  },
+  {
+   "key": "console-side-garnish-2sets",
+   "label": "Center console side garnishes, 2 sets (4 pcs)",
+   "partNumber": "83406-S6M-A020 (driver side) x2; 83405-S6M-A020 (passenger side) x2",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 30,
+   "valueHigh": 80,
+   "notes": "Molded labels read GARN CONSOLE DR SIDE and GARN CONSOLE AS SIDE (HONDA PP-TD10). Black textured plastic with clips on the back. The car's console side next to the driver's leg is open, so one driver-side piece likely fills that gap. The second set is a spare. One panel has a light scuff near the top edge.",
+   "container": "box-trim-large",
+   "photos": [
+    "6f5ec2c1fce02565d8262de14050e5bb.jpg",
+    "3e0670041c0e62ffcb33eb79ee90bdfb.jpg",
+    "d9010c416595e86d500fc794d21a712f.jpg"
+   ],
+   "createdAt": "2026-10-11T13:39:00-05:00"
+  },
+  {
+   "key": "door-sash-garnish-pair",
+   "label": "Front door sash garnish, L/R pair",
+   "partNumber": "72430-S6M-0030 (R); 72470-S6M-0030 (L)",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 30,
+   "valueHigh": 70,
+   "notes": "Molded labels GARN R FR DOOR SASH and GARN L FR DOOR SASH, HONDA AES/EPDM. Gloss black exterior trim that covers the door frame pillar at the window; clips and foam strip on the back. Light surface marks, no cracks seen.",
+   "container": "box-body",
+   "photos": [
+    "72f0f56810d20c76ec96854de4a2de7d.jpg",
+    "8b8c6b48a5d1ff02aa59361a491c7de9.jpg"
+   ],
+   "createdAt": "2026-10-11T13:44:00-05:00"
+  },
+  {
+   "key": "speaker-grille-rr-right",
+   "label": "Rear speaker grille, right",
+   "partNumber": "83737-S6M-A01… (suffix unclear); molded RR SPK R",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Round black honeycomb-pattern grille with fine mesh, two metal clips on top edge (surface rust on clips). Molded RR SPK and R on the back. The left-side mate is not in the haul so far.",
+   "container": "box-trim-large",
+   "photos": [
+    "a86bc25a53778047110132032b9c3398.jpg",
+    "728ff85c376497da0f7227e168b8e4d2.jpg"
+   ],
+   "createdAt": "2026-10-11T14:56:00-05:00"
+  },
+  {
+   "key": "black-ribbed-strip",
+   "label": "Long black ribbed plastic strip",
+   "partNumber": "",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 0,
+   "valueHigh": 10,
+   "notes": "Straight black plastic strip with a raised rounded ridge along one edge on the front; back has two parallel ribs/channels and no clips visible. Light scuffs. No markings seen. Function unknown.",
+   "container": "box-trim-large",
+   "photos": [
+    "ed307fc14db8f947ce0e3a8d4de338d7.jpg",
+    "f1e9e5802193dcc691dc1337b35e63b9.jpg"
+   ],
+   "createdAt": "2026-10-11T18:02:00-05:00"
+  },
+  {
+   "key": "trim-u-cover-p",
+   "label": "U-shaped trim cover (P)",
+   "partNumber": ">PP<, P",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 10,
+   "notes": "Black grain-textured U-shaped piece with a rounded end and clips on each arm; round boss on the back. Molded >PP< and P. Very similar to the U-shaped trim cover (R) already logged; may be its mate or a different version. Guess: seat rail end cover (unconfirmed).",
+   "container": "box-trim-small",
+   "photos": [
+    "d12562aab5eca85cfd812eb348239282.jpg",
+    "393863bd4a5d35d707b9858c461ec26d.jpg"
+   ],
+   "createdAt": "2026-10-11T18:04:00-05:00"
+  },
+  {
+   "key": "coil-cover-acura-prb",
+   "label": "Engine coil cover with Acura emblem",
+   "partNumber": "12500-PRB-A010, COVER COMP PHC; HONDA >PA6-TD35<",
+   "fits": "RSX",
+   "status": "Unverified",
+   "tags": [
+    "Engine"
+   ],
+   "valueLow": 30,
+   "valueHigh": 70,
+   "notes": "Black nylon (PA6) plug/coil cover with chrome Acura emblem, two mounting holes with rubber grommets and two studs with rusty nuts. Stamp reads COVER COMP PHC (PHC likely plug hole cover). PRB is believed to be the RSX Type-S engine code (unconfirmed). Separate from the i-VTEC K20 coil cover already logged. Scuffed, emblem intact.",
+   "container": "box-engine",
+   "photos": [
+    "c8e4e2d1eca742c784d158b9189bad73.jpg",
+    "8199c535bf4c0fe1fc9c2745a2f199a7.jpg"
+   ],
+   "createdAt": "2026-10-11T18:07:00-05:00"
+  },
+  {
+   "key": "coil-cover-silver-pnc",
+   "label": "Silver ribbed engine coil cover (PNC)",
+   "partNumber": "12500-PNC-0100, COVER PHC; HONDA >PA6-TD35<",
+   "fits": "Other K-series",
+   "status": "Unverified",
+   "tags": [
+    "Engine"
+   ],
+   "valueLow": 20,
+   "valueHigh": 50,
+   "notes": "Silver-painted ribbed plug-hole/coil cover, four mounting holes with grommets, no emblem. PNC code: a Honda parts site lists 12500-PNC-020 (likely a later revision) for 2003-07 Accord and 2007-11 Civic Si, with CR-V and Element also mentioned. Not the RSX number (the RSX-type cover in the haul is 12500-PRB). Likely from one of the previous owner's other K-series projects. Should physically fit the same K20 valve cover pattern but not confirmed.",
+   "container": "box-engine",
+   "photos": [
+    "e3111917ff8b258173d0bd2d86a8691f.jpg",
+    "bf0fd1a38d1433220d16e15bafc09d98.jpg"
+   ],
+   "createdAt": "2026-10-11T18:11:00-05:00"
+  },
+  {
+   "key": "cap-child-anchor",
+   "label": "Child seat anchor cap",
+   "partNumber": "84602-S6M-A010-M1, CAP CHILD ANCHOR; HONDA >PP< 2",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 15,
+   "notes": "Black grain-textured flip cap with finger recess and child-seat anchor icon; hinge tab on one corner. Covers a rear child-seat tether anchor in the hatch area. Sits next to the 84601-S6M carpeted panels (adjacent part numbers).",
+   "container": "box-trim-small",
+   "photos": [
+    "c39257da5516fad167f8cbf8db2308a2.jpg",
+    "216eac2dc5edbd60f213d727c41cfd41.jpg"
+   ],
+   "createdAt": "2026-10-11T18:13:00-05:00"
+  },
+  {
+   "key": "bumper-side-bracket-r",
+   "label": "Bumper side mounting bracket (R)",
+   "partNumber": "Molded R, HONDA >PP+GF20<, 1P1Y-0",
+   "fits": "",
+   "status": "Unknown",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 5,
+   "valueHigh": 20,
+   "notes": "Long curved black plastic bracket with two cream-colored clip retainers; the kind that holds a bumper cover edge to the fender (guess). Glass-filled PP. Marked R for right side; no model code found, so which car it's from is unknown. Dirty, no cracks seen.",
+   "container": "box-body",
+   "photos": [
+    "a8f7e7b03608a61ef0254ddb5c609d53.jpg",
+    "5b6efd433e017cb4dc02a55d7bf05960.jpg"
+   ],
+   "createdAt": "2026-10-11T18:18:00-05:00"
+  },
+  {
+   "key": "knob-rod-cover-l-2",
+   "label": "Knob rod covers, left (2)",
+   "partNumber": "Molded S6M L, KNOB ROD, HONDA >PP<",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Body & trim"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Two identical black plastic covers, both marked S6M L (left side), with a screw tab and clip end. Guess: inner door cover over the lock knob/handle rod (unconfirmed). Two of the same side, not a pair; one has light scratches.",
+   "container": "box-trim-small",
+   "photos": [
+    "6b27f909145f382e5267483d86ee41b1.jpg",
+    "39341696c11bedf1310fca8b5e1944eb.jpg"
+   ],
+   "createdAt": "2026-10-11T18:21:00-05:00"
+  },
+  {
+   "key": "window-switch-master-a",
+   "label": "Master window switch, driver (A)",
+   "partNumber": "35750-S6M-A012-M1; Omron C8H-H22-SS2G; lot 1742D1",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical",
+    "Potential sale"
+   ],
+   "valueLow": 25,
+   "valueHigh": 60,
+   "notes": "Driver master switch with AUTO driver window, passenger window and window lock buttons, silver bezel. Rusty mounting screws; a few dark marks and a chipped spot on the bezel's left edge. Same Honda part number as master switch B; only the lot code differs.",
+   "container": "box-electrical-small",
+   "photos": [
+    "89e48554a0bbb6e7db5001b62ba93dba.jpg",
+    "715d1be40ac85b1863ec555017115bbd.jpg"
+   ],
+   "createdAt": "2026-10-12T01:10:00-05:00"
+  },
+  {
+   "key": "window-switch-master-b",
+   "label": "Master window switch, driver (B)",
+   "partNumber": "35750-S6M-A012-M1; Omron C8H-H22-SS2G; lot 15Z3D1",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical"
+   ],
+   "valueLow": 25,
+   "valueHigh": 60,
+   "notes": "Driver master switch with AUTO driver window, passenger window and window lock buttons, silver bezel. Brass mounting screws; light scratches and a small chip on the bezel's right edge. Same Honda part number as master switch A; only the lot code differs.",
+   "container": "box-electrical-small",
+   "photos": [
+    "17f1743816b29933a9b3c871cc5e311b.jpg",
+    "355a9cb75af303ab08c595666c646fc1.jpg"
+   ],
+   "createdAt": "2026-10-12T01:11:00-05:00"
+  },
+  {
+   "key": "window-switch-passenger",
+   "label": "Passenger window switch",
+   "partNumber": "Housing molded S6M LHD, HONDA",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Electrical"
+   ],
+   "valueLow": 10,
+   "valueHigh": 25,
+   "notes": "Single passenger window switch, silver bezel. S6M (RSX), LHD = left-hand-drive car. Full part number not readable in the photo. Some discoloration on the contacts on the back.",
+   "container": "box-electrical-small",
+   "photos": [
+    "4bdca3c90af58437207b466a0271484f.jpg",
+    "f682c1b6e8653c7cea04ce67775b3bd1.jpg"
+   ],
+   "createdAt": "2026-10-12T01:12:00-05:00"
+  },
+  {
+   "key": "owners-manual-2004-rsx",
+   "label": "Owner's manual, 2004 RSX, in Acura portfolio",
+   "partNumber": "Portfolio spine label AM3388",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Documents",
+    "For sale"
+   ],
+   "valueLow": 15,
+   "valueHigh": 35,
+   "notes": "2004 RSX owner's manual in the black Acura leatherette portfolio with pen and card pockets. Pockets hold Joe Rizza Acura dealer cards and a card with a 2004 VIN, so it came from a different RSX than this 2002. 2002–04 are the same generation, so most of it applies to this car. Portfolio is scuffed and dusty.",
+   "container": "box-for-sale",
+   "photos": [
+    "494b0fb701244fb652426d0dfddb5548.jpg",
+    "5f9c7c80df6fb574590c298ccf386461.jpg",
+    "8b929e5b5d4e77b0aeed5709065f982e.jpg"
+   ],
+   "createdAt": "2026-10-12T01:14:00-05:00"
+  },
+  {
+   "key": "owners-manual-2002-rsx",
+   "label": "Owner's manual, 2002 RSX, with warranty book, in Acura zip portfolio",
+   "partNumber": "",
+   "fits": "RSX",
+   "status": "Verified",
+   "tags": [
+    "Documents"
+   ],
+   "valueLow": 20,
+   "valueHigh": 40,
+   "notes": "2002 Acura RSX owner's manual and 2002 warranty booklet in the black zip-around Acura portfolio. Pockets hold the 'What to do if your Acura is involved in an accident' booklet, an Ed Voyles Acura (Chamblee, GA) dealer card and the Anti-Theft Radio Identification Card with the radio code and serial. The radio code only works with the radio whose serial matches; the car's radio is missing. Not confirmed whether this is this car's original packet: no VIN visible in the photos. Portfolio is scuffed and dusty.",
+   "container": "box-electrical",
+   "photos": [
+    "e8f859f240e446a6126893d5edb33a38.jpg",
+    "e287b311801be1cae37a57397cca22e4.jpg"
+   ],
+   "createdAt": "2026-10-12T01:16:00-05:00"
+  }
+ ],
+ "tossed": [
+  {
+   "key": "door-latch-s6a",
+   "label": "Door latch",
+   "partNumber": "S6A",
+   "reason": "Not the RSX code (S6M); wrong model.",
+   "tossedOn": "2026-10-06",
+   "sortOrder": 0,
+   "photos": [
+    "2a62a973419cf4ce346eb6c86cd187a6.jpg",
+    "c5c08d14283c8d21171c8932efb2bdd1.jpg"
+   ]
+  },
+  {
+   "key": "lock-actuator",
+   "label": "Door lock actuator",
+   "partNumber": "",
+   "reason": "Not needed: both doors lock and unlock with the fob and key.",
+   "tossedOn": "2026-10-07",
+   "sortOrder": 1,
+   "photos": []
+  },
+  {
+   "key": "fuel-hose",
+   "label": "Fuel hose",
+   "partNumber": "Stamped FUEL",
+   "reason": "First misidentified as a power steering hose. Not needed.",
+   "tossedOn": "2026-10-06",
+   "sortOrder": 2,
+   "photos": []
+  },
+  {
+   "key": "civic-security-unit",
+   "label": "Civic security unit",
+   "partNumber": "",
+   "reason": "From a Civic, not the RSX.",
+   "tossedOn": "2026-10-06",
+   "sortOrder": 3,
+   "photos": []
+  },
+  {
+   "key": "abs-sensors",
+   "label": "ABS sensors",
+   "partNumber": "",
+   "reason": "Car has ABS deleted.",
+   "tossedOn": "2026-10-06",
+   "sortOrder": 5,
+   "photos": []
+  },
+  {
+   "key": "heat-shield-s6ma",
+   "label": "Exhaust heat shield",
+   "partNumber": "S6MA",
+   "reason": "Factory shield; won't fit the car's aftermarket headers and exhaust.",
+   "tossedOn": "2026-10-07",
+   "sortOrder": 7,
+   "photos": [
+    "1a0a986eb59d460cc66ec39dd34263ab.jpg",
+    "c6c2e3e05a7c5adff9c07c231322a6bf.jpg"
+   ]
+  },
+  {
+   "key": "red-rod",
+   "label": "Red steel rod with rubber sleeves",
+   "partNumber": "No markings",
+   "reason": "Possibly a hood prop rod. Not needed.",
+   "tossedOn": "2026-10-07",
+   "sortOrder": 8,
+   "photos": [
+    "b9bf0752f843033ae43229425f9ceffb.jpg"
+   ]
+  },
+  {
+   "key": "sr3-door-handle",
+   "label": "Exterior door handle, driver side",
+   "partNumber": "SR3-L (1992–95 Civic)",
+   "reason": "Wrong model; gloss black, no key cylinder.",
+   "tossedOn": "2026-10-07",
+   "sortOrder": 9,
+   "photos": [
+    "f5b39a690586270b4171914f93777016.jpg",
+    "4312e19bdd08dc870f1d1c289301ee34.jpg",
+    "053519be457ccc9435fb27e885ff8b3c.jpg"
+   ]
+  },
+  {
+   "key": "s10-air-vent",
+   "label": "Body air outlet vent",
+   "partNumber": "75450-S10-0000",
+   "reason": "Another Honda model, not RSX; low value.",
+   "tossedOn": "2026-10-07",
+   "sortOrder": 10,
+   "photos": [
+    "9f7ca3bccfcc3ba7a15a31c9659f107c.jpg",
+    "6b74f93f7746820f0c3d2d56b9f9a176.jpg",
+    "8907cc14b962e861ede713ef28fa43d7.jpg"
+   ]
+  },
+  {
+   "key": "brake-hose-nichirin",
+   "label": "Brake hose with steel hard line and bracket",
+   "partNumber": "NICHIRIN 1/8 SAE J1401 … 570176 S7 01",
+   "reason": "Unsafe to reuse a used brake hose of unknown age.",
+   "tossedOn": "2026-10-07",
+   "sortOrder": 11,
+   "photos": [
+    "336c67a0c96750cecf14df412587af37.jpg",
+    "fbdfcc9f7ce68c239f7cad7918fa6eb8.jpg"
+   ]
+  },
+  {
+   "key": "sr2-bumper-absorbers",
+   "label": "Front and rear bumper foam absorbers",
+   "partNumber": "HONDA SR2 FR / SR2 RR (1992–95 Civic)",
+   "reason": "Wrong model; bulky; rear had a cracked corner.",
+   "tossedOn": "2026-10-08",
+   "sortOrder": 12,
+   "photos": [
+    "3c8ea680390c8c48dcf56cb8ed6e8790.jpg",
+    "b72fda1b248fd7a2e1dd4b21df4db7c8.jpg",
+    "b3170e6fe22b84265d1a3e1b4170cb0b.jpg",
+    "35403353daa49757cb8df14dac720b56.jpg"
+   ]
+  }
+ ],
+ "tasks": [
+  {
+   "title": "Check brake balance after the ABS delete",
+   "phase": 1,
+   "notes": "Ask Cody before driving. Previous owner ran new lines to the calipers and bypassed the ABS, so the ABS light stays on. The ABS unit also handled front/rear brake balance (EBD), so the rears may lock first. Look for an adjustable proportioning valve in the rear brake line; if there is one, set it so the fronts lock first. If not, install one or have Cody or a shop check the brakes before driving hard or in the rain.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T00:58:00-05:00"
+  },
+  {
+   "title": "Fix the front turn signals",
+   "phase": 1,
+   "notes": "Front turn signals don't work (rears presumably do, so a fuse is less likely). Check whether the headlight or bumper housings are missing their sockets, then try the spliced socket pair (Electrical box). Trace the loose cut wires near the power steering reservoir. If sockets and bulbs are good, check fuse 19 TURN LIGHT 7.5A in the under-dash box and the hazard fuse 5 (15A) under the hood; the spare fuse boxes (Electrical box) can be used to swap-test fuses and relays.",
+   "done": false,
+   "parts": [
+    "front-turn-sockets",
+    "fusebox-underdash-spare",
+    "fusebox-underhood-spare"
+   ],
+   "createdAt": "2026-10-06T02:37:00-05:00"
+  },
+  {
+   "title": "Install the Injen intake",
+   "phase": 1,
+   "notes": "The car has no intake, so the engine pulls in unfiltered air; keep run time short until this is done. Everything is in the Engine box: buy a new cone filter first (the old Injen filter's rubber end cap is crumbling and the mesh seam is split, so it's unusable; kit is the Injen SP cold air intake, CARB EO D-476-5; replacement is Injen X-1014-BB SuperNano-Web dry filter, 3.00\" flange, 6\" base, 5\" tall, 5\" top, closed top, $82.37 on injen.com, which lists it as compatible with the SP1477 RSX Type-S kit. The old filter's top cap is gone, so it's open at both ends and would pass unfiltered air) and the resonator hose, bolt the intake on, plug in the IAT sensor (replace it if missing), slide the breather hose onto the valve cover fitting, and bolt the support bracket to the body. Install the Injen washer reservoir at the same time (see its own task).",
+   "done": false,
+   "parts": [
+    "injen-intake"
+   ],
+   "createdAt": "2026-10-06T10:27:00-05:00"
+  },
+  {
+   "title": "Check all fluids",
+   "phase": 1,
+   "notes": "The car sat abandoned. Check engine oil level and condition, coolant (Mishimoto radiator and overflow tank), brake fluid, clutch fluid (shares the braided-line system), and power steering fluid. Look for leaks under the car after it runs.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:01-05:00"
+  },
+  {
+   "title": "Check tires and wheels",
+   "phase": 1,
+   "notes": "Cars that sit grow flat spots and dry-rot cracks. Check tread depth, sidewall cracking, the four-digit date code on each tire (older than about 6 years is a concern), and set pressures to the door-jamb spec. Check lug nut torque.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:02-05:00"
+  },
+  {
+   "title": "Scan for trouble codes",
+   "phase": 2,
+   "notes": "Plug an OBD2 scanner into the port (per the sticker on the column cover, behind the left side cover of the center console) and read stored codes, especially after the intake and IAT sensor are installed. Expect ABS codes from the delete; note anything else (misfire, sensor, or immobilizer codes).",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:03-05:00"
+  },
+  {
+   "title": "Inspect the front end and get an alignment",
+   "phase": 2,
+   "notes": "Good one to do with Cody. The black hood, fenders and bumper suggest a front hit. Look under the car at the frame rails, radiator support and lower control arms for bends or kinks, and check the tie rods. Then get an alignment, which also suits the aftermarket suspension.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:04-05:00"
+  },
+  {
+   "title": "Do a baseline service",
+   "phase": 2,
+   "notes": "Unknown maintenance history at 173K. Change the oil and filter, inspect the serpentine belt for cracks or glazing, and check the coolant hoses are soft and tight. Plan spark plugs and a valve clearance check if there's no record of them.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:05-05:00"
+  },
+  {
+   "title": "Replace the damaged driver-side fender liner",
+   "phase": 3,
+   "notes": "The inner fender liner in the driver-side front wheel well looked damaged or partly missing. Replace it to keep water and road debris out of the engine bay.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:07-05:00"
+  },
+  {
+   "title": "Reinstall interior and exterior trim",
+   "phase": 3,
+   "notes": "Do after Refinish interior. From the Interior trim box: steering column covers (upper + lower set) and the S6M-L left column cover; driver lower dash cover (repair the crack from the back first with a plastic welder or polyolefin primer + glue). From the Body bin: driver windshield molding, front fender fairings (both sides), front wiper arms (scuff and satin black first). Also check the passenger door's mirror garnish and the K20 coil cover (Engine box).",
+   "done": false,
+   "parts": [
+    "column-cover-lower-unknown",
+    "cover-l-unknown",
+    "dash-lower-cover-driver",
+    "windshield-molding-lh",
+    "front-splash-strip",
+    "wiper-arms-front",
+    "mirror-garnish-r",
+    "engine-coil-cover"
+   ],
+   "createdAt": "2026-10-06T10:27:08-05:00"
+  },
+  {
+   "title": "Check whether cruise control works",
+   "phase": 3,
+   "notes": "Look at the throttle body for a second (cruise) cable and test cruise on the road (main button on, above ~25 mph, SET). If it's missing or doesn't work, install the Denso cruise actuator (Engine box). If cruise works, the actuator is a spare or can be sold.",
+   "done": false,
+   "parts": [
+    "cruise-actuator"
+   ],
+   "createdAt": "2026-10-06T10:27:09-05:00"
+  },
+  {
+   "title": "Body paint",
+   "phase": 3,
+   "notes": "The black hood, fenders and bumper and the dark blue rear bumper don't match the silver body. Painting them silver is the biggest boost to resale value and appearance. The silver rear spoiler's clear coat is peeling; it needs sanding and new 2K clear (not polishing). The center Acura emblem on the hatch is also missing.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:11-05:00"
+  },
+  {
+   "title": "Check whether the A/C works",
+   "phase": 3,
+   "notes": "Two A/C hoses came in the parts pile (Engine box), so lines may have been replaced or removed. Run the A/C and see if it blows cold, and check the compressor-to-firewall lines are all connected. Opening refrigerant lines legally requires recovery equipment, so any A/C line work is a shop job; ask Cody.",
+   "done": false,
+   "parts": [
+    "ac-hose",
+    "ac-hose-nichirin"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Check hoses and heat shielding near the headers",
+   "phase": 2,
+   "notes": "The aftermarket headers have no heat shield. Check the heater hoses (marked WATER) running past the headers have clearance from the hot tubes, and that the crumpled heat-shield material above the crossmember isn't loose, rattling or touching anything.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Check the hood prop rod",
+   "phase": 2,
+   "notes": "A loose red rod with rubber sleeves (possibly a hood prop rod) was tossed. Confirm the car has its own working prop rod; if not, buy one before working under the hood.",
+   "done": true,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Reinstall the driver door panel",
+   "phase": 2,
+   "notes": "Panel is loose (stored outside a container); fit is verified. First replace the torn vapor barrier (a sheet of plastic and butyl tape). Check whether the door still has its inner handle on the latch rod; if not, use the left handle from the interior handle pair (Interior trim box). Check every clip slot on the panel's back; Hardware bag B has push-pins and clips that may belong here.",
+   "done": false,
+   "parts": [
+    "door-panel-driver",
+    "door-handles-inner-pair",
+    "hw-bag-b"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Install a stereo",
+   "phase": 3,
+   "notes": "The radio is missing, with loose taped wiring in the opening. Clean up the wiring and install a head unit with the right harness adapter and dash kit for a 2002 RSX.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Install the washer fluid reservoir",
+   "phase": 1,
+   "notes": "The car has no washer reservoir, so the windshield washers can't work (needed for inspection and safe driving). Install the Injen washer reservoir X-6027 (Engine box). Check that the washer pump, its wiring plug and the hose to the sprayers are present before filling.",
+   "done": false,
+   "parts": [
+    "injen-washer-reservoir"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "List the for-sale parts",
+   "phase": 3,
+   "notes": "Sell box: Hasport EKK mount, K-Tuned bypass, front mud guards (clean first), OBD2 adapter (freebie). Loose: black RSX spoiler (polish the top first, no ceramic coating), front lip (photograph it on the car; local pickup). Potential sale: interior door handles, under-dash fuse box. Track listed/sold with tags.",
+   "done": false,
+   "parts": [
+    "hasport-ekk-lh",
+    "ktuned-immobilizer-bypass",
+    "mudguards-front-pair",
+    "adapter-pigtail",
+    "rsx-spoiler-black",
+    "front-lip-black",
+    "s2000-cap-a",
+    "owners-manual-2004-rsx"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Repair the passenger seat bolster",
+   "phase": 3,
+   "notes": "The passenger seat side bolster is torn with foam showing in two places, and the passenger door armrest is worn and dirty. Options: an upholstery shop repair, a used seat cover, or a replacement bolster panel.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Catalog the trim box and sort the wiring box",
+   "phase": 2,
+   "notes": "Trim box (to catalog): remaining interior trim and panels, one piece at a time with stamps. Wiring box (to sort): harness sections; lay out one at a time with connectors visible and photograph any harness tags. Some may be from the EK Civic swap, not the RSX. Then reorganize containers and match Hardware bags A and B to the door or interior panels.",
+   "done": true,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Trace the unplugged under-dash connectors",
+   "phase": 2,
+   "notes": "Several connectors hang unplugged in the passenger footwell near an under-dash module, and yellow (airbag/SRS) connectors are exposed around the column. Disconnect the battery and wait a few minutes before working near the yellow connectors, and never probe them with a meter. Ask Cody before reconnecting anything airbag-related. Match the others by connector shape and wire colors; the wiring box sort may help.",
+   "done": false,
+   "parts": [
+    "harness-1-dash-s6m",
+    "harness-2-dash-s6m"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "title": "Refinish interior",
+   "phase": 3,
+   "notes": "Do before reinstalling trim. Pick one color for everything first (check factory color vs all-black). Remove trim in sections, photograph and bag fasteners per panel. Clean everything (no protectants), prep by material: plastic scuff + prep cleaner + adhesion promoter; carpet clean and dry; vinyl/leather alcohol prep. Use one coating line per material (e.g. SEM Color Coat). Light coats, full cure before reinstall. Do NOT coat airbag covers (steering wheel center, panels marked SRS/Airbag) and do not unplug yellow SRS connectors: ask Cody first. Leather/vinyl balm for seats and vinyl only.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-09T22:57:00-05:00"
+  },
+  {
+   "title": "Evaluate potential performance upgrades",
+   "phase": 4,
+   "notes": "Review the upgrade options on the Home page (ECU tune, limited-slip differential, intake manifold, turbo or supercharger) once the car drives reliably and a compression and leak-down test looks good. Go over the plan with Cody before buying anything that touches brakes, suspension or the ECU.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-12T03:45:00-05:00"
+  }
+ ],
+ "notes": [
+  {
+   "key": "background",
+   "title": "Background: where the parts came from",
+   "items": [
+    "The previous owner was working on a couple of project cars and lost interest. The RSX was at his father's house.",
+    "The father wanted it gone and didn't know the details. He brought over everything his son had left with the car.",
+    "So the parts pile mixes RSX parts with parts from other Hondas (1992–95 Civic SR2/SR3, 1996–2000 Civic EK K-swap, 2001–05 Civic S5A, S2000 S2A, S10). Don't assume a part came off this car; check the stamp."
+   ],
+   "createdAt": "2026-10-08T00:59:00-05:00"
+  },
+  {
+   "key": "engine-observations-2026-10-07",
+   "title": "Engine bay and underside observations (from photos, 2026-10-07)",
+   "items": [
+    "Aftermarket headers and exhaust installed (silver tubes). No heat shield over the headers; the factory S6MA heat shield from the parts pile was tossed because it won't fit this setup.",
+    "Crumpled silver heat-shield material visible above the crossmember near the exhaust; check that it isn't loose, rattling, or touching anything.",
+    "Heater hoses (Hyplex, marked WATER) routed past the headers on a bracket with surface rust; check hose clearance from the header tubes.",
+    "Surface rust on bolts and brackets around the transmission case and shift cable area.",
+    "Battery installed (sticker dated 4/23) on a light gray tray with square-hole tabs, held by a hold-down bar across the top. Under-hood fuse box beside it."
+   ],
+   "createdAt": "2026-10-07T19:52:00-05:00"
+  },
+  {
+   "key": "exterior-observations-2026-10-07",
+   "title": "Exterior observations (from photos, 2026-10-07)",
+   "items": [
+    "Car has a silver rear spoiler installed; its clear coat is peeling across the top.",
+    "A spare black OEM RSX spoiler (RSX emblem, Honda label) is in the parts pile: scratched but not peeling. Listed for sale.",
+    "Rear bumper is dark blue, not silver; front clip is black. Body has three colors.",
+    "Center Acura emblem is missing from the hatch: outline and two mounting holes visible.",
+    "No windshield washer reservoir in the car. The Injen washer reservoir (X-6027) from the parts pile goes in, likely installed along with the Injen intake."
+   ],
+   "createdAt": "2026-10-07T18:39:00-05:00"
+  },
+  {
+   "key": "interior-observations-2026-10-06",
+   "title": "Interior observations (from photos, 2026-10-06)",
+   "items": [
+    "Driver door panel off; vapor barrier torn and hanging.",
+    "Steering column covers and lower dash panel under the column are off (left column cover from the parts pile is confirmed to fit).",
+    "Side of the center console next to the driver's leg is open.",
+    "Several connectors hang unplugged in the passenger footwell near an under-dash module; trace before reconnecting.",
+    "Radio missing; loose taped wiring through the opening.",
+    "Yellow (airbag) connectors exposed around the column and under the dash; disconnect battery before working there.",
+    "Passenger seat side bolster torn, foam showing in two places.",
+    "Passenger door armrest worn and dirty."
+   ],
+   "createdAt": "2026-10-06T17:50:00-05:00"
+  },
+  {
+   "key": "seller-mod-list",
+   "title": "Previous owner's mod list (from his text message)",
+   "items": [
+    "Truhart coilovers (first line partly hidden in the screenshot)",
+    "Truhart rear lower control arms",
+    "Truhart rear upper control arms",
+    "DC header",
+    "Yonaka full exhaust",
+    "Hardrace shifter",
+    "New sway bar bushings",
+    "K-Tuned clutch slave cylinder and line kit",
+    "Mishimoto radiator",
+    "Brembo pads and rotors (blanks)",
+    "JDM side markers",
+    "OEM fog lights",
+    "Engine work: VTC actuator changed (common K20A2 problem); new timing chain, tensioner and guides; new oil pump, oil pump chain and guides",
+    "He also mentioned other parts too numerous to list. Not yet verified on the car."
+   ],
+   "createdAt": "2026-10-09T23:45:00-05:00"
+  },
+  {
+   "key": "tossed-log",
+   "title": "Tossed parts log",
+   "items": [
+    "Door latch stamped S6A (not the RSX code). Tossed 2026-10-06. Photos: 2a62a973419cf4ce346eb6c86cd187a6, c5c08d14283c8d21171c8932efb2bdd1",
+    "Lock actuator. Not needed: both doors lock/unlock with fob and key. Tossed 2026-10-07. No photo saved.",
+    "Hose stamped FUEL (first misidentified as power steering). Tossed. No photo saved.",
+    "Civic security unit. Tossed. No photo saved.",
+    "Steering column (loose, from the parts pile). Tossed. No photo saved.",
+    "ABS sensors (car has ABS deleted). Tossed. No photo saved.",
+    "Lower steering column cover identified as 1996–2000 Civic (EK). Tossed. No photo saved.",
+    "Exhaust heat shield stamped S6MA: factory shield, won't fit the car's aftermarket headers/exhaust. Tossed 2026-10-07. Photos: 1a0a986eb59d460cc66ec39dd34263ab, c6c2e3e05a7c5adff9c07c231322a6bf",
+    "Red steel rod with rubber sleeves and white pivot grommet, no markings (possibly a hood prop rod). Tossed 2026-10-07. Photo: b9bf0752f843033ae43229425f9ceffb",
+    "Exterior door handle stamped SR3-L (1992–95 Civic, driver side), gloss black, no key cylinder. Tossed 2026-10-07. Photos: f5b39a690586270b4171914f93777016, 4312e19bdd08dc870f1d1c289301ee34, 053519be457ccc9435fb27e885ff8b3c",
+    "Body air outlet vent 75450-S10-0000 (another Honda model, not RSX). Tossed 2026-10-07. Photos: 9f7ca3bccfcc3ba7a15a31c9659f107c, 6b74f93f7746820f0c3d2d56b9f9a176, 8907cc14b962e861ede713ef28fa43d7",
+    "Brake hose with steel hard line and bracket, printed NICHIRIN 1/8 SAE J1401 ... 570176 S7 01. Unsafe to reuse. Tossed 2026-10-07. Photos: 336c67a0c96750cecf14df412587af37, fbdfcc9f7ce68c239f7cad7918fa6eb8",
+    "Front and rear bumper foam absorbers stamped HONDA SR2 FR / SR2 RR (1992–95 Civic); rear had a cracked corner. Tossed 2026-10-08. Photos: 3c8ea680390c8c48dcf56cb8ed6e8790, b72fda1b248fd7a2e1dd4b21df4db7c8, b3170e6fe22b84265d1a3e1b4170cb0b, 35403353daa49757cb8df14dac720b56",
+    "Note: some earlier tossed items from the first sorting sessions weren't recorded individually."
+   ],
+   "createdAt": "2026-10-07T23:40:00-05:00"
+  }
+ ]
+}

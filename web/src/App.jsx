@@ -1,0 +1,313 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { api, keyStore, authEvents } from './api.js';
+import { Icon } from './components/Icons.jsx';
+import Modal from './components/Modal.jsx';
+import Home from './components/Home.jsx';
+import PartsView from './components/PartsView.jsx';
+import { PartDetail, ContainerDetail, TaskDetail } from './components/Details.jsx';
+import { ContainersView, TossedView } from './components/OtherViews.jsx';
+import { TasksView, TaskForm } from './components/TasksView.jsx';
+import { PartForm, ContainerForm, TossedForm, TossPartForm } from './components/forms.jsx';
+import { TagFilter } from './components/ui.jsx';
+import { isForSale, FOR_SALE, findRef, topContainers } from './constants.js';
+
+const store = {
+  get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* storage unavailable */ } },
+};
+
+// Main sections: Home, Parts (Parts / Containers / Tossed), Tasks.
+const VIEWS = ['home', 'parts', 'containers', 'tossed', 'tasks'];
+const ALIASES = { todo: 'tasks', sale: 'parts', boxes: 'containers' };
+const SECTION = { home: 'home', parts: 'parts', part: 'parts', containers: 'parts', container: 'parts', tossed: 'parts', tasks: 'tasks', task: 'tasks' };
+const SUB = { parts: 'parts', part: 'parts', containers: 'containers', container: 'containers', tossed: 'tossed' };
+
+function parseHash() {
+  const h = decodeURIComponent(window.location.hash.slice(1));
+  const m = /^(part|container|box|task)\/(.+)$/.exec(h);
+  if (m) return { view: m[1] === 'box' ? 'container' : m[1], id: m[2] };
+  const v = ALIASES[h] || h;
+  return { view: VIEWS.includes(v) ? v : 'home' };
+}
+
+function KeyForm({ onDone, onCancel, readsLocked }) {
+  const [key, setKey] = useState('');
+  const [error, setError] = useState('');
+  const submit = async (e) => {
+    e.preventDefault();
+    keyStore.set(key.trim());
+    try {
+      const { ok } = await api.checkKey();
+      if (!ok) throw new Error('That key is not right.');
+      onDone();
+    } catch (err) {
+      keyStore.set('');
+      setError(err.message);
+    }
+  };
+  return (
+    <form onSubmit={submit}>
+      <h3 id="form-title">{readsLocked ? 'Access key' : 'Unlock editing'}</h3>
+      <p className="mini" style={{ margin: 0 }}>
+        {readsLocked ? 'This app is private. Enter the access key to view it.' : 'Enter the access key to add or change things.'} It's remembered in this browser.
+      </p>
+      <label>Key<input type="password" value={key} onChange={(e) => setKey(e.target.value)} autoFocus autoComplete="current-password" required /></label>
+      {error && <p className="err" role="alert">{error}</p>}
+      <div className="formbtns">
+        {onCancel && <button type="button" className="ibtn" title="Cancel" aria-label="Cancel" onClick={onCancel}><Icon.x /></button>}
+        <button className="ibtn add" title="Unlock" aria-label="Unlock"><Icon.unlock /></button>
+      </div>
+    </form>
+  );
+}
+
+export default function App() {
+  const [cfg, setCfg] = useState(null);
+  const [unlocked, setUnlocked] = useState(false);
+  const [parts, setParts] = useState([]);
+  const [containers, setContainers] = useState([]);
+  const [tossed, setTossed] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState('');
+  const [route, setRoute] = useState(parseHash);
+  const [layout, setLayout] = useState(() => (store.get('layout') === 'table' ? 'table' : 'cards'));
+  const [filters, setFilters] = useState(() => new Set(window.location.hash === '#sale' ? [`tag:${FOR_SALE}`] : []));
+  const [modal, setModal] = useState(null); // { type, record? }
+  const [toast, setToast] = useState('');
+  const toastTimer = useRef();
+  const listScroll = useRef(0);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 3000);
+  };
+
+  const canEdit = Boolean(cfg) && (!cfg.keyRequiredForChanges || unlocked);
+  const readsLocked = Boolean(cfg?.keyRequiredForReads) && !unlocked;
+
+  const refresh = useCallback(async () => {
+    try {
+      const [p, c, x, t] = await Promise.all([api.parts.list(), api.containers.list(), api.tossed.list(), api.tasks.list()]);
+      setParts(p); setContainers(c); setTossed(x); setTasks(t);
+      setLoadError('');
+    } catch (err) {
+      if (err.status !== 401) setLoadError(err.message);
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
+
+  // Load config, check any saved key, then load data; refresh on a timer and on focus.
+  useEffect(() => {
+    let timer;
+    (async () => {
+      try {
+        const c = await api.config();
+        setCfg(c);
+        if (c.keyRequiredForChanges && keyStore.get()) {
+          const { ok } = await api.checkKey().catch(() => ({ ok: false }));
+          if (ok) setUnlocked(true);
+          else keyStore.set('');
+        }
+      } catch (err) {
+        setLoadError(err.message);
+        setLoaded(true);
+        return;
+      }
+      await refresh();
+      timer = setInterval(() => document.visibilityState === 'visible' && refresh(), 30000);
+    })();
+    const onFocus = () => refresh();
+    window.addEventListener('focus', onFocus);
+    const onNeedKey = () => setModal((m) => m || { type: 'key' });
+    authEvents.addEventListener('needkey', onNeedKey);
+    return () => { clearInterval(timer); window.removeEventListener('focus', onFocus); authEvents.removeEventListener('needkey', onNeedKey); };
+  }, [refresh]);
+
+  // Hash routing: #home, #parts, #containers, #tossed, #tasks, #part/<key>, #container/<key>, #task/<id>.
+  useEffect(() => {
+    const onHash = () => {
+      setRoute((prev) => {
+        const next = parseHash();
+        if (prev.view === 'parts' && next.view !== 'parts') listScroll.current = window.scrollY;
+        return next;
+      });
+    };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  useEffect(() => {
+    if (route.id) window.scrollTo(0, 0);
+    else if (route.view === 'parts') requestAnimationFrame(() => window.scrollTo(0, listScroll.current));
+    const titles = { part: findRef(parts, route.id)?.label, container: findRef(containers, route.id)?.name, task: findRef(tasks, route.id)?.title };
+    document.title = titles[route.view] ? `${titles[route.view]} · RSX Type-S Project` : 'RSX Type-S Project';
+  }, [route, parts, containers, tasks]);
+  useEffect(() => { store.set('layout', layout); }, [layout]);
+
+  const go = (view) => { window.location.hash = `#${view}`; };
+  // Clicking any tag shows only parts with that tag.
+  const onTag = useCallback((key) => {
+    setFilters(new Set([key]));
+    listScroll.current = 0;
+    if (window.location.hash !== '#parts') window.location.hash = '#parts';
+    else window.scrollTo(0, 0);
+  }, []);
+
+  const run = async (fn, okMsg) => {
+    try {
+      await fn();
+      if (okMsg) showToast(okMsg);
+    } catch (err) {
+      showToast(err.message);
+    }
+    refresh();
+  };
+
+  const close = () => setModal(null);
+  const saved = (msg) => (_rec, opts) => {
+    if (!opts?.keepOpen) {
+      close();
+      showToast(msg);
+    }
+    refresh();
+  };
+  const tagOptions = [...new Set(parts.flatMap((p) => p.tags || []))];
+  const openTasks = tasks.filter((t) => !t.done).length;
+  const topCount = topContainers(containers).length;
+
+  const partActs = {
+    onEdit: (p) => setModal({ type: 'part', record: p }),
+    onToggleSale: (p) => run(
+      () => api.parts.update(p.id, {
+        tags: isForSale(p) ? p.tags.filter((t) => t !== FOR_SALE) : [...p.tags.filter((t) => t !== 'Potential sale'), FOR_SALE],
+      }),
+      isForSale(p) ? `Took "${p.label}" off sale.` : `Marked "${p.label}" for sale.`,
+    ),
+    onToss: (p) => setModal({ type: 'toss', record: p }),
+    onDelete: (p) => run(() => api.parts.remove(p.id).then(() => { if (route.view === 'part') go('parts'); }), `Deleted "${p.label}".`),
+  };
+  const boxActs = {
+    onEdit: (c) => setModal({ type: 'container', record: c }),
+    onDelete: (c) => run(() => api.containers.remove(c.id).then(() => { if (!c.parentId && route.view === 'container') go('containers'); }), `Removed "${c.name}".`),
+  };
+  const taskActs = {
+    onToggle: (t, done) => {
+      setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, done } : x)));
+      run(() => api.tasks.update(t.id, { done }));
+    },
+    onEdit: (task) => setModal({ type: 'task', record: task }),
+    onDelete: (t) => run(() => api.tasks.remove(t.id).then(() => { if (route.view === 'task') go('tasks'); }), `Deleted "${t.title}".`),
+  };
+
+  const section = SECTION[route.view] || 'home';
+  const sub = SUB[route.view];
+
+  let page;
+  if (readsLocked) {
+    page = <div className="empty">This app is private. <button className="btn" onClick={() => setModal({ type: 'key' })}>Enter access key</button></div>;
+  } else if (!loaded) {
+    page = <div className="empty">Loading…</div>;
+  } else if (route.view === 'home') {
+    page = <Home parts={parts} containers={containers} tasks={tasks} />;
+  } else if (route.view === 'parts') {
+    page = <PartsView parts={parts} layout={layout} canEdit={canEdit} filters={filters} setFilters={setFilters}
+      onAdd={() => setModal({ type: 'part' })} {...partActs} />;
+  } else if (route.view === 'part') {
+    page = <PartDetail part={findRef(parts, route.id)} loaded={loaded} canEdit={canEdit} {...partActs} />;
+  } else if (route.view === 'containers') {
+    page = <ContainersView containers={containers} parts={parts} canEdit={canEdit} onAdd={() => setModal({ type: 'container' })} {...boxActs} />;
+  } else if (route.view === 'container') {
+    let box = findRef(containers, route.id);
+    if (box?.parentId) box = containers.find((b) => b.id === box.parentId) || box;
+    page = <ContainerDetail box={box} boxes={containers} parts={parts} loaded={loaded} canEdit={canEdit} {...boxActs} />;
+  } else if (route.view === 'tossed') {
+    page = <TossedView tossed={tossed} canEdit={canEdit} onAdd={() => setModal({ type: 'tossed' })}
+      onEdit={(x) => setModal({ type: 'tossed', record: x })}
+      onDelete={(x) => run(() => api.tossed.remove(x.id), `Deleted the record for "${x.label}".`)} />;
+  } else if (route.view === 'tasks') {
+    page = <TasksView tasks={tasks} canEdit={canEdit} onAdd={() => setModal({ type: 'task' })} {...taskActs} />;
+  } else {
+    page = <TaskDetail task={findRef(tasks, route.id)} parts={parts} loaded={loaded} canEdit={canEdit} {...taskActs} />;
+  }
+
+  return (
+    <TagFilter.Provider value={onTag}>
+      <div className="wrap">
+        <header>
+          <div>
+            <h1>RSX Type-S Project</h1>
+            <p className="sub">2002 Acura RSX Type-S: the car, its parts, and the tasks</p>
+          </div>
+          {cfg?.keyRequiredForChanges && (
+            unlocked ? (
+              <button className="chip lockbtn" title="Lock editing in this browser" aria-label="Lock editing" onClick={() => { keyStore.set(''); setUnlocked(false); }}>
+                <Icon.unlock />
+              </button>
+            ) : (
+              <button className="chip lockbtn" title="Unlock editing" aria-label="Unlock editing" onClick={() => setModal({ type: 'key' })}><Icon.lock /></button>
+            )
+          )}
+        </header>
+
+        <nav className="tabs" role="tablist">
+          <button role="tab" aria-selected={section === 'home'} onClick={() => go('home')}>Home</button>
+          <button role="tab" aria-selected={section === 'parts'} onClick={() => go('parts')}>Parts</button>
+          <button role="tab" aria-selected={section === 'tasks'} onClick={() => go('tasks')}>Tasks{openTasks ? ` (${openTasks})` : ''}</button>
+        </nav>
+        {section === 'parts' && (
+          <nav className="subtabs" role="tablist" aria-label="Parts sections">
+            <button role="tab" aria-selected={sub === 'parts'} onClick={() => go('parts')}>Parts</button>
+            <button role="tab" aria-selected={sub === 'containers'} onClick={() => go('containers')}>Containers{topCount ? ` (${topCount})` : ''}</button>
+            <button role="tab" aria-selected={sub === 'tossed'} onClick={() => go('tossed')}>Tossed{tossed.length ? ` (${tossed.length})` : ''}</button>
+            <span className="spacer" />
+            {route.view === 'parts' && (
+              <div className="seg" role="group" aria-label="Layout">
+                <button aria-pressed={layout === 'cards'} aria-label="Card layout" title="Cards" onClick={() => setLayout('cards')}><Icon.cards /></button>
+                <button aria-pressed={layout === 'table'} aria-label="Table layout" title="Table" onClick={() => setLayout('table')}><Icon.table /></button>
+              </div>
+            )}
+          </nav>
+        )}
+
+        {loadError && (
+          <div className="banner" role="alert">
+            {loadError} <button className="ibtn" title="Try again" aria-label="Try again" onClick={refresh}><Icon.forward /></button>
+          </div>
+        )}
+
+        {page}
+
+        <Modal open={!!modal} onClose={close} labelledBy="form-title">
+          {modal?.type === 'key' && (
+            <KeyForm
+              readsLocked={Boolean(cfg?.keyRequiredForReads)}
+              onCancel={cfg?.keyRequiredForReads ? null : close}
+              onDone={() => { setUnlocked(true); close(); showToast('Unlocked.'); refresh(); }}
+            />
+          )}
+          {modal?.type === 'part' && (
+            <PartForm part={modal.record} containers={containers} tagOptions={tagOptions} onCancel={close}
+              onSaved={saved(modal.record ? 'Saved.' : 'Part added.')} />
+          )}
+          {modal?.type === 'container' && (
+            <ContainerForm container={modal.record} containers={containers} onCancel={close} onSaved={saved(modal.record ? 'Saved.' : 'Container added.')} />
+          )}
+          {modal?.type === 'tossed' && (
+            <TossedForm item={modal.record} onCancel={close} onSaved={saved(modal.record ? 'Saved.' : 'Logged.')} />
+          )}
+          {modal?.type === 'toss' && (
+            <TossPartForm part={modal.record} onCancel={close}
+              onDone={() => { close(); showToast(`Moved "${modal.record.label}" to Tossed.`); if (route.view === 'part') go('parts'); refresh(); }} />
+          )}
+          {modal?.type === 'task' && (
+            <TaskForm task={modal.record} parts={parts} onCancel={close} onSaved={saved('Saved.')} />
+          )}
+        </Modal>
+
+        {toast && <div className="toast" role="status">{toast}</div>}
+      </div>
+    </TagFilter.Provider>
+  );
+}

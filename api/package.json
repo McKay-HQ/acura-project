@@ -1,0 +1,21 @@
+{
+  "name": "acura-project-api",
+  "version": "1.0.0",
+  "private": true,
+  "description": "API for the RSX Type-S Project: parts, containers and tasks",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "pg": "^8.13.1",
+    "sharp": "^0.34.1"
+  }
+}

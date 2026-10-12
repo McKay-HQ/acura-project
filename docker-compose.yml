@@ -1,0 +1,37 @@
+name: acura-project
+
+# The app: API + web. The database is NOT part of this file. Point DATABASE_URL at
+# any Postgres (a managed provider in production). For local development, add the
+# bundled Postgres with docker-compose.localdb.yml (the default in .env.example).
+
+services:
+  api:
+    build: ./api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      DATABASE_SSL: ${DATABASE_SSL:-}
+      DATABASE_SSL_CA: ${DATABASE_SSL_CA:-}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      PGHOST: ${PGHOST:-}
+      PGPORT: ${PGPORT:-}
+      PGUSER: ${PGUSER:-}
+      PGPASSWORD: ${PGPASSWORD:-}
+      PGDATABASE: ${PGDATABASE:-}
+      API_KEY: ${API_KEY:-}
+      API_KEY_FOR_READS: ${API_KEY_FOR_READS:-false}
+      UPLOAD_DIR: /data/uploads
+      SEED_ON_EMPTY: ${SEED_ON_EMPTY:-true}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+    volumes:
+      # Photos live on the host, so they survive container rebuilds.
+      - ${DATA_DIR:-./data}/uploads:/data/uploads
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
