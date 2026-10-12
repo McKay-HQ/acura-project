@@ -16,8 +16,8 @@ The app has three sections:
 
 | Container | What it does |
 |---|---|
-| `api` | Node.js + Express. Domain logic, validation, photo processing (auto-rotate, resize, strip location data, thumbnails), serves photos. |
-| `web` | React app built with Vite, served by nginx. nginx forwards `/api` and `/uploads` to the API, so everything is on one port. |
+| `api` | Node.js + Express, in TypeScript. Domain logic, validation, photo processing (auto-rotate, resize, strip location data, thumbnails), serves photos. |
+| `web` | React app in TypeScript, built with Vite, served by nginx. nginx forwards `/api` and `/uploads` to the API, so everything is on one port. |
 | `db` *(local only)* | PostgreSQL 16 for development and testing. In production, use a managed Postgres instead. |
 
 ## Quick start (local, with the bundled database)
@@ -109,8 +109,11 @@ Back up `data/uploads/` alongside it.
 
 ## Develop without Docker
 
+Both packages are TypeScript (strict). The API compiles to `api/dist/` for production and runs
+straight from source with `tsx` in development; the web app is type-checked, then bundled by Vite.
+
 ```sh
-# terminal 1: API (needs a Postgres you can reach)
+# terminal 1: API with reload on save (needs a Postgres you can reach)
 cd api && npm install
 DATABASE_URL=postgres://garage:garage-local@localhost:5432/garage DATABASE_SSL=disable npm run dev
 
@@ -120,6 +123,15 @@ cd web && npm install && npm run dev
 
 With the local database container running (`docker compose up -d db`), it is reachable on
 `localhost:5432`.
+
+| Command (in `api/` or `web/`) | What it does |
+|---|---|
+| `npm run typecheck` | Type-check without building |
+| `npm run build` | API: compile to `dist/`. Web: type-check, then build to `dist/` |
+| `npm run format` | Format with Prettier (4-space indents; settings in `.prettierrc.json` at the root) |
+
+`.editorconfig` at the root sets 4-space indents for editors that support it (YAML and Markdown
+stay at 2).
 
 ## API
 
@@ -183,14 +195,16 @@ api/
   migrations/        SQL schema, applied in order on startup
   seed/              starter data (seed.json) and photos
   src/
-    index.js         server startup
-    config.js        environment variables (database, key, uploads)
-    routes.js        HTTP endpoints
+    index.ts         server startup
+    config.ts        environment variables (database, key, uploads)
+    routes.ts        HTTP endpoints
+    types.ts         database rows, API responses and validated inputs
     services/        parts, containers, tossed, tasks, notes, summary
     lib/             validation, auth, photo processing, errors
 web/
   src/
-    App.jsx          navigation, hash routes, data loading, access key
+    types.ts         models as the API returns them
+    App.tsx          navigation, hash routes, data loading, access key
     components/      Home (charts), parts view (filters, table, cards), detail pages,
                      containers, tossed, tasks, forms
 ```

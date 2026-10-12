@@ -5,8 +5,8 @@ set -e
 # user so the API can write photos without running as root.
 mkdir -p "$UPLOAD_DIR"
 if [ "$(id -u)" = "0" ]; then
-  chown -R node:node "$UPLOAD_DIR"
-  exec setpriv --reuid=node --regid=node --init-groups "$@"
+    chown -R node:node "$UPLOAD_DIR"
+    exec setpriv --reuid=node --regid=node --init-groups "$@"
 fi
 
 exec "$@"

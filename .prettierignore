@@ -1,0 +1,5 @@
+node_modules
+dist
+data
+**/seed/seed.json
+**/package-lock.json
