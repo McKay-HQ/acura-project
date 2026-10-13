@@ -126,7 +126,7 @@ docker compose push api web
 **4. The app** (creates it the first time, updates it after)
 
 ```sh
-PG_PASSWORD="$PG_PASSWORD" ./deploy/azure-containerapp.sh
+PG_PASSWORD="$PG_PASSWORD" ./bin/azure-containerapp.sh
 ```
 
 The app's definition (containers, sizes, secrets, scaling, the photo volume) is in
@@ -276,7 +276,13 @@ curl -X PATCH https://your-host/api/parts/rsx-spoiler-black \
 docker-compose.yml           api + web
 docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
+bin/
+  azure-containerapp.sh   create or update the Azure container app
+  docker-entrypoint.sh    API container entrypoint (copied into the image)
+deploy/
+  containerapp.yaml       Azure Container Apps spec template
 api/
+  Dockerfile         built from the repo root (see docker-compose.yml)
   migrations/        SQL schema, applied in order on startup
   seed/              starter data (seed.json) and photos
   src/

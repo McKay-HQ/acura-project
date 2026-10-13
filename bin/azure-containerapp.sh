@@ -10,7 +10,7 @@
 #   PostgreSQL flexible server, Container Apps environment with storage "uploads".
 #
 # Usage:
-#   PG_PASSWORD='...' ./deploy/azure-containerapp.sh        # or it prompts for it
+#   PG_PASSWORD='...' ./bin/azure-containerapp.sh        # or it prompts for it
 # Optional: API_KEY='...' to reuse an existing access key (a new one is generated otherwise).
 set -euo pipefail
 
@@ -55,7 +55,7 @@ fi
 
 # Fill in the spec template. It ends up holding secrets, so it goes in a private temp
 # file that is always removed. Only the variables listed here are substituted.
-SPEC_TEMPLATE="$(dirname "$0")/containerapp.yaml"
+SPEC_TEMPLATE="$(dirname "$0")/../deploy/containerapp.yaml"
 SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
 export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077

@@ -9,7 +9,11 @@ name: acura-project
 
 services:
   api:
-    build: ./api
+    build:
+      # Built from the repo root so the image can include bin/docker-entrypoint.sh;
+      # api/Dockerfile.dockerignore limits what is sent to Docker.
+      context: .
+      dockerfile: api/Dockerfile
     image: ${IMAGE_REGISTRY:-acuraproject.azurecr.io}/acura-api:${IMAGE_TAG:-latest}
     platform: linux/amd64
     restart: unless-stopped
