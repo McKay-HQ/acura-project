@@ -1,4 +1,4 @@
-# Build context is the repo root (see docker-compose.yml): docker build -f api/Dockerfile .
+# Build context is the repo root (see docker-compose.yml): docker build -f docker/api/Dockerfile .
 # ---- build: compile TypeScript to dist/ ----
 FROM node:22-slim AS build
 
@@ -27,7 +27,7 @@ RUN npm ci --omit=dev && npm cache clean --force
 COPY --from=build /app/dist ./dist
 COPY api/migrations ./migrations
 COPY api/seed ./seed
-COPY bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && mkdir -p /data/uploads
 
 EXPOSE 3000

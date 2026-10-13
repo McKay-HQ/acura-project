@@ -278,11 +278,12 @@ docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
 bin/
   azure-containerapp.sh   create or update the Azure container app
-  docker-entrypoint.sh    API container entrypoint (copied into the image)
+docker/
+  api/                    API image: Dockerfile, .dockerignore, entrypoint
+  web/                    web image: Dockerfile, .dockerignore, nginx config template
 deploy/
   containerapp.yaml       Azure Container Apps spec template
 api/
-  Dockerfile         built from the repo root (see docker-compose.yml)
   migrations/        SQL schema, applied in order on startup
   seed/              starter data (seed.json) and photos
   src/

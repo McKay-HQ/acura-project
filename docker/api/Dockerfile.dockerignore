@@ -6,4 +6,4 @@
 !api/src
 !api/migrations
 !api/seed
-!bin/docker-entrypoint.sh
+!docker/api/docker-entrypoint.sh
