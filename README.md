@@ -126,11 +126,11 @@ docker compose push api web
 **4. The app** (creates it the first time, updates it after)
 
 ```sh
-PG_PASSWORD="$PG_PASSWORD" ./bin/azure-containerapp.sh
+PG_PASSWORD="$PG_PASSWORD" ./bin/deploy.sh
 ```
 
 The app's definition (containers, sizes, secrets, scaling, the photo volume) is in
-`deploy/containerapp.yaml`; the script fills in its `${...}` placeholders and applies it.
+`bin/deploy.d/containerapp.yaml`; the script fills in its `${...}` placeholders and applies it.
 It prints the app's URL and a new access key for making changes (pass `API_KEY=...` to keep an
 existing one). The first start creates the tables and imports the starter inventory and photos,
 which takes about a minute; follow it with
@@ -277,9 +277,9 @@ docker-compose.yml           api + web
 docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
 bin/
-  azure-containerapp.sh   create or update the Azure container app
-deploy/
-  containerapp.yaml       Azure Container Apps spec template
+  deploy.sh               create or update the Azure container app
+  deploy.d/
+    containerapp.yaml     Azure Container Apps spec template
 api/
   docker/            Dockerfile, .dockerignore, entrypoint
   migrations/        SQL schema, applied in order on startup

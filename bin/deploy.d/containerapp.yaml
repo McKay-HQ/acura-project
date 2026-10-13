@@ -2,7 +2,7 @@
 #   web  nginx serving the React app, public on port 80; proxies /api and /uploads to the API
 #   api  Node API on localhost:3000, with the Azure Files share "uploads" at /data/uploads
 #
-# bin/azure-containerapp.sh fills in the ${...} placeholders with envsubst (only the
+# bin/deploy.sh fills in the ${...} placeholders with envsubst (only the
 # variables it lists) and passes the result to `az containerapp create/update --yaml`.
 # Don't put real secret values in this file.
 location: ${LOCATION}
