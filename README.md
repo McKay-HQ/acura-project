@@ -118,10 +118,11 @@ so it doesn't end up in your scrollback.
 **3. Images**
 
 ```sh
-az acr login -n $ACR
-docker compose build
-docker compose push api web
+./bin/build        # signs in to the registry, builds both images, pushes them
 ```
+
+`IMAGE_TAG=... ./bin/build` pushes a different tag (default `latest`); `ACR=...` a different
+registry.
 
 **4. The app** (creates it the first time, updates it after)
 
@@ -138,8 +139,8 @@ which takes about a minute; follow it with
 
 The app scales to zero when idle, so the first visit after a quiet spell takes a few seconds.
 
-**Shipping changes:** rebuild and push the images (step 3), then start a new revision so Azure
-pulls the new `latest` images:
+**Shipping changes:** `./bin/build`, then start a new revision so Azure pulls the new `latest`
+images:
 
 ```sh
 az containerapp update -n acura -g acura-project --revision-suffix "r$(date +%Y%m%d%H%M)"
@@ -163,14 +164,15 @@ API_KEY=$(openssl rand -hex 24)
 ## Publish the images
 
 The `api` and `web` services are named for the Azure Container Registry
-(`acuraproject.azurecr.io/acura-api` and `acura-web`, built for `linux/amd64`). Change
-`IMAGE_REGISTRY` or `IMAGE_TAG` in `.env` to publish elsewhere.
+(`acuraproject.azurecr.io/acura-api` and `acura-web`, built for `linux/amd64`).
 
 ```sh
-az acr login -n acuraproject
-docker compose build
-docker compose push api web     # name the services: the local db image isn't yours to push
+./bin/build
 ```
+
+It signs in with `az acr login`, then runs `docker compose build api web` and
+`docker compose push api web` (naming the services so the local database image isn't pushed).
+Set `IMAGE_TAG` for a tag other than `latest`, or `ACR` for another registry.
 
 ## Everyday commands
 
@@ -277,6 +279,7 @@ docker-compose.yml           api + web
 docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
 bin/
+  build                   build both images and push them to the registry
   deploy.sh               create or update the Azure container app
   deploy.d/
     containerapp.yaml     Azure Container Apps spec template
