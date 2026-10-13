@@ -127,7 +127,7 @@ registry.
 **4. The app**
 
 ```sh
-PG_PASSWORD="$PG_PASSWORD" ./bin/deploy.sh      # first time: creates the app
+PG_PASSWORD="$PG_PASSWORD" ./bin/deploy      # first time: creates the app
 ```
 
 The app's definition (containers, sizes, secrets, scaling, the photo volume) is in
@@ -141,12 +141,12 @@ The app scales to zero when idle, so the first visit after a quiet spell takes a
 **Shipping changes:**
 
 ```sh
-./bin/deploy.sh -b      # build and push both images, then roll out a new revision
+./bin/deploy -bp      # git pull, build and push both images, then roll out a new revision
 ```
 
 Later deploys reuse the database password and access key stored in the app's secrets (set
 `PG_PASSWORD` or `API_KEY` to replace one). Every deploy creates a new revision, so Azure pulls
-the current images even when the tag hasn't changed. `./bin/deploy.sh -h` lists the options.
+the current images even when the tag hasn't changed. `./bin/deploy -h` lists the options; `./bin/build -p` pulls, builds and pushes without deploying.
 
 ## Access key (for a public host)
 
@@ -281,8 +281,8 @@ docker-compose.yml           api + web
 docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
 bin/
-  build                   build both images and push them to the registry
-  deploy.sh               create or update the Azure container app
+  build                   build both images and push them to the registry (-p: git pull first)
+  deploy                  create or update the Azure container app
   deploy.d/
     containerapp.yaml     Azure Container Apps spec template
 api/

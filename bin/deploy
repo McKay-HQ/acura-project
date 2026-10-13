@@ -10,13 +10,14 @@
 #   PostgreSQL flexible server, Container Apps environment with storage "uploads".
 #
 # Usage:
-#   ./bin/deploy.sh [-b] [-h]
+#   ./bin/deploy [-b] [-p] [-h]
 #     -b  run ./bin/build first (build and push both images)
+#     -p  git pull first
 #     -h  show this help
 #
-# First deploy: PG_PASSWORD='...' ./bin/deploy.sh (it prompts if unset) creates the app and
+# First deploy: PG_PASSWORD='...' ./bin/deploy (it prompts if unset) creates the app and
 # prints a new access key. Later deploys reuse the database password and access key stored
-# in the app's secrets, so ./bin/deploy.sh -b is all it takes to ship changes. Set
+# in the app's secrets, so ./bin/deploy -bp is all it takes to ship changes. Set
 # PG_PASSWORD or API_KEY to replace either one.
 #
 # Every run creates a new revision, so Azure pulls the current images even when the tag
@@ -26,14 +27,26 @@ set -euo pipefail
 usage() { sed -n '/^# Usage:/,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
 
 BUILD=0
-while getopts ":bh" opt; do
+PULL=0
+ARGS=()
+while getopts ":bph" opt; do
     case $opt in
-        b) BUILD=1 ;;
+        b) BUILD=1; ARGS+=(-b) ;;
+        p) PULL=1 ;;
         h) usage; exit 0 ;;
         *) echo "Unknown option -$OPTARG" >&2; usage >&2; exit 2 ;;
     esac
 done
 shift $((OPTIND - 1))
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+if [ "$PULL" = 1 ]; then
+    echo "Pulling the latest code..."
+    git -C "$ROOT" pull --ff-only
+    # Restart so the rest of the run uses the freshly pulled version of this script.
+    exec "$0" "${ARGS[@]}"
+fi
 
 command -v envsubst >/dev/null || { echo "envsubst is missing: sudo apt install -y gettext-base" >&2; exit 1; }
 
@@ -50,7 +63,7 @@ IMAGE_TAG=${IMAGE_TAG:-latest}
 REVISION_SUFFIX="r$(date +%y%m%d%H%M%S)"
 
 if [ "$BUILD" = 1 ]; then
-    ACR="$ACR" IMAGE_TAG="$IMAGE_TAG" "$(dirname "$0")/build"
+    ACR="$ACR" IMAGE_TAG="$IMAGE_TAG" "$ROOT/bin/build"
     echo
 fi
 
@@ -96,7 +109,7 @@ fi
 
 # Fill in the spec template. It ends up holding secrets, so it goes in a private temp
 # file that is always removed. Only the variables listed here are substituted.
-SPEC_TEMPLATE="$(dirname "$0")/deploy.d/containerapp.yaml"
+SPEC_TEMPLATE="$ROOT/bin/deploy.d/containerapp.yaml"
 SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${REVISION_SUFFIX} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
 export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG REVISION_SUFFIX PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077
