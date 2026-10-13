@@ -89,15 +89,34 @@ function asBody(body: unknown): Body {
     return body as Body;
 }
 
-function text(body: Body, key: string, errors: string[], { required = false, max = 2000 } = {}): string | undefined {
+/**
+ * A text field. `required`: must be present (on create). `nonEmpty`: if present, it can't be blank,
+ * so an update can't clear a record's name (the database would reject it).
+ */
+function text(
+    body: Body,
+    key: string,
+    errors: string[],
+    { required = false, nonEmpty = false, max = 2000 } = {},
+): string | undefined {
     if (!(key in body)) {
         if (required) errors.push(`${nm(key)} is required`);
         return undefined;
     }
     const v = body[key] == null ? '' : String(body[key]).trim();
-    if (required && !v) errors.push(`${nm(key)} cannot be empty`);
+    if ((required || nonEmpty) && !v) errors.push(`${nm(key)} cannot be empty`);
     if (v.length > max) errors.push(`${nm(key)} is too long (max ${max} characters)`);
     return v;
+}
+
+/** A true/false field. Accepts JSON booleans, and "true"/"false" strings from forms; anything else is an error. */
+function bool(body: Body, key: string, errors: string[]): boolean | undefined {
+    if (!(key in body)) return undefined;
+    const v = body[key];
+    if (v === true || v === 'true') return true;
+    if (v === false || v === 'false') return false;
+    errors.push(`${nm(key)} must be true or false`);
+    return undefined; // never reaches the caller: done() throws because errors is non-empty
 }
 
 const isOneOf = <T>(allowed: readonly T[], v: unknown): v is T => (allowed as readonly unknown[]).includes(v);
@@ -213,7 +232,7 @@ export function validatePart(input: unknown = {}, { create = false }: ValidateOp
     const errors: string[] = [];
     const out = compact<PartInput>({
         key: keyField(body, errors),
-        label: text(body, 'label', errors, { required: create, max: 200 }),
+        label: text(body, 'label', errors, { required: create, nonEmpty: true, max: 200 }),
         partNumber: text(body, 'partNumber', errors, { max: 300 }),
         fits: text(body, 'fits', errors, { max: 60 }),
         status: oneOf(body, 'status', STATUSES, errors),
@@ -234,7 +253,7 @@ export function validateContainer(input: unknown = {}, { create = false }: Valid
     const errors: string[] = [];
     const out = compact<ContainerInput>({
         key: keyField(body, errors),
-        name: text(body, 'name', errors, { required: create, max: 120 }),
+        name: text(body, 'name', errors, { required: create, nonEmpty: true, max: 120 }),
         location: text(body, 'location', errors, { max: 200 }),
         notes: text(body, 'notes', errors, { max: 5000 }),
         parentId: ref(body, 'parentId', errors),
@@ -249,7 +268,7 @@ export function validateTossed(input: unknown = {}, { create = false }: Validate
     const errors: string[] = [];
     const out = compact<TossedInput>({
         key: keyField(body, errors),
-        label: text(body, 'label', errors, { required: create, max: 200 }),
+        label: text(body, 'label', errors, { required: create, nonEmpty: true, max: 200 }),
         partNumber: text(body, 'partNumber', errors, { max: 300 }),
         reason: text(body, 'reason', errors, { max: 2000 }),
         tossedOn: dateOnly(body, 'tossedOn', errors),
@@ -261,11 +280,11 @@ export function validateTask(input: unknown = {}, { create = false }: ValidateOp
     const body = asBody(input);
     const errors: string[] = [];
     const out = compact<TaskInput>({
-        title: text(body, 'title', errors, { required: create, max: 200 }),
+        title: text(body, 'title', errors, { required: create, nonEmpty: true, max: 200 }),
         // intIn checks the 1-4 range; anything else is reported and done() throws.
         phase: intIn(body, 'phase', errors, 1, 4) as Phase | undefined,
         notes: text(body, 'notes', errors, { max: 5000 }),
-        done: 'done' in body ? Boolean(body.done) : undefined,
+        done: bool(body, 'done', errors),
         partIds: stringList(body, 'partIds', errors, { maxItems: 200, maxLen: 80 }),
     });
     if (out.partIds?.some((x) => !isUuid(x) && !KEY.test(x))) errors.push('Parts must be part ids or keys');
@@ -277,7 +296,7 @@ export function validateNote(input: unknown = {}, { create = false }: ValidateOp
     const errors: string[] = [];
     const out = compact<NoteInput>({
         key: keyField(body, errors),
-        title: text(body, 'title', errors, { required: create, max: 200 }),
+        title: text(body, 'title', errors, { required: create, nonEmpty: true, max: 200 }),
         items: stringList(body, 'items', errors, { maxItems: 200, maxLen: 2000, unique: false }),
     });
     return done(out, errors);

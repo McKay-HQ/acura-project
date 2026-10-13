@@ -499,7 +499,7 @@
  *           type: string
  *           minLength: 1
  *           maxLength: 200
- *           description: The part's name. Required on create.
+ *           description: The part's name. Required on create; can't be set to empty.
  *         partNumber:
  *           type: string
  *           nullable: true
@@ -560,7 +560,7 @@
  *           type: string
  *           minLength: 1
  *           maxLength: 120
- *           description: Required on create.
+ *           description: Required on create; can't be set to empty.
  *         location:
  *           type: string
  *           nullable: true
@@ -598,7 +598,7 @@
  *           type: string
  *           minLength: 1
  *           maxLength: 200
- *           description: Required on create.
+ *           description: Required on create; can't be set to empty.
  *         partNumber:
  *           type: string
  *           nullable: true
@@ -640,7 +640,7 @@
  *           type: string
  *           minLength: 1
  *           maxLength: 200
- *           description: Required on create.
+ *           description: Required on create; can't be set to empty.
  *         phase:
  *           $ref: '#/components/schemas/Phase'
  *         notes:
@@ -651,7 +651,7 @@
  *           type: boolean
  *           description: >-
  *             Marking a task done sets doneAt (kept if it was already done); marking it open clears doneAt.
- *             Any value is read as a boolean by truthiness, so send a real JSON boolean.
+ *             Must be `true` or `false` (the strings "true" and "false" are accepted too); anything else is a 400.
  *         partIds:
  *           type: array
  *           maxItems: 200
@@ -677,7 +677,7 @@
  *           type: string
  *           minLength: 1
  *           maxLength: 200
- *           description: Required on create.
+ *           description: Required on create; can't be set to empty.
  *         items:
  *           type: array
  *           maxItems: 200
