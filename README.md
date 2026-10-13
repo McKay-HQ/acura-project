@@ -17,7 +17,7 @@ The app has three sections:
 | Container | What it does |
 |---|---|
 | `api` | Node.js + Express, in TypeScript. Domain logic, validation, photo processing (auto-rotate, resize, strip location data, thumbnails), serves photos. |
-| `web` | React app in TypeScript, built with Vite, served by nginx. nginx forwards `/api` and `/uploads` to the API, so everything is on one port. |
+| `web` | React app in TypeScript, built with Vite, served by nginx. nginx forwards `/api` and `/uploads` to the API (`API_URL`, default `http://api:3000`), so everything is on one port. |
 | `db` *(local only)* | PostgreSQL 16 for development and testing. In production, use a managed Postgres instead. |
 
 ## Quick start (local, with the bundled database)
@@ -71,6 +71,77 @@ database it connects to (never the password).
 
 **Photos** are stored on disk in `${DATA_DIR}/uploads`, not in the database. On a host with ephemeral
 disks, mount a persistent volume there. Object storage (S3/R2) would be a later addition.
+
+## Deploy to Azure Container Apps
+
+One container app runs both containers: nginx (`web`, public) and the API (`api`), which nginx
+reaches at `localhost:3000`. Postgres is an Azure Database for PostgreSQL flexible server, and
+photos live on an Azure Files share mounted into the API. Everything is in one resource group and
+region.
+
+**1. Settings** (re-paste in each new terminal; keep the saved password, don't regenerate it)
+
+```sh
+LOCATION=centralus RG=acura-project ACR=acuraproject PG_SERVER=acura-project-db
+PG_ADMIN=acura_db_admin STORAGE=acuraprojectfiles ENV=acura-env
+PG_PASSWORD="$(openssl rand -base64 30 | tr -d '/+=')Aa1"   # first time only; save it
+```
+
+**2. Infrastructure** (once)
+
+```sh
+az group create -n $RG -l $LOCATION
+for ns in Microsoft.ContainerRegistry Microsoft.DBforPostgreSQL Microsoft.App Microsoft.OperationalInsights Microsoft.Storage Microsoft.ManagedIdentity; do
+    az provider register --namespace $ns
+done
+az acr create -g $RG -n $ACR --sku Basic -l $LOCATION
+
+az postgres flexible-server create -g $RG -n $PG_SERVER -l $LOCATION \
+    --tier Burstable --sku-name Standard_B1ms --storage-size 32 --version 16 \
+    --admin-user $PG_ADMIN --admin-password "$PG_PASSWORD" --public-access 0.0.0.0 --yes -o none
+MYIP=$(curl -s https://api.ipify.org)       # optional: lets psql connect from this machine
+az postgres flexible-server firewall-rule create -g $RG --server-name $PG_SERVER \
+    --name home --start-ip-address $MYIP --end-ip-address $MYIP
+
+az containerapp env create -n $ENV -g $RG -l $LOCATION
+az storage account create -n $STORAGE -g $RG -l $LOCATION --sku Standard_LRS --kind StorageV2
+az storage share-rm create --storage-account $STORAGE -g $RG --name uploads --quota 5
+STORAGE_KEY=$(az storage account keys list -n $STORAGE -g $RG --query "[0].value" -o tsv)
+az containerapp env storage set -n $ENV -g $RG --storage-name uploads \
+    --azure-file-account-name $STORAGE --azure-file-account-key "$STORAGE_KEY" \
+    --azure-file-share-name uploads --access-mode ReadWrite
+```
+
+`az postgres flexible-server create` prints the password in its output; use `-o none` (as above)
+so it doesn't end up in your scrollback.
+
+**3. Images**
+
+```sh
+az acr login -n $ACR
+docker compose build
+docker compose push api web
+```
+
+**4. The app** (creates it the first time, updates it after)
+
+```sh
+PG_PASSWORD="$PG_PASSWORD" ./deploy/azure-containerapp.sh
+```
+
+It prints the app's URL and a new access key for making changes (pass `API_KEY=...` to keep an
+existing one). The first start creates the tables and imports the starter inventory and photos,
+which takes about a minute; follow it with
+`az containerapp logs show -n acura -g acura-project --container api --follow`.
+
+The app scales to zero when idle, so the first visit after a quiet spell takes a few seconds.
+
+**Shipping changes:** rebuild and push the images (step 3), then start a new revision so Azure
+pulls the new `latest` images:
+
+```sh
+az containerapp update -n acura -g acura-project --revision-suffix "r$(date +%Y%m%d%H%M)"
+```
 
 ## Access key (for a public host)
 

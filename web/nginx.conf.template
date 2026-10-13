@@ -1,3 +1,6 @@
+# Rendered at container start by the nginx image: ${API_URL} is replaced from the
+# environment (default http://api:3000 for Docker Compose; http://localhost:3000 when
+# both containers share a Container App). nginx's own $variables are left alone.
 server {
     listen 80;
     server_name _;
@@ -10,14 +13,15 @@ server {
     gzip_types text/css application/javascript application/json image/svg+xml;
 
     location /api/ {
-        proxy_pass http://api:3000;
-        proxy_set_header Host $host;
+        proxy_pass ${API_URL};
+        proxy_set_header Host $proxy_host;
+        proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_read_timeout 120s;
     }
 
     location /uploads/ {
-        proxy_pass http://api:3000;
+        proxy_pass ${API_URL};
         expires 30d;
     }
 
