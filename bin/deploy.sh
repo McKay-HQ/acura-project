@@ -10,9 +10,30 @@
 #   PostgreSQL flexible server, Container Apps environment with storage "uploads".
 #
 # Usage:
-#   PG_PASSWORD='...' ./bin/deploy.sh        # or it prompts for it
-# Optional: API_KEY='...' to reuse an existing access key (a new one is generated otherwise).
+#   ./bin/deploy.sh [-b] [-h]
+#     -b  run ./bin/build first (build and push both images)
+#     -h  show this help
+#
+# First deploy: PG_PASSWORD='...' ./bin/deploy.sh (it prompts if unset) creates the app and
+# prints a new access key. Later deploys reuse the database password and access key stored
+# in the app's secrets, so ./bin/deploy.sh -b is all it takes to ship changes. Set
+# PG_PASSWORD or API_KEY to replace either one.
+#
+# Every run creates a new revision, so Azure pulls the current images even when the tag
+# (default "latest") hasn't changed.
 set -euo pipefail
+
+usage() { sed -n '/^# Usage:/,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
+
+BUILD=0
+while getopts ":bh" opt; do
+    case $opt in
+        b) BUILD=1 ;;
+        h) usage; exit 0 ;;
+        *) echo "Unknown option -$OPTARG" >&2; usage >&2; exit 2 ;;
+    esac
+done
+shift $((OPTIND - 1))
 
 command -v envsubst >/dev/null || { echo "envsubst is missing: sudo apt install -y gettext-base" >&2; exit 1; }
 
@@ -26,12 +47,32 @@ ENV=${ENV:-acura-env}
 APP=${APP:-acura}
 IDENTITY=${IDENTITY:-acura-pull}
 IMAGE_TAG=${IMAGE_TAG:-latest}
+REVISION_SUFFIX="r$(date +%y%m%d%H%M%S)"
 
+if [ "$BUILD" = 1 ]; then
+    ACR="$ACR" IMAGE_TAG="$IMAGE_TAG" "$(dirname "$0")/build"
+    echo
+fi
+
+EXISTS=0
+if az containerapp show -n "$APP" -g "$RG" -o none 2>/dev/null; then
+    EXISTS=1
+fi
+secret() {
+    az containerapp secret list -n "$APP" -g "$RG" --show-values --query "[?name=='$1'].value | [0]" -o tsv
+}
+
+if [ -z "${PG_PASSWORD:-}" ] && [ "$EXISTS" = 1 ]; then
+    PG_PASSWORD=$(secret pg-password)
+fi
 if [ -z "${PG_PASSWORD:-}" ]; then
     read -rsp "Database password for $PG_ADMIN: " PG_PASSWORD
     echo
 fi
 NEW_KEY=0
+if [ -z "${API_KEY:-}" ] && [ "$EXISTS" = 1 ]; then
+    API_KEY=$(secret api-key)
+fi
 if [ -z "${API_KEY:-}" ]; then
     API_KEY=$(openssl rand -hex 24)
     NEW_KEY=1
@@ -41,7 +82,7 @@ echo "Checking the environment and its photo storage..."
 ENV_ID=$(az containerapp env show -n "$ENV" -g "$RG" --query id -o tsv)
 az containerapp env storage show -n "$ENV" -g "$RG" --storage-name uploads -o none
 
-echo "Creating the identity the app uses to pull images..."
+echo "Setting up the identity the app uses to pull images..."
 az identity create -n "$IDENTITY" -g "$RG" -l "$LOCATION" -o none
 IDENTITY_ID=$(az identity show -n "$IDENTITY" -g "$RG" --query id -o tsv)
 PRINCIPAL_ID=$(az identity show -n "$IDENTITY" -g "$RG" --query principalId -o tsv)
@@ -56,15 +97,15 @@ fi
 # Fill in the spec template. It ends up holding secrets, so it goes in a private temp
 # file that is always removed. Only the variables listed here are substituted.
 SPEC_TEMPLATE="$(dirname "$0")/deploy.d/containerapp.yaml"
-SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
-export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
+SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${REVISION_SUFFIX} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
+export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG REVISION_SUFFIX PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077
 SPEC=$(mktemp --suffix=.yaml)
 trap 'rm -f "$SPEC"' EXIT
 envsubst "$SPEC_VARS" < "$SPEC_TEMPLATE" > "$SPEC"
 
-if az containerapp show -n "$APP" -g "$RG" -o none 2>/dev/null; then
-    echo "Updating container app $APP..."
+if [ "$EXISTS" = 1 ]; then
+    echo "Updating container app $APP (revision $REVISION_SUFFIX)..."
     az containerapp update -n "$APP" -g "$RG" --yaml "$SPEC" -o none
 else
     echo "Creating container app $APP..."
@@ -74,7 +115,9 @@ fi
 URL=$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)
 echo
 echo "App: https://$URL"
-echo "The first start creates the tables and loads the starter inventory and photos (about a minute)."
+if [ "$EXISTS" = 0 ]; then
+    echo "The first start creates the tables and loads the starter inventory and photos (about a minute)."
+fi
 echo "Watch it with: az containerapp logs show -n $APP -g $RG --container api --follow"
 if [ "$NEW_KEY" = 1 ]; then
     echo

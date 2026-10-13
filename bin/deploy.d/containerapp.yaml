@@ -28,6 +28,8 @@ properties:
       - name: api-key
         value: "${API_KEY}"
   template:
+    # A new suffix on every deploy forces a new revision, which pulls the images again.
+    revisionSuffix: ${REVISION_SUFFIX}
     containers:
       - name: web
         image: ${ACR}.azurecr.io/acura-web:${IMAGE_TAG}

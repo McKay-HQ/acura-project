@@ -124,27 +124,29 @@ so it doesn't end up in your scrollback.
 `IMAGE_TAG=... ./bin/build` pushes a different tag (default `latest`); `ACR=...` a different
 registry.
 
-**4. The app** (creates it the first time, updates it after)
+**4. The app**
 
 ```sh
-PG_PASSWORD="$PG_PASSWORD" ./bin/deploy.sh
+PG_PASSWORD="$PG_PASSWORD" ./bin/deploy.sh      # first time: creates the app
 ```
 
 The app's definition (containers, sizes, secrets, scaling, the photo volume) is in
 `bin/deploy.d/containerapp.yaml`; the script fills in its `${...}` placeholders and applies it.
-It prints the app's URL and a new access key for making changes (pass `API_KEY=...` to keep an
-existing one). The first start creates the tables and imports the starter inventory and photos,
-which takes about a minute; follow it with
-`az containerapp logs show -n acura -g acura-project --container api --follow`.
+It prints the app's URL and, the first time, a new access key for making changes; save it. The
+first start creates the tables and imports the starter inventory and photos, which takes about a
+minute; follow it with `az containerapp logs show -n acura -g acura-project --container api --follow`.
 
 The app scales to zero when idle, so the first visit after a quiet spell takes a few seconds.
 
-**Shipping changes:** `./bin/build`, then start a new revision so Azure pulls the new `latest`
-images:
+**Shipping changes:**
 
 ```sh
-az containerapp update -n acura -g acura-project --revision-suffix "r$(date +%Y%m%d%H%M)"
+./bin/deploy.sh -b      # build and push both images, then roll out a new revision
 ```
+
+Later deploys reuse the database password and access key stored in the app's secrets (set
+`PG_PASSWORD` or `API_KEY` to replace one). Every deploy creates a new revision, so Azure pulls
+the current images even when the tag hasn't changed. `./bin/deploy.sh -h` lists the options.
 
 ## Access key (for a public host)
 
