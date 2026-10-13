@@ -1,0 +1,9 @@
+# Build context is api/; send Docker only what the image needs.
+*
+!package.json
+!package-lock.json
+!tsconfig.json
+!src
+!migrations
+!seed
+!docker/docker-entrypoint.sh

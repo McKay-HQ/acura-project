@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // In development (`npm run dev`), forward API and photo requests to the API on port 3000.
-// In Docker, nginx does the same job (see docker/web/nginx.conf.template).
+// In Docker, nginx does the same job (see docker/nginx.conf.template).
 const target = process.env.API_URL || 'http://localhost:3000';
 
 export default defineConfig({

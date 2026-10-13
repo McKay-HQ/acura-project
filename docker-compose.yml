@@ -10,10 +10,10 @@ name: acura-project
 services:
   api:
     build:
-      # Both images build from the repo root; docker/<service>/ holds the Dockerfile,
-      # its .dockerignore (which limits what is sent to Docker) and supporting files.
-      context: .
-      dockerfile: docker/api/Dockerfile
+      # <service>/docker/ holds the Dockerfile, its .dockerignore (which limits what
+      # is sent to Docker) and supporting files.
+      context: ./api
+      dockerfile: docker/Dockerfile
     image: ${IMAGE_REGISTRY:-acuraproject.azurecr.io}/acura-api:${IMAGE_TAG:-latest}
     platform: linux/amd64
     restart: unless-stopped
@@ -38,8 +38,8 @@ services:
 
   web:
     build:
-      context: .
-      dockerfile: docker/web/Dockerfile
+      context: ./web
+      dockerfile: docker/Dockerfile
     image: ${IMAGE_REGISTRY:-acuraproject.azurecr.io}/acura-web:${IMAGE_TAG:-latest}
     platform: linux/amd64
     restart: unless-stopped

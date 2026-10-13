@@ -1,9 +1,0 @@
-# The API image is built from the repo root, so send Docker only what it needs.
-*
-!api/package.json
-!api/package-lock.json
-!api/tsconfig.json
-!api/src
-!api/migrations
-!api/seed
-!docker/api/docker-entrypoint.sh

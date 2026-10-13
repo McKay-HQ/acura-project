@@ -1,14 +1,14 @@
-# Build context is the repo root (see docker-compose.yml): docker build -f docker/api/Dockerfile .
+# Build context is api/ (see docker-compose.yml): docker build -f api/docker/Dockerfile api
 # ---- build: compile TypeScript to dist/ ----
 FROM node:22-slim AS build
 
 WORKDIR /app
 
-COPY api/package.json api/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
-COPY api/tsconfig.json ./
-COPY api/src ./src
+COPY tsconfig.json ./
+COPY src ./src
 RUN npm run build
 
 # ---- runtime: production dependencies and compiled output only ----
@@ -20,14 +20,14 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-COPY api/package.json api/package-lock.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 # dist/ sits next to migrations/ and seed/, so the '../migrations' and '../seed' paths resolve.
 COPY --from=build /app/dist ./dist
-COPY api/migrations ./migrations
-COPY api/seed ./seed
-COPY docker/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY migrations ./migrations
+COPY seed ./seed
+COPY docker/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && mkdir -p /data/uploads
 
 EXPOSE 3000
