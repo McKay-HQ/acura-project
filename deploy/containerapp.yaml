@@ -1,0 +1,73 @@
+# Azure Container Apps spec for the RSX Type-S Project: one app, two containers.
+#   web  nginx serving the React app, public on port 80; proxies /api and /uploads to the API
+#   api  Node API on localhost:3000, with the Azure Files share "uploads" at /data/uploads
+#
+# deploy/azure-containerapp.sh fills in the ${...} placeholders with envsubst (only the
+# variables it lists) and passes the result to `az containerapp create/update --yaml`.
+# Don't put real secret values in this file.
+location: ${LOCATION}
+identity:
+  type: UserAssigned
+  userAssignedIdentities:
+    ${IDENTITY_ID}: {}
+properties:
+  managedEnvironmentId: ${ENV_ID}
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      external: true
+      targetPort: 80
+      transport: auto
+      allowInsecure: false
+    registries:
+      - server: ${ACR}.azurecr.io
+        identity: ${IDENTITY_ID}
+    secrets:
+      - name: pg-password
+        value: "${PG_PASSWORD}"
+      - name: api-key
+        value: "${API_KEY}"
+  template:
+    containers:
+      - name: web
+        image: ${ACR}.azurecr.io/acura-web:${IMAGE_TAG}
+        resources:
+          cpu: 0.25
+          memory: 0.5Gi
+        env:
+          - name: API_URL
+            value: http://localhost:3000
+      - name: api
+        image: ${ACR}.azurecr.io/acura-api:${IMAGE_TAG}
+        resources:
+          cpu: 0.5
+          memory: 1Gi
+        env:
+          - name: PGHOST
+            value: ${PG_SERVER}.postgres.database.azure.com
+          - name: PGPORT
+            value: "5432"
+          - name: PGUSER
+            value: ${PG_ADMIN}
+          - name: PGDATABASE
+            value: ${PG_DATABASE}
+          - name: PGPASSWORD
+            secretRef: pg-password
+          - name: DATABASE_SSL
+            value: require
+          - name: DB_POOL_MAX
+            value: "5"
+          - name: API_KEY
+            secretRef: api-key
+        volumeMounts:
+          - volumeName: uploads
+            mountPath: /data/uploads
+    scale:
+      minReplicas: 0
+      maxReplicas: 1
+    volumes:
+      - name: uploads
+        storageType: AzureFile
+        storageName: uploads
+        # The share can't be chowned; mount it as the image's "node" user (uid/gid 1000).
+        mountOptions: uid=1000,gid=1000,dir_mode=0755,file_mode=0644

@@ -14,6 +14,8 @@
 # Optional: API_KEY='...' to reuse an existing access key (a new one is generated otherwise).
 set -euo pipefail
 
+command -v envsubst >/dev/null || { echo "envsubst is missing: sudo apt install -y gettext-base" >&2; exit 1; }
+
 LOCATION=${LOCATION:-centralus}
 RG=${RG:-acura-project}
 ACR=${ACR:-acuraproject}
@@ -51,79 +53,15 @@ if [ -z "$(az role assignment list --assignee "$PRINCIPAL_ID" --scope "$ACR_ID" 
     sleep 60
 fi
 
-# The spec holds secrets, so it lives in a private temp file that is always removed.
+# Fill in the spec template. It ends up holding secrets, so it goes in a private temp
+# file that is always removed. Only the variables listed here are substituted.
+SPEC_TEMPLATE="$(dirname "$0")/containerapp.yaml"
+SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
+export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077
 SPEC=$(mktemp --suffix=.yaml)
 trap 'rm -f "$SPEC"' EXIT
-
-cat > "$SPEC" <<YAML
-location: $LOCATION
-identity:
-  type: UserAssigned
-  userAssignedIdentities:
-    $IDENTITY_ID: {}
-properties:
-  managedEnvironmentId: $ENV_ID
-  configuration:
-    activeRevisionsMode: Single
-    ingress:
-      external: true
-      targetPort: 80
-      transport: auto
-      allowInsecure: false
-    registries:
-      - server: $ACR.azurecr.io
-        identity: $IDENTITY_ID
-    secrets:
-      - name: pg-password
-        value: "$PG_PASSWORD"
-      - name: api-key
-        value: "$API_KEY"
-  template:
-    containers:
-      - name: web
-        image: $ACR.azurecr.io/acura-web:$IMAGE_TAG
-        resources:
-          cpu: 0.25
-          memory: 0.5Gi
-        env:
-          - name: API_URL
-            value: http://localhost:3000
-      - name: api
-        image: $ACR.azurecr.io/acura-api:$IMAGE_TAG
-        resources:
-          cpu: 0.5
-          memory: 1Gi
-        env:
-          - name: PGHOST
-            value: $PG_SERVER.postgres.database.azure.com
-          - name: PGPORT
-            value: "5432"
-          - name: PGUSER
-            value: $PG_ADMIN
-          - name: PGDATABASE
-            value: $PG_DATABASE
-          - name: PGPASSWORD
-            secretRef: pg-password
-          - name: DATABASE_SSL
-            value: require
-          - name: DB_POOL_MAX
-            value: "5"
-          - name: API_KEY
-            secretRef: api-key
-        volumeMounts:
-          - volumeName: uploads
-            mountPath: /data/uploads
-    scale:
-      minReplicas: 0
-      maxReplicas: 1
-    volumes:
-      - name: uploads
-        storageType: AzureFile
-        storageName: uploads
-        # The share can't be chowned; mount it as the image's "node" user (uid/gid 1000).
-        mountOptions: uid=1000,gid=1000,dir_mode=0755,file_mode=0644
-YAML
+envsubst "$SPEC_VARS" < "$SPEC_TEMPLATE" > "$SPEC"
 
 if az containerapp show -n "$APP" -g "$RG" -o none 2>/dev/null; then
     echo "Updating container app $APP..."

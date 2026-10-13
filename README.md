@@ -129,6 +129,8 @@ docker compose push api web
 PG_PASSWORD="$PG_PASSWORD" ./deploy/azure-containerapp.sh
 ```
 
+The app's definition (containers, sizes, secrets, scaling, the photo volume) is in
+`deploy/containerapp.yaml`; the script fills in its `${...}` placeholders and applies it.
 It prints the app's URL and a new access key for making changes (pass `API_KEY=...` to keep an
 existing one). The first start creates the tables and imports the starter inventory and photos,
 which takes about a minute; follow it with
