@@ -1,4 +1,4 @@
-// Parts: everything kept, spare, for sale or still unidentified.
+// Parts: everything kept, spare, for sale or still unknown.
 import type { PoolClient } from 'pg';
 import { query, runner, tx } from '../db.js';
 import { badRequest } from '../lib/errors.js';

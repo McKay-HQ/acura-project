@@ -1,3 +1,21 @@
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Error:
+ *       type: object
+ *       description: Every error response (written by the error handler in index.ts).
+ *       required: [error]
+ *       properties:
+ *         error:
+ *           type: string
+ *           description: A message that can be shown to the user.
+ *         details:
+ *           type: array
+ *           description: For validation errors, one message per field problem.
+ *           items:
+ *             type: string
+ */
 export class HttpError extends Error {
     status: number;
     details: unknown;

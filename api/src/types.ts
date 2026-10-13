@@ -1,4 +1,5 @@
 // Domain types: database rows, API response shapes, and validated request inputs.
+// Their OpenAPI schemas are in schemas.ts (tsc would drop @openapi comments placed here).
 
 export type PartStatus = 'Verified' | 'Unverified' | 'Unknown';
 export type Phase = 1 | 2 | 3 | 4;

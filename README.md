@@ -16,7 +16,7 @@ The app has three sections:
 
 | Container | What it does |
 |---|---|
-| `api` | Node.js + Express, in TypeScript. Domain logic, validation, photo processing (auto-rotate, resize, strip location data, thumbnails), serves photos. |
+| `api` | Node.js + Express, in TypeScript. Domain logic, validation, photo processing (auto-rotate, resize, strip location data, thumbnails), serves photos and its own OpenAPI docs (`/api/docs/`). |
 | `web` | React app in TypeScript, built with Vite, served by nginx. nginx forwards `/api` and `/uploads` to the API (`API_URL`, default `http://api:3000`), so everything is on one port. |
 | `db` *(local only)* | PostgreSQL 16 for development and testing. In production, use a managed Postgres instead. |
 
@@ -33,8 +33,8 @@ Open **http://localhost:8080**. The default `.env` sets
 `COMPOSE_FILE=docker-compose.yml:docker-compose.localdb.yml`, which adds the local Postgres container.
 
 On the first start the API creates the tables and imports the starter inventory in `api/seed/`
-(84 parts, 14 containers of which 6 are top-level, 11 tossed items, 24 tasks, 6 notes and 211 photos). Processing the photos
-takes about a minute. The import runs once, and only against an empty database. Set
+(84 parts, 14 containers of which 6 are top-level, 11 tossed items, 24 tasks, 6 notes and 211
+photos). Processing the photos takes about a minute. The import runs once, and only against an empty database. Set
 `SEED_ON_EMPTY=false` to start blank.
 
 **Upgrading an existing install:** migrations run on startup, so `docker compose up -d --build` adds
@@ -121,8 +121,9 @@ so it doesn't end up in your scrollback.
 ./bin/build        # signs in to the registry, builds both images, pushes them
 ```
 
-`IMAGE_TAG=... ./bin/build` pushes a different tag (default `latest`); `ACR=...` a different
-registry.
+Images are `acuraproject.azurecr.io/acura-api` and `acura-web`, built for `linux/amd64`.
+`IMAGE_TAG=... ./bin/build` pushes a different tag (default `latest`), `ACR=...` uses a different
+registry, and `-p` runs `git pull` first.
 
 **4. The app**
 
@@ -146,7 +147,7 @@ The app scales to zero when idle, so the first visit after a quiet spell takes a
 
 Later deploys reuse the database password and access key stored in the app's secrets (set
 `PG_PASSWORD` or `API_KEY` to replace one). Every deploy creates a new revision, so Azure pulls
-the current images even when the tag hasn't changed. `./bin/deploy -h` lists the options; `./bin/build -p` pulls, builds and pushes without deploying.
+the current images even when the tag hasn't changed. `./bin/deploy -h` lists the options.
 
 ## Access key (for a public host)
 
@@ -162,19 +163,6 @@ API_KEY=$(openssl rand -hex 24)
 - `API_KEY_FOR_READS=true` makes the whole app private.
 - API clients send `Authorization: Bearer <key>` (or `X-API-Key: <key>`).
 - Photo files (`/uploads/...`) are not behind the key; their names are random UUIDs.
-
-## Publish the images
-
-The `api` and `web` services are named for the Azure Container Registry
-(`acuraproject.azurecr.io/acura-api` and `acura-web`, built for `linux/amd64`).
-
-```sh
-./bin/build
-```
-
-It signs in with `az acr login`, then runs `docker compose build api web` and
-`docker compose push api web` (naming the services so the local database image isn't pushed).
-Set `IMAGE_TAG` for a tag other than `latest`, or `ACR` for another registry.
 
 ## Everyday commands
 
@@ -196,83 +184,20 @@ docker compose exec db pg_dump -U garage garage > garage-backup.sql
 Managed database: use your provider's backups, or `pg_dump "$DATABASE_URL" > garage-backup.sql`.
 Back up `data/uploads/` alongside it.
 
-## Develop without Docker
-
-Both packages are TypeScript (strict). The API compiles to `api/dist/` for production and runs
-straight from source with `tsx` in development; the web app is type-checked, then bundled by Vite.
-
-```sh
-# terminal 1: API with reload on save (needs a Postgres you can reach)
-cd api && npm install
-DATABASE_URL=postgres://garage:garage-local@localhost:5432/garage DATABASE_SSL=disable npm run dev
-
-# terminal 2: front end with hot reload, proxied to the API on :3000
-cd web && npm install && npm run dev
-```
-
-With the local database container running (`docker compose up -d db`), it is reachable on
-`localhost:5432`.
-
-| Command (in `api/` or `web/`) | What it does |
-|---|---|
-| `npm run typecheck` | Type-check without building |
-| `npm run build` | API: compile to `dist/`. Web: type-check, then build to `dist/` |
-| `npm run format` | Format with Prettier (4-space indents; settings in `.prettierrc.json` at the root) |
-
-`.editorconfig` at the root sets 4-space indents for editors that support it (YAML and Markdown
-stay at 2).
-
 ## API
 
-JSON in and out. Errors look like `{ "error": "...", "details": ["..."] }`. Anywhere an `:id` appears
-you can pass the record's UUID **or** its `key` (e.g. `/api/parts/injen-intake`,
-`/api/containers/box-engine`).
+The API documents itself with OpenAPI. Open the Swagger UI at **`/api/docs/`** on any running
+copy of the app:
 
-| Method | Path | Purpose |
-|---|---|---|
-| GET | `/api/health` | Health check (also checks the database) |
-| GET | `/api/config` | Whether a key is required; allowed statuses, task phases and container icons |
-| POST | `/api/auth/check` | `{ ok: true }` if the presented key is valid |
-| GET | `/api/summary` | Counts and value totals for the header |
-| GET | `/api/tags` | Tags in use, with counts |
-| GET | `/api/parts` | List parts. Filters: `status` (repeat or comma-separate), `tag` (any of; `Other cars` = fits isn't RSX; `Phase N` = linked to a task in that phase), `fits`, `container` (id, key or `none`; a top-level container includes its sub-containers), `q` (text search) |
-| POST | `/api/parts` | Create. JSON, or multipart with `photos` files |
-| GET / PATCH / DELETE | `/api/parts/:id` | Read, update, delete |
-| POST | `/api/parts/:id/toss` | Move to Tossed with its photos. Body `{ reason?, tossedOn? }` |
-| GET / POST | `/api/containers` | List (each with its parts) / create |
-| GET / PATCH / DELETE | `/api/containers/:id` | Deleting a sub-container moves its parts up to the parent; deleting a top-level container leaves its parts unassigned and its sub-containers become top-level |
-| GET / POST | `/api/tossed` | List / create |
-| GET / PATCH / DELETE | `/api/tossed/:id` | |
-| POST | `/api/{parts,containers,tossed}/:id/photos` | Add photos (multipart, field `photos`) |
-| PUT | `/api/{parts,containers,tossed}/:id/photos/order` | `{ "ids": [...] }`; the first is the main photo |
-| DELETE | `/api/photos/:photoId` | Delete one photo; returns the updated record |
-| GET / POST | `/api/tasks` | List / create |
-| GET / PATCH / DELETE | `/api/tasks/:id` | Read (with its parts), update, delete |
-| GET / POST | `/api/notes` | Observation notes: `{ title, items: [...] }` |
-| GET / PATCH / DELETE | `/api/notes/:id` | |
+- local: http://localhost:8080/api/docs/
+- Azure: `https://<app URL printed by bin/deploy>/api/docs/`
 
-Fields:
+The raw spec is at `/api/openapi.json`. Both stay open even when an access key is required; use
+**Authorize** in the Swagger UI to enter the key and try out changes.
 
-- **Part:** `label`, `partNumber`, `fits`, `status` (`Verified` / `Unverified` / `Unknown`),
-  `tags` (array, or comma-separated string in multipart), `valueLow`, `valueHigh`, `notes`,
-  `containerId` (UUID or key, `null` to clear), `key`.
-  "For sale", "Spare" and "Potential sale" are just tags. Responses also include `container`
-  (with `icon` and its top-level parent as `top`), `tasks` and `phaseTags`.
-- **Container:** `name`, `location`, `notes`, `key`, `parentId` (UUID or key of a top-level
-  container, `null` for top-level; one level of nesting), `icon` (`trim`, `engine`, `electrical`,
-  `other`, `askcody`, `none`, `hardware`, `box`), `sortOrder`.
-- **Tossed:** `label`, `partNumber`, `reason`, `tossedOn` (`YYYY-MM-DD`), `key`.
-- **Task:** `title`, `phase` (`1`–`4`), `notes` (the description), `done`, `partIds` (array of part
-  UUIDs or keys; replaces the task's linked parts).
-- **Note:** `title`, `items` (array of strings), `key`.
-
-Example: tag a part for sale with a value range.
-
-```sh
-curl -X PATCH https://your-host/api/parts/rsx-spoiler-black \
-  -H "Authorization: Bearer $API_KEY" -H "content-type: application/json" \
-  -d '{"tags":["RSX OEM","For sale"],"valueLow":75,"valueHigh":150}'
-```
+The docs are written as `@openapi` annotations in the API code: one above each route in
+`api/src/routes.ts`, with the shared schemas in `api/src/schemas.ts`. `npm run lint:openapi`
+(in `api/`) checks that the spec is valid and that every route is documented.
 
 ## Project layout
 
@@ -288,11 +213,14 @@ bin/
 api/
   docker/            Dockerfile, .dockerignore, entrypoint
   migrations/        SQL schema, applied in order on startup
+  scripts/           lint-openapi.ts (npm run lint:openapi)
   seed/              starter data (seed.json) and photos
   src/
     index.ts         server startup
     config.ts        environment variables (database, key, uploads)
-    routes.ts        HTTP endpoints
+    routes.ts        HTTP endpoints, each with its @openapi annotation
+    schemas.ts       OpenAPI component schemas
+    openapi.ts       builds the spec; serves /api/openapi.json and /api/docs/
     types.ts         database rows, API responses and validated inputs
     services/        parts, containers, tossed, tasks, notes, summary
     lib/             validation, auth, photo processing, errors
