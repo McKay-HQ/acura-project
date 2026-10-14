@@ -137,6 +137,13 @@ It prints the app's URL and, the first time, a new access key for making changes
 first start creates the tables and imports the starter inventory and photos, which takes about a
 minute; follow it with `az containerapp logs show -n acura -g acura-project --container api --follow`.
 
+**Custom domain** (e.g. `acura.mckayhq.com`): at your DNS host add a CNAME from the subdomain to
+the app's address and a TXT record `asuid.<subdomain>` holding the app's verification ID
+(`az containerapp show -n acura -g acura-project --query properties.customDomainVerificationId -o tsv`),
+then run `az containerapp hostname add` and `az containerapp hostname bind ... --environment acura-env
+--validation-method CNAME`, which also issues a free, auto-renewing certificate. `bin/deploy` keeps
+custom domains that are already bound.
+
 The app scales to zero when idle, so the first visit after a quiet spell takes a few seconds.
 
 **Shipping changes:**

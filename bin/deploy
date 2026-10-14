@@ -49,6 +49,7 @@ if [ "$PULL" = 1 ]; then
 fi
 
 command -v envsubst >/dev/null || { echo "envsubst is missing: sudo apt install -y gettext-base" >&2; exit 1; }
+command -v jq >/dev/null || { echo "jq is missing: sudo apt install -y jq" >&2; exit 1; }
 
 LOCATION=${LOCATION:-centralus}
 RG=${RG:-acura-project}
@@ -82,6 +83,12 @@ if [ -z "${PG_PASSWORD:-}" ]; then
     read -rsp "Database password for $PG_ADMIN: " PG_PASSWORD
     echo
 fi
+# Keep custom domains (and their certificates) that are already bound to the app.
+CUSTOM_DOMAINS='[]'
+if [ "$EXISTS" = 1 ]; then
+    CUSTOM_DOMAINS=$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.customDomains -o json | jq -c '. // []')
+fi
+CUSTOM_DOMAINS=${CUSTOM_DOMAINS:-[]}
 NEW_KEY=0
 if [ -z "${API_KEY:-}" ] && [ "$EXISTS" = 1 ]; then
     API_KEY=$(secret api-key)
@@ -110,8 +117,8 @@ fi
 # Fill in the spec template. It ends up holding secrets, so it goes in a private temp
 # file that is always removed. Only the variables listed here are substituted.
 SPEC_TEMPLATE="$ROOT/bin/deploy.d/containerapp.yaml"
-SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${REVISION_SUFFIX} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
-export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG REVISION_SUFFIX PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
+SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${REVISION_SUFFIX} ${CUSTOM_DOMAINS} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
+export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG REVISION_SUFFIX CUSTOM_DOMAINS PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077
 SPEC=$(mktemp --suffix=.yaml)
 trap 'rm -f "$SPEC"' EXIT

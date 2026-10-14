@@ -19,6 +19,9 @@ properties:
       targetPort: 80
       transport: auto
       allowInsecure: false
+      # Custom domains already bound to the app (e.g. acura.mckayhq.com), carried over by
+      # bin/deploy so a redeploy doesn't drop them. Add new ones with `az containerapp hostname`.
+      customDomains: ${CUSTOM_DOMAINS}
     registries:
       - server: ${ACR}.azurecr.io
         identity: ${IDENTITY_ID}
