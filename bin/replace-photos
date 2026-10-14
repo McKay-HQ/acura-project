@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# Replaces a record's photos on the deployed app: uploads the new files, then deletes the
+# photos the record had before. Works for parts, containers and tossed items.
+#
+# Usage:
+#   ./bin/replace-photos [-h] <parts|containers|tossed> <key-or-id> <photo>...
+#
+# The app's URL and access key are read from Azure (az must be signed in); set APP_URL
+# and/or API_KEY to skip that, e.g. APP_URL=http://localhost:8080 for a local copy.
+# Example:
+#   ./bin/replace-photos containers box-hw hardware.jpg hardware-ask-cody.jpg
+set -euo pipefail
+
+usage() { sed -n '/^# Usage:/,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
+
+while getopts ":h" opt; do
+    case $opt in
+        h) usage; exit 0 ;;
+        *) echo "Unknown option -$OPTARG" >&2; usage >&2; exit 2 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ $# -lt 3 ]; then
+    usage >&2
+    exit 2
+fi
+KIND=$1
+REF=$2
+shift 2
+case $KIND in
+    parts | containers | tossed) ;;
+    *) echo "First argument must be parts, containers or tossed (got '$KIND')." >&2; exit 2 ;;
+esac
+for f in "$@"; do
+    [ -f "$f" ] || { echo "No such file: $f" >&2; exit 1; }
+done
+command -v jq >/dev/null || { echo "jq is missing: sudo apt install -y jq" >&2; exit 1; }
+
+RG=${RG:-acura-project}
+APP=${APP:-acura}
+if [ -z "${APP_URL:-}" ]; then
+    APP_URL="https://$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)"
+fi
+if [ -z "${API_KEY:-}" ]; then
+    API_KEY=$(az containerapp secret list -n "$APP" -g "$RG" --show-values --query "[?name=='api-key'].value | [0]" -o tsv)
+fi
+AUTH=(-H "Authorization: Bearer $API_KEY")
+BASE="$APP_URL/api/$KIND/$REF"
+
+echo "Looking up $KIND/$REF on $APP_URL..."
+OLD=$(curl -fsS "${AUTH[@]}" "$BASE" | jq -r '.photos[].id')
+
+echo "Uploading $# photo(s)..."
+FORM=()
+for f in "$@"; do FORM+=(-F "photos=@$f"); done
+curl -fsS "${AUTH[@]}" "${FORM[@]}" "$BASE/photos" -o /dev/null
+
+if [ -n "$OLD" ]; then
+    echo "Deleting $(echo "$OLD" | wc -l) old photo(s)..."
+    for id in $OLD; do
+        curl -fsS -X DELETE "${AUTH[@]}" "$APP_URL/api/photos/$id" -o /dev/null
+    done
+fi
+
+echo "Done. $KIND/$REF now has:"
+curl -fsS "${AUTH[@]}" "$BASE" | jq -r '.photos[] | "  \(.url)"'

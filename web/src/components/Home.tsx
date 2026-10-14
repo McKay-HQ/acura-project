@@ -328,7 +328,7 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
                         <figure>
                             <img
                                 src="/home/haul-sorted.jpg"
-                                alt="The whole haul sorted into four clear bins and the black Husky hardware bin"
+                                alt="The whole haul sorted into labeled bins: Other, Electrical, Body/Interior/Trim and Engine, each with its small inner bin, plus the Hardware - Ask Cody bin and the Hardware tray"
                                 loading="lazy"
                             />
                             <figcaption className="fine">The full haul, sorted.</figcaption>

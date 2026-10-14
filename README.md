@@ -208,6 +208,7 @@ docker-compose.localdb.yml   adds the local Postgres for dev/testing
 bin/
   build                   build both images and push them to the registry (-p: git pull first)
   deploy                  create or update the Azure container app
+  replace-photos          swap a part's, container's or tossed item's photos on the live app
   deploy.d/
     containerapp.yaml     Azure Container Apps spec template
 api/
