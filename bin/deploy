@@ -1,30 +1,8 @@
 #!/usr/bin/env bash
-# Creates (or updates) the RSX Type-S Project container app in Azure Container Apps.
-#
-# One app runs both containers: nginx ("web", public on port 80) and the API ("api",
-# reached by nginx at localhost:3000). Photos live on the Azure Files share "uploads"
-# that is attached to the Container Apps environment.
-#
-# Expects these to exist already (see README, "Deploy to Azure Container Apps"):
-#   resource group, container registry with the acura-api and acura-web images,
-#   PostgreSQL flexible server, Container Apps environment with storage "uploads".
-#
-# Usage:
-#   ./bin/deploy [-b] [-p] [-h]
-#     -b  run ./bin/build first (build and push both images)
-#     -p  git pull first
-#     -h  show this help
-#
-# First deploy: PG_PASSWORD='...' ./bin/deploy (it prompts if unset) creates the app and
-# prints a new access key. Later deploys reuse the database password and access key stored
-# in the app's secrets, so ./bin/deploy -bp is all it takes to ship changes. Set
-# PG_PASSWORD or API_KEY to replace either one.
-#
-# Every run creates a new revision, so Azure pulls the current images even when the tag
-# (default "latest") hasn't changed.
-set -euo pipefail
-
-usage() { sed -n '/^# Usage:/,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
+# Creates or updates the container app in Azure Container Apps from bin/deploy.d/containerapp.yaml.
+# Help: ./bin/deploy -h (docs/deploy.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+source "$ROOT/lib/azure.sh"
 
 BUILD=0
 PULL=0
@@ -33,34 +11,18 @@ while getopts ":bph" opt; do
     case $opt in
         b) BUILD=1; ARGS+=(-b) ;;
         p) PULL=1 ;;
-        h) usage; exit 0 ;;
-        *) echo "Unknown option -$OPTARG" >&2; usage >&2; exit 2 ;;
+        h) show_help; exit 0 ;;
+        *) bad_option "$OPTARG" ;;
     esac
 done
 shift $((OPTIND - 1))
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+[ "$PULL" = 1 ] && pull_and_restart "${ARGS[@]}"
 
-if [ "$PULL" = 1 ]; then
-    echo "Pulling the latest code..."
-    git -C "$ROOT" pull --ff-only
-    # Restart so the rest of the run uses the freshly pulled version of this script.
-    exec "$0" "${ARGS[@]}"
-fi
+need az "see docs/azure.md"
+need envsubst "sudo apt install -y gettext-base"
+need jq "sudo apt install -y jq"
 
-command -v envsubst >/dev/null || { echo "envsubst is missing: sudo apt install -y gettext-base" >&2; exit 1; }
-command -v jq >/dev/null || { echo "jq is missing: sudo apt install -y jq" >&2; exit 1; }
-
-LOCATION=${LOCATION:-centralus}
-RG=${RG:-acura-project}
-ACR=${ACR:-acuraproject}
-PG_SERVER=${PG_SERVER:-acura-project-db}
-PG_ADMIN=${PG_ADMIN:-acura_db_admin}
-PG_DATABASE=${PG_DATABASE:-postgres}
-ENV=${ENV:-acura-env}
-APP=${APP:-acura}
-IDENTITY=${IDENTITY:-acura-pull}
-IMAGE_TAG=${IMAGE_TAG:-latest}
 REVISION_SUFFIX="r$(date +%y%m%d%H%M%S)"
 
 if [ "$BUILD" = 1 ]; then
@@ -69,34 +31,27 @@ if [ "$BUILD" = 1 ]; then
 fi
 
 EXISTS=0
-if az containerapp show -n "$APP" -g "$RG" -o none 2>/dev/null; then
-    EXISTS=1
-fi
-secret() {
-    az containerapp secret list -n "$APP" -g "$RG" --show-values --query "[?name=='$1'].value | [0]" -o tsv
-}
+app_exists && EXISTS=1
 
+# Reuse what the app already has unless told otherwise: database password, access key, and
+# custom domains (with their certificates).
 if [ -z "${PG_PASSWORD:-}" ] && [ "$EXISTS" = 1 ]; then
-    PG_PASSWORD=$(secret pg-password)
+    PG_PASSWORD=$(app_secret pg-password)
 fi
 if [ -z "${PG_PASSWORD:-}" ]; then
     read -rsp "Database password for $PG_ADMIN: " PG_PASSWORD
     echo
 fi
-# Keep custom domains (and their certificates) that are already bound to the app.
-CUSTOM_DOMAINS='[]'
-if [ "$EXISTS" = 1 ]; then
-    CUSTOM_DOMAINS=$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.customDomains -o json | jq -c '. // []')
-fi
-CUSTOM_DOMAINS=${CUSTOM_DOMAINS:-[]}
 NEW_KEY=0
 if [ -z "${API_KEY:-}" ] && [ "$EXISTS" = 1 ]; then
-    API_KEY=$(secret api-key)
+    API_KEY=$(app_secret api-key)
 fi
 if [ -z "${API_KEY:-}" ]; then
     API_KEY=$(openssl rand -hex 24)
     NEW_KEY=1
 fi
+CUSTOM_DOMAINS='[]'
+[ "$EXISTS" = 1 ] && CUSTOM_DOMAINS=$(app_custom_domains)
 
 echo "Checking the environment and its photo storage..."
 ENV_ID=$(az containerapp env show -n "$ENV" -g "$RG" --query id -o tsv)
@@ -114,15 +69,14 @@ if [ -z "$(az role assignment list --assignee "$PRINCIPAL_ID" --scope "$ACR_ID" 
     sleep 60
 fi
 
-# Fill in the spec template. It ends up holding secrets, so it goes in a private temp
-# file that is always removed. Only the variables listed here are substituted.
-SPEC_TEMPLATE="$ROOT/bin/deploy.d/containerapp.yaml"
+# Fill in the spec template. It ends up holding secrets, so it goes in a private temp file
+# that is always removed. Only the variables listed here are substituted.
 SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${REVISION_SUFFIX} ${CUSTOM_DOMAINS} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
 export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG REVISION_SUFFIX CUSTOM_DOMAINS PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077
 SPEC=$(mktemp --suffix=.yaml)
 trap 'rm -f "$SPEC"' EXIT
-envsubst "$SPEC_VARS" < "$SPEC_TEMPLATE" > "$SPEC"
+envsubst "$SPEC_VARS" < "$ROOT/bin/deploy.d/containerapp.yaml" > "$SPEC"
 
 if [ "$EXISTS" = 1 ]; then
     echo "Updating container app $APP (revision $REVISION_SUFFIX)..."
@@ -132,11 +86,10 @@ else
     az containerapp create -n "$APP" -g "$RG" --yaml "$SPEC" -o none
 fi
 
-URL=$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)
 echo
-echo "App: https://$URL"
+echo "App: $(app_url)"
 if [ "$EXISTS" = 0 ]; then
-    echo "The first start creates the tables and loads the starter inventory and photos (about a minute)."
+    echo "The first start creates the tables and loads the starter inventory and photos (a few minutes)."
 fi
 echo "Watch it with: az containerapp logs show -n $APP -g $RG --container api --follow"
 if [ "$NEW_KEY" = 1 ]; then

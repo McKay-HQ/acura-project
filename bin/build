@@ -1,44 +1,28 @@
 #!/usr/bin/env bash
 # Builds the api and web images and pushes them to the Azure Container Registry.
-#
-# Usage:
-#   ./bin/build [-p] [-h]
-#     -p  git pull first
-#     -h  show this help
-#
-# Pushes acuraproject.azurecr.io/acura-{api,web}:latest. Set IMAGE_TAG for another tag or
-# ACR for another registry. Needs az (signed in with `az login`) and docker with compose.
-# ./bin/deploy -b runs this and then rolls the new images out.
-set -euo pipefail
-
-usage() { sed -n '/^# Usage:/,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
+# Help: ./bin/build -h (docs/build.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+source "$ROOT/lib/azure.sh"
 
 PULL=0
-ARGS=()
 while getopts ":ph" opt; do
     case $opt in
         p) PULL=1 ;;
-        h) usage; exit 0 ;;
-        *) echo "Unknown option -$OPTARG" >&2; usage >&2; exit 2 ;;
+        h) show_help; exit 0 ;;
+        *) bad_option "$OPTARG" ;;
     esac
 done
 shift $((OPTIND - 1))
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+[ "$PULL" = 1 ] && pull_and_restart
 
-if [ "$PULL" = 1 ]; then
-    echo "Pulling the latest code..."
-    git -C "$ROOT" pull --ff-only
-    # Restart so the rest of the run uses the freshly pulled version of this script.
-    exec "$0" "${ARGS[@]}"
-fi
-
+need az "see docs/azure.md"
+need docker "Docker Desktop with WSL integration, or Docker Engine with the compose plugin"
 cd "$ROOT"
 
-ACR=${ACR:-acuraproject}
 # Exported so they win over .env: the registry we log in to is the one we push to.
 export IMAGE_REGISTRY="$ACR.azurecr.io"
-export IMAGE_TAG=${IMAGE_TAG:-latest}
+export IMAGE_TAG
 
 echo "Signing in to $IMAGE_REGISTRY..."
 az acr login -n "$ACR"
