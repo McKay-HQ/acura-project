@@ -257,7 +257,7 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
             <figure className="hero" style={{ margin: 0 }}>
                 <img
                     src="/home/hero.jpg"
-                    alt="The 2002 Acura RSX Type-S: black front end and hood, silver doors and body, factory 5-spoke wheels"
+                    alt="The 2002 Acura RSX Type-S from the front left: black front end, hood and fender, silver body, factory 5-spoke wheels"
                 />
                 <figcaption className="cap">
                     <h2>2002 Acura RSX Type-S</h2>
@@ -277,11 +277,14 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
                         <dt>Paid</dt>
                         <dd>$2,600</dd>
                     </dl>
+                    <a className="ibtn" href="#car" title="Open the car" aria-label="Open the car">
+                        <Icon.forward />
+                    </a>
                     <p>
-                        Three-color body: black front clip and hood, silver body, dark blue rear bumper. The previous
-                        owner lowered it, deleted the ABS and did the work listed below. Missing pieces when bought:
-                        intake, washer reservoir, radio, driver door panel and the hatch emblem. Front turn signals
-                        don't work.
+                        Three-color body: black front clip and hood, silver body, dark blue rear bumper, passenger door
+                        and passenger mirror. The previous owner lowered it, deleted the ABS and did the work listed
+                        below. Missing pieces when bought: intake, washer reservoir, radio, driver door panel and the
+                        hatch emblem. Front turn signals don't work.
                     </p>
                 </div>
                 <div className="panel">

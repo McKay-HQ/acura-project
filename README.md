@@ -3,6 +3,7 @@
 A self-hosted tracker for the 2002 Acura RSX Type-S project: the car, the parts haul, the containers they're stored in, tossed parts, and the task list, all with photos.
 
 - **Home:** the car, the Phase 1 list, charts of the haul by container, mods and upgrade ideas.
+- **The Car:** condition notes and photos of the exterior, engine bay and interior (`web/src/car.ts`, photos in `web/public/car/`).
 - **Parts:** Parts (cards or table, filters, a page per part), Containers and Tossed.
 - **Tasks:** grouped into four phases, each with a page listing its parts.
 

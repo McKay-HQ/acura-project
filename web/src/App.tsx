@@ -12,6 +12,8 @@ import { api, keyStore, authEvents, errorMessage, ApiError, PreconditionFailedEr
 import { Icon } from './components/Icons';
 import Modal from './components/Modal';
 import Home from './components/Home';
+import CarView from './components/CarView';
+import ThemeToggle from './components/ThemeToggle';
 import PartsView, { type Layout } from './components/PartsView';
 import { PartDetail, ContainerDetail, TaskDetail } from './components/Details';
 import { ContainersView, TossedView } from './components/OtherViews';
@@ -50,19 +52,20 @@ const store = {
 };
 
 // Main sections: Home, Parts (Parts / Containers / Tossed), Tasks.
-type ListView = 'home' | 'parts' | 'containers' | 'tossed' | 'tasks';
+type ListView = 'home' | 'car' | 'parts' | 'containers' | 'tossed' | 'tasks';
 type DetailView = 'part' | 'container' | 'task';
 type View = ListView | DetailView;
-type Section = 'home' | 'parts' | 'tasks';
+type Section = 'home' | 'car' | 'parts' | 'tasks';
 type Sub = 'parts' | 'containers' | 'tossed';
 /** A list page, or a record's page with the id or key from the URL. */
 type Route = { view: ListView; id?: undefined } | { view: DetailView; id: string };
 
-const VIEWS: readonly ListView[] = ['home', 'parts', 'containers', 'tossed', 'tasks'];
+const VIEWS: readonly ListView[] = ['home', 'car', 'parts', 'containers', 'tossed', 'tasks'];
 const isListView = (v: string): v is ListView => VIEWS.some((x) => x === v);
 const ALIASES: Record<string, ListView> = { todo: 'tasks', sale: 'parts', boxes: 'containers' };
 const SECTION: Record<View, Section> = {
     home: 'home',
+    car: 'car',
     parts: 'parts',
     part: 'parts',
     containers: 'parts',
@@ -264,6 +267,7 @@ export default function App() {
             part: findRef(parts, route.id)?.label,
             container: findRef(containers, route.id)?.name,
             task: findRef(tasks, route.id)?.title,
+            car: 'The Car',
         };
         document.title = titles[route.view] ? `${titles[route.view]} · RSX Type-S Project` : 'RSX Type-S Project';
     }, [route, parts, containers, tasks]);
@@ -386,6 +390,8 @@ export default function App() {
         page = <div className="empty">Loading…</div>;
     } else if (route.view === 'home') {
         page = <Home parts={parts} containers={containers} tasks={tasks} />;
+    } else if (route.view === 'car') {
+        page = <CarView tasks={tasks} />;
     } else if (route.view === 'parts') {
         page = (
             <PartsView
@@ -447,37 +453,46 @@ export default function App() {
             <div className="wrap">
                 <header>
                     <div>
-                        <h1>RSX Type-S Project</h1>
+                        <a className="brand" href="#home" aria-label="RSX Type-S Project, home">
+                            <img src="/icon.jpg" alt="" />
+                            <h1>RSX Type-S Project</h1>
+                        </a>
                         <p className="sub">2002 Acura RSX Type-S: the car, its parts, and the tasks</p>
                     </div>
-                    {cfg?.keyRequiredForChanges &&
-                        (unlocked ? (
-                            <button
-                                className="chip lockbtn"
-                                title="Lock editing in this browser"
-                                aria-label="Lock editing"
-                                onClick={() => {
-                                    keyStore.set('');
-                                    setUnlocked(false);
-                                }}
-                            >
-                                <Icon.unlock />
-                            </button>
-                        ) : (
-                            <button
-                                className="chip lockbtn"
-                                title="Unlock editing"
-                                aria-label="Unlock editing"
-                                onClick={() => setModal({ type: 'key' })}
-                            >
-                                <Icon.lock />
-                            </button>
-                        ))}
+                    <div className="hdrtools">
+                        {cfg?.keyRequiredForChanges &&
+                            (unlocked ? (
+                                <button
+                                    className="chip lockbtn"
+                                    title="Lock editing in this browser"
+                                    aria-label="Lock editing"
+                                    onClick={() => {
+                                        keyStore.set('');
+                                        setUnlocked(false);
+                                    }}
+                                >
+                                    <Icon.unlock />
+                                </button>
+                            ) : (
+                                <button
+                                    className="chip lockbtn"
+                                    title="Unlock editing"
+                                    aria-label="Unlock editing"
+                                    onClick={() => setModal({ type: 'key' })}
+                                >
+                                    <Icon.lock />
+                                </button>
+                            ))}
+                        <ThemeToggle />
+                    </div>
                 </header>
 
                 <nav className="tabs" role="tablist">
                     <button role="tab" aria-selected={section === 'home'} onClick={() => go('home')}>
                         Home
+                    </button>
+                    <button role="tab" aria-selected={section === 'car'} onClick={() => go('car')}>
+                        The Car
                     </button>
                     <button role="tab" aria-selected={section === 'parts'} onClick={() => go('parts')}>
                         Parts
