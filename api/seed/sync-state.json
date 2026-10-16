@@ -2018,12 +2018,12 @@
   "basic-service": {
    "base": {
     "done": false,
-    "notes": "Unknown maintenance history at 173K. Change the oil and filter, inspect the serpentine belt for cracks or glazing, and check the coolant hoses are soft and tight. Plan spark plugs and a valve clearance check if there's no record of them.",
+    "notes": "Unknown maintenance history at 173K. Change the oil and filter, inspect the serpentine belt for cracks or glazing, and check the coolant hoses are soft and tight. Plan spark plugs and a valve clearance check if there's no record of them. From the engine bay photos: (1) there's oily grime along the back of the head where the valve cover meets it, above the header; wipe it clean and recheck after a run to see if the valve cover gasket is seeping. (2) Clean the battery terminals and have the battery load-tested (NAPA Legend, date sticker 4/23); the paint on the body next to the battery looks bubbled and crusty, possibly from battery acid (a guess), so clean it and treat any rust. (3) A rusty ring terminal on top of the transmission near the shift cables looks like a ground strap end; check it's bolted down tight, since a loose ground causes odd electrical faults.",
     "parts": [],
     "phase": 2,
     "title": "Do a baseline service"
    },
-   "version": 1
+   "version": 2
   },
   "check-ac": {
    "base": {
@@ -2087,6 +2087,16 @@
     "parts": [],
     "phase": 1,
     "title": "Check tires and wheels"
+   },
+   "version": 1
+  },
+  "check-water-leaks": {
+   "base": {
+    "done": false,
+    "notes": "The dash support beam, steering column bracket and pedal assembly have surface rust. That suggests water got into the cabin at some point (a guess). Lift the carpet edges in both footwells and feel the padding underneath for damp, check the door and windshield seals, and clear the sunroof drains (the car has a sunroof, and blocked drains are a common cause of wet footwells). Ask Cody whether the rust on the beam and brackets needs treating.",
+    "parts": [],
+    "phase": 2,
+    "title": "Check for water leaks into the cabin"
    },
    "version": 1
   },
@@ -2223,12 +2233,12 @@
   "paint-match-front": {
    "base": {
     "done": false,
-    "notes": "The black hood, fenders and bumper and the dark blue rear bumper don't match the silver body. Painting them silver is the biggest boost to resale value and appearance. The silver rear spoiler's clear coat is peeling; it needs sanding and new 2K clear (not polishing). The center Acura emblem on the hatch is also missing.",
+    "notes": "The black hood, fenders and bumper, and the dark blue rear bumper, passenger door and passenger mirror, don't match the silver body. Painting them silver is the biggest boost to resale value and appearance. The hood's clear coat is peeling with faded purple patches, so it needs sanding down before paint. The passenger-side rear quarter panel has a large patch of bare body filler just behind the door; have a body shop check the repair under it before painting. The silver rear spoiler's clear coat is peeling; it needs sanding and new 2K clear (not polishing). The center Acura emblem on the hatch is also missing.",
     "parts": [],
     "phase": 3,
     "title": "Body paint"
    },
-   "version": 1
+   "version": 2
   },
   "refinish-interior": {
    "base": {
@@ -2243,12 +2253,12 @@
   "repair-seat-bolster": {
    "base": {
     "done": false,
-    "notes": "The passenger seat side bolster is torn with foam showing in two places, and the passenger door armrest is worn and dirty. Options: an upholstery shop repair, a used seat cover, or a replacement bolster panel.",
+    "notes": "Both front seat bottoms are torn through to the foam: the driver seat along its outer side bolster, the passenger seat across the cushion in two places. The passenger door armrest is also worn and dirty. Options: an upholstery shop repair, used seat covers, or replacement covers or bolster panels. The seats have side airbags in the backrests; ask Cody or the upholstery shop before removing the seats or working on the backrest covers.",
     "parts": [],
     "phase": 3,
-    "title": "Repair the passenger seat bolster"
+    "title": "Repair the front seats"
    },
-   "version": 1
+   "version": 2
   },
   "scan-codes": {
    "base": {
