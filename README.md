@@ -33,6 +33,14 @@ Pulls the latest code, then builds both images and pushes them to the Azure Cont
 
 Pulls, builds and pushes the images, then rolls out a new revision of the Azure container app. First-time Azure setup is in [docs/azure.md](docs/azure.md); options in [docs/deploy.md](docs/deploy.md).
 
+## Sync the catalog
+
+```sh
+./bin/sync -p
+```
+
+Pulls the latest catalog and applies only what differs (names, notes, containers, photos) to the live app through its API, with no rebuild or redeploy. Add `-n` to preview. More in [docs/sync.md](docs/sync.md).
+
 ## API
 
 Interactive docs (Swagger UI) at **`/api/docs/`** on any running copy, e.g. http://localhost:8080/api/docs/; the spec is at `/api/openapi.json`. The docs come from `@openapi` annotations in `api/src/routes.ts` and `api/src/schemas.ts`.
@@ -52,13 +60,14 @@ bin/                         commands (see docs/)
   deploy                     create or update the Azure container app
   deploy.d/containerapp.yaml Azure Container Apps spec template
   replace-photos             swap a record's photos on the live app
+  sync                       make the live app match the catalog (sync.d/sync.py)
 lib/                         shared bash for bin/ (common.sh, azure.sh)
 docs/                        command pages, azure.md, docker.md
 api/
   docker/                    Dockerfile, .dockerignore, entrypoint
   migrations/                SQL schema, applied in order on startup
   scripts/                   lint-openapi.ts (npm run lint:openapi)
-  seed/                      starter data (seed.json) and photos
+  seed/                      the catalog: starter data (seed.json), photos, history/
   src/                       routes.ts, schemas.ts, openapi.ts, services/, lib/, ...
 web/
   docker/                    Dockerfile, .dockerignore, nginx config template

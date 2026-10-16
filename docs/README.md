@@ -6,6 +6,7 @@
 | [azure.md](azure.md) | Setting up Azure once, deploying, custom domain, logs |
 | [build.md](build.md) | `bin/build`: build and push the images |
 | [deploy.md](deploy.md) | `bin/deploy`: create or update the Azure container app |
+| [sync.md](sync.md) | `bin/sync`: make the live app match the catalog (data and photos) |
 | [replace-photos.md](replace-photos.md) | `bin/replace-photos`: swap a record's photos on the live app |
 
 The API documents itself: open `/api/docs/` on any running copy of the app.

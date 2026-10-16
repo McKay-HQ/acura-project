@@ -39,8 +39,8 @@ export async function seedIfEmpty(): Promise<void> {
             const p = await processPhoto(buf);
             written.push({ filename: p.filename, thumb_filename: p.thumbFilename });
             await c.query(
-                `INSERT INTO photos (${col}, filename, thumb_filename, width, height, sort_order) VALUES ($1,$2,$3,$4,$5,$6)`,
-                [id, p.filename, p.thumbFilename, p.width, p.height, order++],
+                `INSERT INTO photos (${col}, filename, thumb_filename, width, height, sort_order, source) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+                [id, p.filename, p.thumbFilename, p.width, p.height, order++, path.basename(name)],
             );
         }
     }

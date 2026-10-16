@@ -19,6 +19,7 @@ export interface PhotoJson {
     thumb: string;
     width: number | null;
     height: number | null;
+    source: string | null;
 }
 
 /** Filenames of a photo on disk, as stored in the photos table. */
@@ -33,6 +34,8 @@ export interface Photo {
     thumbUrl: string;
     width: number | null;
     height: number | null;
+    /** The uploaded file's name; for catalog photos, "<catalog id>.jpg". */
+    source: string | null;
 }
 
 export interface ProcessedPhoto {

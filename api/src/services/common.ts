@@ -25,7 +25,7 @@ const LABEL: Readonly<Record<KeyedTable, string>> = {
 /** SQL expression returning a JSON array of a record's photos, in display order. */
 export const photosJson = (table: PhotoTable, alias: string): string => `(
   SELECT COALESCE(json_agg(json_build_object('id', p.id, 'filename', p.filename, 'thumb', p.thumb_filename,
-           'width', p.width, 'height', p.height) ORDER BY p.sort_order, p.created_at), '[]')
+           'width', p.width, 'height', p.height, 'source', p.source) ORDER BY p.sort_order, p.created_at), '[]')
   FROM photos p WHERE p.${OWNER[table]} = ${alias}.id) AS photos`;
 
 export const mapPhotos = (rows: PhotoJson[] = []): Photo[] =>
@@ -35,6 +35,7 @@ export const mapPhotos = (rows: PhotoJson[] = []): Photo[] =>
         thumbUrl: photoUrl(p.thumb),
         width: p.width,
         height: p.height,
+        source: p.source ?? null,
     }));
 
 /** Resolve a UUID or human-readable key to the record's UUID, or 404. */
@@ -80,6 +81,9 @@ export function assignments<T extends object>(
     return { sets, vals };
 }
 
+/** The name a photo is recorded under: the uploaded file's base name, or null if it has none. */
+const sourceName = (name: string | undefined): string | null => (name ? name.split(/[\\/]/).pop() || null : null);
+
 /** Process uploaded files and attach them to a record, after any existing photos. */
 export async function addPhotos(
     table: PhotoTable,
@@ -100,8 +104,9 @@ export async function addPhotos(
             const p = await processPhoto(f.buffer);
             written.push({ filename: p.filename, thumb_filename: p.thumbFilename });
             await c.query(
-                `INSERT INTO photos (${col}, filename, thumb_filename, width, height, sort_order) VALUES ($1,$2,$3,$4,$5,$6)`,
-                [id, p.filename, p.thumbFilename, p.width, p.height, order++],
+                `INSERT INTO photos (${col}, filename, thumb_filename, width, height, sort_order, source)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+                [id, p.filename, p.thumbFilename, p.width, p.height, order++, sourceName(f.originalname)],
             );
         }
     };

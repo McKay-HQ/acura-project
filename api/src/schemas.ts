@@ -44,7 +44,7 @@
  *   schemas:
  *     Photo:
  *       type: object
- *       required: [id, url, thumbUrl, width, height]
+ *       required: [id, url, thumbUrl, width, height, source]
  *       properties:
  *         id:
  *           type: string
@@ -63,6 +63,12 @@
  *         height:
  *           type: integer
  *           nullable: true
+ *         source:
+ *           type: string
+ *           nullable: true
+ *           description: >-
+ *             The uploaded file's name. Catalog photos are named after their catalog id (e.g.
+ *             `77dd58464b9a5e54c6bdc3f6f251c440.jpg`), which is how bin/sync recognizes them.
  *     PhotoUpload:
  *       type: object
  *       required: [photos]

@@ -57,13 +57,12 @@
    "key": "box-hw",
    "name": "Hardware",
    "location": "",
-   "notes": "Black Husky bin. Hardware is the gray tray of loose hardware; Ask Cody is the clear bin of bagged hardware.",
+   "notes": "Gray tray of loose hardware. The bagged hardware to review with Cody is in its own Ask Cody container.",
    "parent": null,
    "icon": "hardware",
    "order": 5,
    "photos": [
-    "8ad7bb9a329964c01231d312e00626f3.jpg",
-    "fffe2ed4cd54a2c7c9421d6160b651c7.jpg"
+    "8ad7bb9a329964c01231d312e00626f3.jpg"
    ],
    "createdAt": "2026-10-12T03:25:06-05:00"
   },
@@ -74,7 +73,7 @@
    "notes": "Too big for a bin, leaning against the garage wall: driver door panel and windshield side molding in front, with the front lip and rear spoiler behind the door panel.",
    "parent": null,
    "icon": "none",
-   "order": 6,
+   "order": 7,
    "photos": [
     "f3dba951f56c743acb6dbe59761eaeb9.jpg"
    ],
@@ -96,10 +95,12 @@
    "name": "Ask Cody",
    "location": "",
    "notes": "Hardware to review with Cody before reuse: chrome lug nuts (4), castle nuts (9), long black 10.9 bolts, short GA 10.9 bolts with washers (3), large hex plug with O-ring, suspension bushing hardware set, large fine-thread flange nuts (3), wheel studs (3) and 12-point flange bolts (7), split rubber bushing, exhaust-style springs with long bolts.",
-   "parent": "box-hw",
+   "parent": null,
    "icon": "askcody",
-   "order": 1,
-   "photos": [],
+   "order": 6,
+   "photos": [
+    "fffe2ed4cd54a2c7c9421d6160b651c7.jpg"
+   ],
    "createdAt": "2026-10-09T12:00:00-05:00"
   },
   {

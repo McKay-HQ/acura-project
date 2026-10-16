@@ -41,7 +41,7 @@ const midVal = (p: Pick<Part, 'valueLow' | 'valueHigh'>): number => {
 function haulSegments(parts: Part[], boxes: Container[]): Segment[] {
     const segs: Segment[] = [];
     topContainers(boxes).forEach((t, i) => {
-        const slot = Math.min(i, 5) + 1;
+        const slot = Math.min(i, 6) + 1;
         const add = (label: string, ps: Part[]) => {
             if (ps.length)
                 segs.push({

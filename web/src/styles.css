@@ -1523,6 +1523,9 @@ table.tbl {
 .s6 {
     --c: #008300;
 }
+.s7 {
+    --c: #6250d6;
+}
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) .s1 {
         --c: #3987e5;
@@ -1539,6 +1542,9 @@ table.tbl {
     :root:not([data-theme='light']) .s5 {
         --c: #d55181;
     }
+    :root:not([data-theme='light']) .s7 {
+        --c: #9085e9;
+    }
 }
 :root[data-theme='dark'] .s1 {
     --c: #3987e5;
@@ -1554,6 +1560,9 @@ table.tbl {
 }
 :root[data-theme='dark'] .s5 {
     --c: #d55181;
+}
+:root[data-theme='dark'] .s7 {
+    --c: #9085e9;
 }
 .pie .seg {
     fill: var(--c);

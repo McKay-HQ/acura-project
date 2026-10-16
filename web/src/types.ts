@@ -13,6 +13,7 @@ export interface Photo {
     thumbUrl: string;
     width: number | null;
     height: number | null;
+    source: string | null;
 }
 
 /** The container a part is in, as embedded on a part. */

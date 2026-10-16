@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Makes the live app match the catalog in api/seed/seed.json, through the app's API.
+# Help: ./bin/sync -h (docs/sync.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+source "$ROOT/lib/azure.sh"
+
+PULL=0
+DRY_RUN=0
+ARGS=()
+while getopts ":nph" opt; do
+    case $opt in
+        n) DRY_RUN=1; ARGS+=(-n) ;;
+        p) PULL=1 ;;
+        h) show_help; exit 0 ;;
+        *) bad_option "$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+[ "$PULL" = 1 ] && pull_and_restart "${ARGS[@]}"
+
+need python3 "sudo apt install -y python3"
+if [ -z "${APP_URL:-}" ] || [ -z "${API_KEY:-}" ]; then
+    need az "see docs/azure.md"
+fi
+APP_URL=${APP_URL:-$(app_url)}
+API_KEY=${API_KEY:-$(app_secret api-key)}
+
+APP_URL="$APP_URL" API_KEY="$API_KEY" ROOT="$ROOT" DRY_RUN="$DRY_RUN" exec python3 -I "$ROOT/bin/sync.d/sync.py"
