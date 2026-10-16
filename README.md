@@ -36,7 +36,7 @@ Pulls, builds and pushes the images, then rolls out a new revision of the Azure 
 ## Sync the catalog
 
 ```sh
-./bin/sync -p
+./bin/sync
 ```
 
 Two-way sync between the catalog and the live app: edits made on either side are copied to the other, edits to different fields are merged, and conflicting edits are reported, never overwritten. No rebuild or redeploy. More in [docs/sync.md](docs/sync.md).

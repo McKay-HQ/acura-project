@@ -6,8 +6,8 @@ The catalog (the RSX Type-S Project artifact on claude.ai) and the app (Azure) a
 artifact  ⇄ (Claude: tools/artifact)  ⇄  repo: api/seed/  ⇄ (you: bin/sync)  ⇄  app API
 ```
 
-- **Catalog → app:** Claude exports the artifact into `api/seed/` and pushes; you run `./bin/sync -p`.
-- **App → catalog:** you run `./bin/sync -p`; it pulls app changes into `api/seed/`, commits and pushes; Claude imports them into the artifact.
+- **Catalog → app:** Claude exports the artifact into `api/seed/` and pushes; you run `./bin/sync`.
+- **App → catalog:** you run `./bin/sync`; it pulls app changes into `api/seed/`, commits and pushes; Claude imports them into the artifact.
 
 ## Why not an off-the-shelf sync engine
 
@@ -36,7 +36,7 @@ ElectricSQL, PowerSync, Replicache and CRDT libraries (Automerge, Yjs) assume bo
 | same | same | nothing |
 | changed | same | push to the app with `If-Match: base version` (a 412 means someone just edited it: conflict) |
 | same | changed | pull into the catalog |
-| changed | changed | merge field by field when different fields changed; a field changed on both sides to different values is a **conflict**: reported, nothing changed for that record (or settled with `-C` / `-A`) |
+| changed | changed | merge field by field when different fields changed; a field changed on both sides to different values is a **conflict**: reported, nothing changed for that record (or settled with `-c` / `-a`) |
 
 Creates and deletes follow the same table, with "missing" as the change. Photos compare as an ordered list of `source` names. Pulled photos are downloaded into `api/seed/photos/`.
 
