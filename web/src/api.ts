@@ -15,6 +15,7 @@ import type {
     Tossed,
     TossedInput,
     TossInput,
+    VersionedRecord,
 } from './types';
 
 const KEY_STORE = 'rsxApiKey';
@@ -34,6 +35,7 @@ export const keyStore = {
         }
     },
 };
+/** "needkey" fires on a 401; "conflict" fires on a 412 (someone else changed the record first). */
 export const authEvents = new EventTarget();
 
 /** An error response from the API, with its HTTP status. */
@@ -45,21 +47,53 @@ export class ApiError extends Error {
     }
 }
 
+export const CONFLICT_MESSAGE =
+    "Someone else changed this while you were editing. It's been reloaded — your change wasn't saved.";
+
+/**
+ * 412: the record changed since the version this browser sent, and nothing was saved.
+ * `current` is the record as it is now (from the response body), when the server sent it.
+ */
+export class PreconditionFailedError extends ApiError {
+    current: VersionedRecord | null;
+    constructor(current: VersionedRecord | null) {
+        super(CONFLICT_MESSAGE, 412);
+        this.current = current;
+    }
+    /** The current version of `rec`, if the server sent it back. */
+    currentFor<T extends VersionedRecord>(rec: T): T | null {
+        const c = this.current;
+        // Cast: same id as the record that was written, so it is the same kind of record.
+        return c && c.id === rec.id ? (c as T) : null;
+    }
+}
+
 /** Readable message for anything caught from an API call. */
 export const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
+/** What a write to an existing record needs: its id and the version this browser last saw. */
+export interface Versioned {
+    id: string;
+    version: number;
+}
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 interface ErrorBody {
     error?: string;
     details?: unknown;
+    current?: VersionedRecord;
 }
 
-/** T is the JSON the endpoint returns; endpoints that answer 204 No Content use T = null. */
-async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+/**
+ * T is the JSON the endpoint returns; endpoints that answer 204 No Content use T = null.
+ * `version` is the record's version for writes to an existing record; it is sent as If-Match.
+ */
+async function request<T>(method: Method, path: string, body?: unknown, version?: number): Promise<T> {
     const headers: Record<string, string> = {};
     const opts: RequestInit = { method, headers };
     const key = keyStore.get();
     if (key) headers.authorization = `Bearer ${key}`;
+    if (version !== undefined) headers['if-match'] = `"${version}"`;
     if (body instanceof FormData) {
         opts.body = body;
     } else if (body !== undefined) {
@@ -77,13 +111,21 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
     const data: unknown = await res.json().catch(() => ({}));
     if (res.status === 401) authEvents.dispatchEvent(new Event('needkey'));
     if (!res.ok) {
-        const e = (data ?? {}) as ErrorBody; // error responses are { error, details? } (api/src/index.ts)
+        const e = (data ?? {}) as ErrorBody; // error responses are { error, details?, current? } (api/src/index.ts)
+        if (res.status === 412) {
+            authEvents.dispatchEvent(new Event('conflict'));
+            throw new PreconditionFailedError(e.current ?? null);
+        }
         const details = Array.isArray(e.details) ? ` ${e.details.join('. ')}.` : '';
         throw new ApiError((e.error || `Request failed (${res.status})`) + details, res.status);
     }
     // Cast: the JSON body is not validated at runtime; its shape is the API contract in types.ts.
     return data as T;
 }
+
+/** A write to an existing record: sends the record's version as If-Match. */
+const write = <T>(method: Method, path: string, rec: Versioned, body?: unknown) =>
+    request<T>(method, path, body, rec.version);
 
 /** Values a multipart form field can take; arrays are sent as JSON. */
 type FormValue = string | number | boolean | string[] | null | undefined;
@@ -98,26 +140,34 @@ function form(fields: Record<string, FormValue>, files: File[]): FormData {
     return fd;
 }
 
-/** CRUD + photos for parts, containers and tossed. */
-export interface Resource<T, Input> {
+/**
+ * CRUD + photos for parts, containers and tossed. Writes to an existing record take the
+ * record itself (its id and version) and resolve to the updated record with its new version;
+ * keep that one for the next write. A stale version rejects with PreconditionFailedError.
+ */
+export interface Resource<T extends Versioned, Input> {
     list: (params?: Record<string, string>) => Promise<T[]>;
     get: (id: string) => Promise<T>;
     create: (fields: Input, files?: File[]) => Promise<T>;
-    update: (id: string, fields: Partial<Input>) => Promise<T>;
-    remove: (id: string) => Promise<null>;
-    addPhotos: (id: string, files: File[]) => Promise<T>;
-    reorderPhotos: (id: string, ids: string[]) => Promise<T>;
+    update: (record: T, fields: Partial<Input>) => Promise<T>;
+    remove: (record: T) => Promise<null>;
+    addPhotos: (record: T, files: File[]) => Promise<T>;
+    reorderPhotos: (record: T, photoIds: string[]) => Promise<T>;
+    /** Deletes one of the record's photos; responds with the updated record. */
+    deletePhoto: (record: T, photoId: string) => Promise<T>;
 }
 
-function resource<T, Input extends Record<string, FormValue>>(name: string): Resource<T, Input> {
+function resource<T extends Versioned, Input extends Record<string, FormValue>>(name: string): Resource<T, Input> {
+    const at = (rec: Versioned, sub = '') => `/${name}/${encodeURIComponent(rec.id)}${sub}`;
     return {
         list: (params) => request<T[]>('GET', `/${name}${params ? `?${new URLSearchParams(params)}` : ''}`),
         get: (id) => request<T>('GET', `/${name}/${encodeURIComponent(id)}`),
         create: (fields, files = []) => request<T>('POST', `/${name}`, files.length ? form(fields, files) : fields),
-        update: (id, fields) => request<T>('PATCH', `/${name}/${encodeURIComponent(id)}`, fields),
-        remove: (id) => request<null>('DELETE', `/${name}/${encodeURIComponent(id)}`),
-        addPhotos: (id, files) => request<T>('POST', `/${name}/${encodeURIComponent(id)}/photos`, form({}, files)),
-        reorderPhotos: (id, ids) => request<T>('PUT', `/${name}/${encodeURIComponent(id)}/photos/order`, { ids }),
+        update: (rec, fields) => write<T>('PATCH', at(rec), rec, fields),
+        remove: (rec) => write<null>('DELETE', at(rec), rec),
+        addPhotos: (rec, files) => write<T>('POST', at(rec, '/photos'), rec, form({}, files)),
+        reorderPhotos: (rec, ids) => write<T>('PUT', at(rec, '/photos/order'), rec, { ids }),
+        deletePhoto: (rec, photoId) => write<T>('DELETE', `/photos/${encodeURIComponent(photoId)}`, rec),
     };
 }
 
@@ -128,18 +178,17 @@ export const api = {
     tags: () => request<TagCount[]>('GET', '/tags'),
     parts: {
         ...resource<Part, PartInput>('parts'),
-        toss: (id: string, body: TossInput) => request<Tossed>('POST', `/parts/${encodeURIComponent(id)}/toss`, body),
+        toss: (part: Part, body: TossInput) =>
+            write<Tossed>('POST', `/parts/${encodeURIComponent(part.id)}/toss`, part, body),
     },
     containers: resource<Container, ContainerInput>('containers'),
     tossed: resource<Tossed, TossedInput>('tossed'),
-    /** Responds with the updated record the photo belonged to; the caller names which kind that is. */
-    deletePhoto: <T extends Part | Container | Tossed = Part | Container | Tossed>(photoId: string) =>
-        request<T>('DELETE', `/photos/${photoId}`),
     tasks: {
         list: () => request<Task[]>('GET', '/tasks'),
         create: (f: Partial<TaskInput> & Pick<TaskInput, 'title'>) => request<Task>('POST', '/tasks', f),
-        update: (id: string, f: Partial<TaskInput>) => request<Task>('PATCH', `/tasks/${id}`, f),
-        remove: (id: string) => request<null>('DELETE', `/tasks/${id}`),
+        update: (task: Task, f: Partial<TaskInput>) =>
+            write<Task>('PATCH', `/tasks/${encodeURIComponent(task.id)}`, task, f),
+        remove: (task: Task) => write<null>('DELETE', `/tasks/${encodeURIComponent(task.id)}`, task),
     },
     notes: { list: () => request<Note[]>('GET', '/notes') },
 };

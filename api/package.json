@@ -17,6 +17,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@sindresorhus/slugify": "^3.0.1",
     "express": "^5.1.0",
     "multer": "^2.0.2",
     "pg": "^8.13.1",

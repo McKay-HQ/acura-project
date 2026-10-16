@@ -1,10 +1,15 @@
-// Helpers shared by the services: looking records up by id or key, and photos.
+// Helpers shared by the services: looking records up by id or key, versions (If-Match), keys, soft deletes
+// and photos.
+import crypto from 'node:crypto';
 import type { PoolClient } from 'pg';
+import slugify from '@sindresorhus/slugify';
 import { query, runner, tx } from '../db.js';
 import { notFound, badRequest } from '../lib/errors.js';
 import { isUuid } from '../lib/validate.js';
 import { processPhoto, removePhotoFiles, photoUrl } from '../lib/photos.js';
-import type { KeyedTable, Photo, PhotoFileRow, PhotoJson, PhotoTable } from '../types.js';
+import { preconditionFailed, versionMatches } from '../lib/preconditions.js';
+import type { IfMatch } from '../lib/preconditions.js';
+import type { KeyedTable, Photo, PhotoFileRow, PhotoJson, PhotoTable, Versioned } from '../types.js';
 
 /** Maps every field of a validated input to its database column. */
 export type ColumnMap<T> = { readonly [K in keyof T]-?: string };
@@ -20,6 +25,7 @@ const LABEL: Readonly<Record<KeyedTable, string>> = {
     containers: 'Container',
     tossed: 'Tossed item',
     notes: 'Note',
+    tasks: 'Task',
 };
 
 /** SQL expression returning a JSON array of a record's photos, in display order. */
@@ -38,13 +44,82 @@ export const mapPhotos = (rows: PhotoJson[] = []): Photo[] =>
         source: p.source ?? null,
     }));
 
-/** Resolve a UUID or human-readable key to the record's UUID, or 404. */
+/** Resolve a UUID or human-readable key to the UUID of a live (not deleted) record, or 404. */
 export async function resolveId(table: KeyedTable, ref: string, client?: PoolClient): Promise<string> {
     const run = runner(client);
-    const sql = isUuid(ref) ? `SELECT id FROM ${table} WHERE id = $1` : `SELECT id FROM ${table} WHERE key = $1`;
-    const { rows } = await run<{ id: string }>(sql, [ref]);
+    const by = isUuid(ref) ? 'id' : 'key';
+    const { rows } = await run<{ id: string }>(`SELECT id FROM ${table} WHERE ${by} = $1 AND deleted_at IS NULL`, [
+        ref,
+    ]);
     if (!rows.length) throw notFound(`${LABEL[table] || 'Record'} not found`);
     return rows[0].id;
+}
+
+/** Reads one record by UUID or key, optionally on a transaction client. */
+export type Getter<T> = (ref: string, client?: PoolClient) => Promise<T>;
+
+/**
+ * Lock a live record for a write (until the transaction ends) and check the client's If-Match against its
+ * version: 404 if it is gone, 412 with the current record if the version doesn't match.
+ */
+export async function lockVersion(
+    c: PoolClient,
+    table: KeyedTable,
+    id: string,
+    im: IfMatch,
+    current: Getter<Versioned>,
+): Promise<void> {
+    const { rows } = await c.query<{ version: number }>(
+        `SELECT version FROM ${table} WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
+        [id],
+    );
+    if (!rows.length) throw notFound(`${LABEL[table] || 'Record'} not found`);
+    if (!versionMatches(im, rows[0].version)) throw preconditionFailed(await current(id, c));
+}
+
+/** Resolve a ref and lock the record against If-Match, inside the caller's transaction. Returns the UUID. */
+export async function lockRef(
+    c: PoolClient,
+    table: KeyedTable,
+    ref: string,
+    im: IfMatch,
+    current: Getter<Versioned>,
+): Promise<string> {
+    const id = await resolveId(table, ref, c);
+    await lockVersion(c, table, id, im, current);
+    return id;
+}
+
+/**
+ * Mark a record deleted (a tombstone: hidden from normal reads, its key stays taken). Call it before removing the
+ * record's photos or links, so the whole delete is one version bump.
+ */
+export async function softDelete(c: PoolClient, table: KeyedTable, id: string): Promise<void> {
+    await c.query(`UPDATE ${table} SET deleted_at = now(), updated_at = now() WHERE id = $1`, [id]);
+}
+
+/** A record's current version (deleted or not), e.g. at the end of a write. */
+export async function versionOf(c: PoolClient, table: KeyedTable, id: string): Promise<number> {
+    const { rows } = await c.query<{ version: number }>(`SELECT version FROM ${table} WHERE id = $1`, [id]);
+    return rows[0].version;
+}
+
+const KEY_MAX = 60;
+
+/**
+ * A key for a new record, made from its name: slugified, at most 60 characters, with -2, -3... added when the
+ * key is taken (deleted records keep theirs). `fallback` is used when the name has no usable characters.
+ */
+export async function uniqueKey(c: PoolClient, table: KeyedTable, name: string, fallback: string): Promise<string> {
+    const trim = (s: string, max: number): string => s.slice(0, max).replace(/-+$/, '');
+    let base = trim(slugify(name), KEY_MAX) || fallback;
+    if (isUuid(base)) base = trim(`${fallback}-${base}`, KEY_MAX);
+    for (let n = 1; ; n++) {
+        const suffix = n === 1 ? '' : `-${n}`;
+        const key = `${trim(base, KEY_MAX - suffix.length)}${suffix}`;
+        const { rowCount } = await c.query(`SELECT 1 FROM ${table} WHERE key = $1`, [key]);
+        if (!rowCount) return key;
+    }
 }
 
 /** Turn a unique-violation on "key" into a friendly 409. */
@@ -81,8 +156,16 @@ export function assignments<T extends object>(
     return { sets, vals };
 }
 
-/** The name a photo is recorded under: the uploaded file's base name, or null if it has none. */
-const sourceName = (name: string | undefined): string | null => (name ? name.split(/[\\/]/).pop() || null : null);
+const CATALOG_NAME = /^[0-9a-f]{32}\.(jpe?g|png|webp)$/i;
+
+/**
+ * The name a photo is recorded under: the uploaded file's base name when it is named like a catalog photo
+ * (`<32 hex>.jpg`), otherwise `<photo id>.jpg`. Either way every photo has a stable, unique name.
+ */
+export function photoSource(uploadedName: string | undefined, photoId: string): string {
+    const base = uploadedName ? (uploadedName.split(/[\\/]/).pop() ?? '') : '';
+    return CATALOG_NAME.test(base) ? base : `${photoId}.jpg`;
+}
 
 /** Process uploaded files and attach them to a record, after any existing photos. */
 export async function addPhotos(
@@ -103,10 +186,20 @@ export async function addPhotos(
         for (const f of files) {
             const p = await processPhoto(f.buffer);
             written.push({ filename: p.filename, thumb_filename: p.thumbFilename });
+            const photoId = crypto.randomUUID();
             await c.query(
-                `INSERT INTO photos (${col}, filename, thumb_filename, width, height, sort_order, source)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-                [id, p.filename, p.thumbFilename, p.width, p.height, order++, sourceName(f.originalname)],
+                `INSERT INTO photos (id, ${col}, filename, thumb_filename, width, height, sort_order, source)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+                [
+                    photoId,
+                    id,
+                    p.filename,
+                    p.thumbFilename,
+                    p.width,
+                    p.height,
+                    order++,
+                    photoSource(f.originalname, photoId),
+                ],
             );
         }
     };
@@ -119,12 +212,35 @@ export async function addPhotos(
     }
 }
 
+/** Add uploaded photos to a record (after any existing ones), checking If-Match. Returns the updated record. */
+export async function addRecordPhotos<T>(
+    table: PhotoTable,
+    ref: string,
+    files: Express.Multer.File[] | undefined,
+    im: IfMatch,
+    get: Getter<T & Versioned>,
+): Promise<T> {
+    if (!files?.length) throw badRequest('Choose at least one photo');
+    return tx(async (c) => {
+        const id = await lockRef(c, table, ref, im, get);
+        await addPhotos(table, id, files, c);
+        return get(id, c);
+    });
+}
+
 /** Set photo order; ids must be exactly the record's photos. The first is the main photo. */
-export async function reorderPhotos(table: PhotoTable, id: string, ids: unknown): Promise<void> {
+export async function reorderPhotos<T>(
+    table: PhotoTable,
+    ref: string,
+    ids: unknown,
+    im: IfMatch,
+    get: Getter<T & Versioned>,
+): Promise<T> {
     const col = OWNER[table];
     if (!Array.isArray(ids)) throw badRequest('ids must be a list of photo ids');
     const list: unknown[] = ids;
-    await tx(async (c) => {
+    return tx(async (c) => {
+        const id = await lockRef(c, table, ref, im, get);
         const { rows } = await c.query<{ id: string }>(`SELECT id FROM photos WHERE ${col} = $1`, [id]);
         const have = new Set<unknown>(rows.map((r) => r.id));
         if (list.length !== have.size || !list.every((x) => have.has(x))) {
@@ -132,37 +248,54 @@ export async function reorderPhotos(table: PhotoTable, id: string, ids: unknown)
         }
         for (const [i, pid] of list.entries())
             await c.query('UPDATE photos SET sort_order = $1 WHERE id = $2', [i, pid]);
+        return get(id, c);
     });
 }
 
-interface DeletedPhotoRow extends PhotoFileRow {
+interface PhotoOwnerRow {
     part_id: string | null;
     container_id: string | null;
     tossed_id: string | null;
 }
 
-/** Delete one photo; returns which record it belonged to. */
-export async function deletePhoto(photoId: string): Promise<[PhotoTable, string]> {
-    const { rows } = await query<DeletedPhotoRow>(
-        'DELETE FROM photos WHERE id = $1 RETURNING filename, thumb_filename, part_id, container_id, tossed_id',
-        [photoId],
-    );
+/**
+ * Delete one photo of a live record, checking If-Match against that record's version. Returns the updated
+ * record (a part, container or tossed record, read with the matching getter).
+ */
+export async function deletePhoto(
+    photoId: string,
+    im: IfMatch,
+    getters: Record<PhotoTable, Getter<Versioned>>,
+): Promise<Versioned> {
+    const { rows } = await query<PhotoOwnerRow>('SELECT part_id, container_id, tossed_id FROM photos WHERE id = $1', [
+        photoId,
+    ]);
     if (!rows.length) throw notFound('Photo not found');
-    await removePhotoFiles(rows);
     const r = rows[0];
     // The one_owner constraint guarantees exactly one owner column is set, so tossed_id is non-null here.
-    return r.part_id
+    const [table, ownerId]: [PhotoTable, string] = r.part_id
         ? ['parts', r.part_id]
         : r.container_id
           ? ['containers', r.container_id]
           : ['tossed', r.tossed_id as string];
+    const get = getters[table];
+    const { files, record } = await tx(async (c) => {
+        await lockVersion(c, table, ownerId, im, get);
+        const del = await c.query<PhotoFileRow>('DELETE FROM photos WHERE id = $1 RETURNING filename, thumb_filename', [
+            photoId,
+        ]);
+        if (!del.rowCount) throw notFound('Photo not found');
+        return { files: del.rows, record: await get(ownerId, c) };
+    });
+    await removePhotoFiles(files);
+    return record;
 }
 
-/** Photo files of a record, captured before it is deleted (the rows cascade). */
-export async function photoFilesOf(table: PhotoTable, id: string, client?: PoolClient): Promise<PhotoFileRow[]> {
-    const run = runner(client);
-    const { rows } = await run<PhotoFileRow>(`SELECT filename, thumb_filename FROM photos WHERE ${OWNER[table]} = $1`, [
-        id,
-    ]);
+/** Delete a record's photo rows (inside its delete transaction); returns their files to remove after commit. */
+export async function deleteRecordPhotos(c: PoolClient, table: PhotoTable, id: string): Promise<PhotoFileRow[]> {
+    const { rows } = await c.query<PhotoFileRow>(
+        `DELETE FROM photos WHERE ${OWNER[table]} = $1 RETURNING filename, thumb_filename`,
+        [id],
+    );
     return rows;
 }

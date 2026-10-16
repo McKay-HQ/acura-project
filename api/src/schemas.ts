@@ -31,9 +31,10 @@
  *       type: string
  *       nullable: true
  *       description: >-
- *         Optional human-readable id, unique per record type: lowercase letters, numbers, dots, dashes or
- *         underscores, starting with a letter or number, up to 80 characters (input is trimmed and lowercased;
- *         it cannot look like a UUID). `null` or `''` removes it.
+ *         Human-readable id, unique per record type (deleted records keep theirs): lowercase letters, numbers, dots,
+ *         dashes or underscores, starting with a letter or number, up to 80 characters (input is trimmed and
+ *         lowercased; it cannot look like a UUID). On create, when omitted, `null` or `''`, one is generated from
+ *         the name (slugified, up to 60 characters, with -2, -3... added if taken). On update, `null` or `''` removes it.
  *       example: injen-intake
  */
 
@@ -67,8 +68,9 @@
  *           type: string
  *           nullable: true
  *           description: >-
- *             The uploaded file's name. Catalog photos are named after their catalog id (e.g.
- *             `77dd58464b9a5e54c6bdc3f6f251c440.jpg`), which is how bin/sync recognizes them.
+ *             A stable, unique name for the photo: the uploaded file's name when it is named like a catalog photo
+ *             (32 hex digits plus .jpg/.jpeg/.png/.webp, e.g. `77dd58464b9a5e54c6bdc3f6f251c440.jpg`), otherwise
+ *             `<photo id>.jpg`. bin/sync uses it to match photos.
  *     PhotoUpload:
  *       type: object
  *       required: [photos]
@@ -98,11 +100,14 @@
  *     PartTaskRef:
  *       type: object
  *       description: A task that uses this part.
- *       required: [id, title, phase, done]
+ *       required: [id, key, title, phase, done]
  *       properties:
  *         id:
  *           type: string
  *           format: uuid
+ *         key:
+ *           type: string
+ *           nullable: true
  *         title:
  *           type: string
  *         phase:
@@ -155,7 +160,7 @@
  *   schemas:
  *     Part:
  *       type: object
- *       required: [id, key, label, partNumber, fits, status, tags, valueLow, valueHigh, notes, container, tasks, phaseTags, photos, createdAt, updatedAt]
+ *       required: [id, key, label, partNumber, fits, status, tags, valueLow, valueHigh, notes, container, tasks, phaseTags, photos, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -208,12 +213,21 @@
  *           description: In display order; the first is the main photo.
  *           items:
  *             $ref: '#/components/schemas/Photo'
+ *         version:
+ *           type: integer
+ *           minimum: 1
+ *           description: Bumped by the database on every change; sent as the ETag and expected in If-Match.
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the record was deleted; null unless listed with includeDeleted=1.
  */
 
 // ---- TagCount (Tag) ----
@@ -261,7 +275,7 @@
  *   schemas:
  *     Container:
  *       type: object
- *       required: [id, key, name, location, notes, parentId, icon, sortOrder, photos, parts, partCount, createdAt, updatedAt]
+ *       required: [id, key, name, location, notes, parentId, icon, sortOrder, photos, parts, partCount, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -296,12 +310,21 @@
  *         partCount:
  *           type: integer
  *           description: Length of `parts`.
+ *         version:
+ *           type: integer
+ *           minimum: 1
+ *           description: Bumped by the database on every change; sent as the ETag and expected in If-Match.
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the record was deleted; null unless listed with includeDeleted=1.
  */
 
 // ---- Tossed ----
@@ -311,7 +334,7 @@
  *   schemas:
  *     Tossed:
  *       type: object
- *       required: [id, key, label, partNumber, reason, tossedOn, photos, createdAt, updatedAt]
+ *       required: [id, key, label, partNumber, reason, tossedOn, photos, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -333,12 +356,21 @@
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/Photo'
+ *         version:
+ *           type: integer
+ *           minimum: 1
+ *           description: Bumped by the database on every change; sent as the ETag and expected in If-Match.
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the record was deleted; null unless listed with includeDeleted=1.
  */
 
 // ---- TaskPartRef ----
@@ -372,11 +404,15 @@
  *   schemas:
  *     Task:
  *       type: object
- *       required: [id, title, phase, notes, done, doneAt, parts, createdAt, updatedAt]
+ *       required: [id, key, title, phase, notes, done, doneAt, parts, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
  *           format: uuid
+ *         key:
+ *           type: string
+ *           nullable: true
+ *           example: fix-front-turn-signals
  *         title:
  *           type: string
  *         phase:
@@ -395,12 +431,21 @@
  *           description: Parts the task needs, in the order given.
  *           items:
  *             $ref: '#/components/schemas/TaskPartRef'
+ *         version:
+ *           type: integer
+ *           minimum: 1
+ *           description: Bumped by the database on every change; sent as the ETag and expected in If-Match.
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the record was deleted; null unless listed with includeDeleted=1.
  */
 
 // ---- Note ----
@@ -410,7 +455,7 @@
  *   schemas:
  *     Note:
  *       type: object
- *       required: [id, key, title, items, createdAt, updatedAt]
+ *       required: [id, key, title, items, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -424,12 +469,21 @@
  *           type: array
  *           items:
  *             type: string
+ *         version:
+ *           type: integer
+ *           minimum: 1
+ *           description: Bumped by the database on every change; sent as the ETag and expected in If-Match.
  *         createdAt:
  *           type: string
  *           format: date-time
  *         updatedAt:
  *           type: string
  *           format: date-time
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: When the record was deleted; null unless listed with includeDeleted=1.
  */
 
 // ---- Summary ----
@@ -642,6 +696,8 @@
  *       type: object
  *       description: Fields to set; omitted fields are left unchanged (on create, phase defaults to 1 and done to false).
  *       properties:
+ *         key:
+ *           $ref: '#/components/schemas/Key'
  *         title:
  *           type: string
  *           minLength: 1

@@ -35,19 +35,24 @@ AUTH=(-H "Authorization: Bearer $API_KEY")
 BASE="$APP_URL/api/$KIND/$REF"
 
 echo "Looking up $KIND/$REF on $APP_URL..."
-OLD=$(curl -fsS "${AUTH[@]}" "$BASE" | jq -r '.photos[].id')
+RECORD=$(curl -fsS "${AUTH[@]}" "$BASE")
+OLD=$(jq -r '.photos[].id' <<<"$RECORD")
+VERSION=$(jq -r '.version' <<<"$RECORD")
 
+# Every write names the version it's based on (If-Match); each response carries the next one.
 echo "Uploading $# photo(s)..."
 FORM=()
 for f in "$@"; do FORM+=(-F "photos=@$f"); done
-curl -fsS "${AUTH[@]}" "${FORM[@]}" "$BASE/photos" -o /dev/null
+RECORD=$(curl -fsS "${AUTH[@]}" -H "If-Match: \"$VERSION\"" "${FORM[@]}" "$BASE/photos")
+VERSION=$(jq -r '.version' <<<"$RECORD")
 
 if [ -n "$OLD" ]; then
     echo "Deleting $(echo "$OLD" | wc -l) old photo(s)..."
     for id in $OLD; do
-        curl -fsS -X DELETE "${AUTH[@]}" "$APP_URL/api/photos/$id" -o /dev/null
+        RECORD=$(curl -fsS -X DELETE "${AUTH[@]}" -H "If-Match: \"$VERSION\"" "$APP_URL/api/photos/$id")
+        VERSION=$(jq -r '.version' <<<"$RECORD")
     done
 fi
 
 echo "Done. $KIND/$REF now has:"
-curl -fsS "${AUTH[@]}" "$BASE" | jq -r '.photos[] | "  \(.url)"'
+jq -r '.photos[] | "  \(.url)"' <<<"$RECORD"

@@ -2,7 +2,20 @@
 import type { PoolClient } from 'pg';
 import { query, runner, tx } from '../db.js';
 import { removePhotoFiles } from '../lib/photos.js';
-import { photosJson, mapPhotos, resolveId, friendlyDbError, assignments, addPhotos, photoFilesOf } from './common.js';
+import type { IfMatch } from '../lib/preconditions.js';
+import {
+    photosJson,
+    mapPhotos,
+    resolveId,
+    friendlyDbError,
+    assignments,
+    addPhotos,
+    lockRef,
+    softDelete,
+    versionOf,
+    uniqueKey,
+    deleteRecordPhotos,
+} from './common.js';
 import type { ColumnMap } from './common.js';
 import type { Tossed, TossedInput, TossedRow } from '../types.js';
 
@@ -24,12 +37,16 @@ const toApi = (r: TossedRow): Tossed => ({
     reason: r.reason,
     tossedOn: r.tossed_on,
     photos: mapPhotos(r.photos),
+    version: r.version,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
+    deletedAt: r.deleted_at,
 });
 
-export async function listTossed(): Promise<Tossed[]> {
-    const { rows } = await query<TossedRow>(`${SELECT} ORDER BY x.sort_order, x.created_at`);
+/** Tossed records in display order; deleted ones (tombstones) only with includeDeleted. */
+export async function listTossed(includeDeleted = false): Promise<Tossed[]> {
+    const where = includeDeleted ? '' : 'WHERE x.deleted_at IS NULL';
+    const { rows } = await query<TossedRow>(`${SELECT} ${where} ORDER BY x.sort_order, x.created_at`);
     return rows.map(toApi);
 }
 
@@ -43,6 +60,10 @@ export async function getTossed(ref: string, client?: PoolClient): Promise<Tosse
 export async function createTossed(data: TossedInput, files?: Express.Multer.File[]): Promise<Tossed> {
     try {
         return await tx(async (c) => {
+            if (data.key == null) data.key = await uniqueKey(c, 'tossed', data.label ?? '', 'tossed');
+            // tossedOn defaults to today (the database's date), set in the INSERT so the record starts at version 1.
+            if (data.tossedOn === undefined)
+                data.tossedOn = (await c.query<{ d: string }>('SELECT CURRENT_DATE::text AS d')).rows[0].d;
             // Object.keys widens the keys to string; they are exactly the keys of TossedInput.
             const cols = (Object.keys(COLS) as (keyof TossedInput)[]).filter((k) => data[k] !== undefined);
             const { rows } = await c.query<{ id: string }>(
@@ -52,8 +73,6 @@ export async function createTossed(data: TossedInput, files?: Express.Multer.Fil
          RETURNING id`,
                 cols.map((k) => data[k]),
             );
-            if (data.tossedOn === undefined)
-                await c.query('UPDATE tossed SET tossed_on = CURRENT_DATE WHERE id = $1', [rows[0].id]);
             if (files?.length) await addPhotos('tossed', rows[0].id, files, c);
             return getTossed(rows[0].id, c);
         });
@@ -62,22 +81,28 @@ export async function createTossed(data: TossedInput, files?: Express.Multer.Fil
     }
 }
 
-export async function updateTossed(ref: string, data: TossedInput): Promise<Tossed> {
-    const id = await resolveId('tossed', ref);
-    const { sets, vals } = assignments(data, COLS, 2);
-    if (sets.length) {
-        try {
-            await query(`UPDATE tossed SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [id, ...vals]);
-        } catch (err) {
-            throw friendlyDbError(err);
-        }
+export async function updateTossed(ref: string, data: TossedInput, im: IfMatch): Promise<Tossed> {
+    try {
+        return await tx(async (c) => {
+            const id = await lockRef(c, 'tossed', ref, im, getTossed);
+            const { sets, vals } = assignments(data, COLS, 2);
+            if (sets.length)
+                await c.query(`UPDATE tossed SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [id, ...vals]);
+            return getTossed(id, c);
+        });
+    } catch (err) {
+        throw friendlyDbError(err);
     }
-    return getTossed(id);
 }
 
-export async function deleteTossed(ref: string): Promise<void> {
-    const id = await resolveId('tossed', ref);
-    const files = await photoFilesOf('tossed', id);
-    await query('DELETE FROM tossed WHERE id = $1', [id]);
+/** Soft-delete a tossed record (its photos are removed). Returns the new version. */
+export async function deleteTossed(ref: string, im: IfMatch): Promise<number> {
+    const { version, files } = await tx(async (c) => {
+        const id = await lockRef(c, 'tossed', ref, im, getTossed);
+        await softDelete(c, 'tossed', id);
+        const files = await deleteRecordPhotos(c, 'tossed', id);
+        return { version: await versionOf(c, 'tossed', id), files };
+    });
     await removePhotoFiles(files);
+    return version;
 }

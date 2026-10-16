@@ -1935,6 +1935,7 @@
  ],
  "tasks": [
   {
+   "key": "abs-delete-brake-balance",
    "title": "Check brake balance after the ABS delete",
    "phase": 1,
    "notes": "Ask Cody before driving. Previous owner ran new lines to the calipers and bypassed the ABS, so the ABS light stays on. The ABS unit also handled front/rear brake balance (EBD), so the rears may lock first. Look for an adjustable proportioning valve in the rear brake line; if there is one, set it so the fronts lock first. If not, install one or have Cody or a shop check the brakes before driving hard or in the rain.",
@@ -1943,6 +1944,93 @@
    "createdAt": "2026-10-06T00:58:00-05:00"
   },
   {
+   "key": "basic-service",
+   "title": "Do a baseline service",
+   "phase": 2,
+   "notes": "Unknown maintenance history at 173K. Change the oil and filter, inspect the serpentine belt for cracks or glazing, and check the coolant hoses are soft and tight. Plan spark plugs and a valve clearance check if there's no record of them.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:05-05:00"
+  },
+  {
+   "key": "check-ac",
+   "title": "Check whether the A/C works",
+   "phase": 3,
+   "notes": "Two A/C hoses came in the parts pile (Engine box), so lines may have been replaced or removed. Run the A/C and see if it blows cold, and check the compressor-to-firewall lines are all connected. Opening refrigerant lines legally requires recovery equipment, so any A/C line work is a shop job; ask Cody.",
+   "done": false,
+   "parts": [
+    "ac-hose",
+    "ac-hose-nichirin"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "key": "check-cruise",
+   "title": "Check whether cruise control works",
+   "phase": 3,
+   "notes": "Look at the throttle body for a second (cruise) cable and test cruise on the road (main button on, above ~25 mph, SET). If it's missing or doesn't work, install the Denso cruise actuator (Engine box). If cruise works, the actuator is a spare or can be sold.",
+   "done": false,
+   "parts": [
+    "cruise-actuator"
+   ],
+   "createdAt": "2026-10-06T10:27:09-05:00"
+  },
+  {
+   "key": "check-fluids",
+   "title": "Check all fluids",
+   "phase": 1,
+   "notes": "The car sat abandoned. Check engine oil level and condition, coolant (Mishimoto radiator and overflow tank), brake fluid, clutch fluid (shares the braided-line system), and power steering fluid. Look for leaks under the car after it runs.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:01-05:00"
+  },
+  {
+   "key": "check-header-clearances",
+   "title": "Check hoses and heat shielding near the headers",
+   "phase": 2,
+   "notes": "The aftermarket headers have no heat shield. Check the heater hoses (marked WATER) running past the headers have clearance from the hot tubes, and that the crumpled heat-shield material above the crossmember isn't loose, rattling or touching anything.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "key": "check-hood-prop",
+   "title": "Check the hood prop rod",
+   "phase": 2,
+   "notes": "A loose red rod with rubber sleeves (possibly a hood prop rod) was tossed. Confirm the car has its own working prop rod; if not, buy one before working under the hood.",
+   "done": true,
+   "parts": [],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "key": "check-tires",
+   "title": "Check tires and wheels",
+   "phase": 1,
+   "notes": "Cars that sit grow flat spots and dry-rot cracks. Check tread depth, sidewall cracking, the four-digit date code on each tire (older than about 6 years is a concern), and set pressures to the door-jamb spec. Check lug nut torque.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:02-05:00"
+  },
+  {
+   "key": "evaluate-performance-upgrades",
+   "title": "Evaluate potential performance upgrades",
+   "phase": 4,
+   "notes": "Review the upgrade options on the Home page (ECU tune, limited-slip differential, intake manifold, turbo or supercharger) once the car drives reliably and a compression and leak-down test looks good. Go over the plan with Cody before buying anything that touches brakes, suspension or the ECU.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-12T03:45:00-05:00"
+  },
+  {
+   "key": "fix-fender-liner",
+   "title": "Replace the damaged driver-side fender liner",
+   "phase": 3,
+   "notes": "The inner fender liner in the driver-side front wheel well looked damaged or partly missing. Replace it to keep water and road debris out of the engine bay.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:07-05:00"
+  },
+  {
+   "key": "fix-front-turn-signals",
    "title": "Fix the front turn signals",
    "phase": 1,
    "notes": "Front turn signals don't work (rears presumably do, so a fuse is less likely). Check whether the headlight or bumper housings are missing their sockets, then try the spliced socket pair (Electrical box). Trace the loose cut wires near the power steering reservoir. If sockets and bulbs are good, check fuse 19 TURN LIGHT 7.5A in the under-dash box and the hazard fuse 5 (15A) under the hood; the spare fuse boxes (Electrical box) can be used to swap-test fuses and relays.",
@@ -1955,6 +2043,29 @@
    "createdAt": "2026-10-06T02:37:00-05:00"
   },
   {
+   "key": "inspect-front-structure",
+   "title": "Inspect the front end and get an alignment",
+   "phase": 2,
+   "notes": "Good one to do with Cody. The black hood, fenders and bumper suggest a front hit. Look under the car at the frame rails, radiator support and lower control arms for bends or kinks, and check the tie rods. Then get an alignment, which also suits the aftermarket suspension.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:04-05:00"
+  },
+  {
+   "key": "install-driver-door-panel",
+   "title": "Reinstall the driver door panel",
+   "phase": 2,
+   "notes": "Panel is loose (stored outside a container); fit is verified. First replace the torn vapor barrier (a sheet of plastic and butyl tape). Check whether the door still has its inner handle on the latch rod; if not, use the left handle from the interior handle pair (Interior trim box). Check every clip slot on the panel's back; Hardware bag B has push-pins and clips that may belong here.",
+   "done": false,
+   "parts": [
+    "door-panel-driver",
+    "door-handles-inner-pair",
+    "hw-bag-b"
+   ],
+   "createdAt": "2026-10-08T11:35:00-05:00"
+  },
+  {
+   "key": "install-injen-intake",
    "title": "Install the Injen intake",
    "phase": 1,
    "notes": "The car has no intake, so the engine pulls in unfiltered air; keep run time short until this is done. Everything is in the Engine box: buy a new cone filter first (the old Injen filter's rubber end cap is crumbling and the mesh seam is split, so it's unusable; kit is the Injen SP cold air intake, CARB EO D-476-5; replacement is Injen X-1014-BB SuperNano-Web dry filter, 3.00\" flange, 6\" base, 5\" tall, 5\" top, closed top, $82.37 on injen.com, which lists it as compatible with the SP1477 RSX Type-S kit. The old filter's top cap is gone, so it's open at both ends and would pass unfiltered air) and the resonator hose, bolt the intake on, plug in the IAT sensor (replace it if missing), slide the breather hose onto the valve cover fitting, and bolt the support bracket to the body. Install the Injen washer reservoir at the same time (see its own task).",
@@ -1965,54 +2076,16 @@
    "createdAt": "2026-10-06T10:27:00-05:00"
   },
   {
-   "title": "Check all fluids",
-   "phase": 1,
-   "notes": "The car sat abandoned. Check engine oil level and condition, coolant (Mishimoto radiator and overflow tank), brake fluid, clutch fluid (shares the braided-line system), and power steering fluid. Look for leaks under the car after it runs.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-06T10:27:01-05:00"
-  },
-  {
-   "title": "Check tires and wheels",
-   "phase": 1,
-   "notes": "Cars that sit grow flat spots and dry-rot cracks. Check tread depth, sidewall cracking, the four-digit date code on each tire (older than about 6 years is a concern), and set pressures to the door-jamb spec. Check lug nut torque.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-06T10:27:02-05:00"
-  },
-  {
-   "title": "Scan for trouble codes",
-   "phase": 2,
-   "notes": "Plug an OBD2 scanner into the port (per the sticker on the column cover, behind the left side cover of the center console) and read stored codes, especially after the intake and IAT sensor are installed. Expect ABS codes from the delete; note anything else (misfire, sensor, or immobilizer codes).",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-06T10:27:03-05:00"
-  },
-  {
-   "title": "Inspect the front end and get an alignment",
-   "phase": 2,
-   "notes": "Good one to do with Cody. The black hood, fenders and bumper suggest a front hit. Look under the car at the frame rails, radiator support and lower control arms for bends or kinks, and check the tie rods. Then get an alignment, which also suits the aftermarket suspension.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-06T10:27:04-05:00"
-  },
-  {
-   "title": "Do a baseline service",
-   "phase": 2,
-   "notes": "Unknown maintenance history at 173K. Change the oil and filter, inspect the serpentine belt for cracks or glazing, and check the coolant hoses are soft and tight. Plan spark plugs and a valve clearance check if there's no record of them.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-06T10:27:05-05:00"
-  },
-  {
-   "title": "Replace the damaged driver-side fender liner",
+   "key": "install-stereo",
+   "title": "Install a stereo",
    "phase": 3,
-   "notes": "The inner fender liner in the driver-side front wheel well looked damaged or partly missing. Replace it to keep water and road debris out of the engine bay.",
+   "notes": "The radio is missing, with loose taped wiring in the opening. Clean up the wiring and install a head unit with the right harness adapter and dash kit for a 2002 RSX.",
    "done": false,
    "parts": [],
-   "createdAt": "2026-10-06T10:27:07-05:00"
+   "createdAt": "2026-10-08T11:35:00-05:00"
   },
   {
+   "key": "install-trim",
    "title": "Reinstall interior and exterior trim",
    "phase": 3,
    "notes": "Do after Refinish interior. From the Interior trim box: steering column covers (upper + lower set) and the S6M-L left column cover; driver lower dash cover (repair the crack from the back first with a plastic welder or polyolefin primer + glue). From the Body bin: driver windshield molding, front fender fairings (both sides), front wiper arms (scuff and satin black first). Also check the passenger door's mirror garnish and the K20 coil cover (Engine box).",
@@ -2030,71 +2103,7 @@
    "createdAt": "2026-10-06T10:27:08-05:00"
   },
   {
-   "title": "Check whether cruise control works",
-   "phase": 3,
-   "notes": "Look at the throttle body for a second (cruise) cable and test cruise on the road (main button on, above ~25 mph, SET). If it's missing or doesn't work, install the Denso cruise actuator (Engine box). If cruise works, the actuator is a spare or can be sold.",
-   "done": false,
-   "parts": [
-    "cruise-actuator"
-   ],
-   "createdAt": "2026-10-06T10:27:09-05:00"
-  },
-  {
-   "title": "Body paint",
-   "phase": 3,
-   "notes": "The black hood, fenders and bumper and the dark blue rear bumper don't match the silver body. Painting them silver is the biggest boost to resale value and appearance. The silver rear spoiler's clear coat is peeling; it needs sanding and new 2K clear (not polishing). The center Acura emblem on the hatch is also missing.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-06T10:27:11-05:00"
-  },
-  {
-   "title": "Check whether the A/C works",
-   "phase": 3,
-   "notes": "Two A/C hoses came in the parts pile (Engine box), so lines may have been replaced or removed. Run the A/C and see if it blows cold, and check the compressor-to-firewall lines are all connected. Opening refrigerant lines legally requires recovery equipment, so any A/C line work is a shop job; ask Cody.",
-   "done": false,
-   "parts": [
-    "ac-hose",
-    "ac-hose-nichirin"
-   ],
-   "createdAt": "2026-10-08T11:35:00-05:00"
-  },
-  {
-   "title": "Check hoses and heat shielding near the headers",
-   "phase": 2,
-   "notes": "The aftermarket headers have no heat shield. Check the heater hoses (marked WATER) running past the headers have clearance from the hot tubes, and that the crumpled heat-shield material above the crossmember isn't loose, rattling or touching anything.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-08T11:35:00-05:00"
-  },
-  {
-   "title": "Check the hood prop rod",
-   "phase": 2,
-   "notes": "A loose red rod with rubber sleeves (possibly a hood prop rod) was tossed. Confirm the car has its own working prop rod; if not, buy one before working under the hood.",
-   "done": true,
-   "parts": [],
-   "createdAt": "2026-10-08T11:35:00-05:00"
-  },
-  {
-   "title": "Reinstall the driver door panel",
-   "phase": 2,
-   "notes": "Panel is loose (stored outside a container); fit is verified. First replace the torn vapor barrier (a sheet of plastic and butyl tape). Check whether the door still has its inner handle on the latch rod; if not, use the left handle from the interior handle pair (Interior trim box). Check every clip slot on the panel's back; Hardware bag B has push-pins and clips that may belong here.",
-   "done": false,
-   "parts": [
-    "door-panel-driver",
-    "door-handles-inner-pair",
-    "hw-bag-b"
-   ],
-   "createdAt": "2026-10-08T11:35:00-05:00"
-  },
-  {
-   "title": "Install a stereo",
-   "phase": 3,
-   "notes": "The radio is missing, with loose taped wiring in the opening. Clean up the wiring and install a head unit with the right harness adapter and dash kit for a 2002 RSX.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-08T11:35:00-05:00"
-  },
-  {
+   "key": "install-washer-reservoir",
    "title": "Install the washer fluid reservoir",
    "phase": 1,
    "notes": "The car has no washer reservoir, so the windshield washers can't work (needed for inspection and safe driving). Install the Injen washer reservoir X-6027 (Engine box). Check that the washer pump, its wiring plug and the hose to the sprayers are present before filling.",
@@ -2105,6 +2114,7 @@
    "createdAt": "2026-10-08T11:35:00-05:00"
   },
   {
+   "key": "list-for-sale",
    "title": "List the for-sale parts",
    "phase": 3,
    "notes": "Sell box: Hasport EKK mount, K-Tuned bypass, front mud guards (clean first), OBD2 adapter (freebie). Loose: black RSX spoiler (polish the top first, no ceramic coating), front lip (photograph it on the car; local pickup). Potential sale: interior door handles, under-dash fuse box. Track listed/sold with tags.",
@@ -2122,6 +2132,25 @@
    "createdAt": "2026-10-08T11:35:00-05:00"
   },
   {
+   "key": "paint-match-front",
+   "title": "Body paint",
+   "phase": 3,
+   "notes": "The black hood, fenders and bumper and the dark blue rear bumper don't match the silver body. Painting them silver is the biggest boost to resale value and appearance. The silver rear spoiler's clear coat is peeling; it needs sanding and new 2K clear (not polishing). The center Acura emblem on the hatch is also missing.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:11-05:00"
+  },
+  {
+   "key": "refinish-interior",
+   "title": "Refinish interior",
+   "phase": 3,
+   "notes": "Do before reinstalling trim. Pick one color for everything first (check factory color vs all-black). Remove trim in sections, photograph and bag fasteners per panel. Clean everything (no protectants), prep by material: plastic scuff + prep cleaner + adhesion promoter; carpet clean and dry; vinyl/leather alcohol prep. Use one coating line per material (e.g. SEM Color Coat). Light coats, full cure before reinstall. Do NOT coat airbag covers (steering wheel center, panels marked SRS/Airbag) and do not unplug yellow SRS connectors: ask Cody first. Leather/vinyl balm for seats and vinyl only.",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-09T22:57:00-05:00"
+  },
+  {
+   "key": "repair-seat-bolster",
    "title": "Repair the passenger seat bolster",
    "phase": 3,
    "notes": "The passenger seat side bolster is torn with foam showing in two places, and the passenger door armrest is worn and dirty. Options: an upholstery shop repair, a used seat cover, or a replacement bolster panel.",
@@ -2130,6 +2159,16 @@
    "createdAt": "2026-10-08T11:35:00-05:00"
   },
   {
+   "key": "scan-codes",
+   "title": "Scan for trouble codes",
+   "phase": 2,
+   "notes": "Plug an OBD2 scanner into the port (per the sticker on the column cover, behind the left side cover of the center console) and read stored codes, especially after the intake and IAT sensor are installed. Expect ABS codes from the delete; note anything else (misfire, sensor, or immobilizer codes).",
+   "done": false,
+   "parts": [],
+   "createdAt": "2026-10-06T10:27:03-05:00"
+  },
+  {
+   "key": "sort-trim-and-wiring",
    "title": "Catalog the trim box and sort the wiring box",
    "phase": 2,
    "notes": "Trim box (to catalog): remaining interior trim and panels, one piece at a time with stamps. Wiring box (to sort): harness sections; lay out one at a time with connectors visible and photograph any harness tags. Some may be from the EK Civic swap, not the RSX. Then reorganize containers and match Hardware bags A and B to the door or interior panels.",
@@ -2138,6 +2177,7 @@
    "createdAt": "2026-10-08T11:35:00-05:00"
   },
   {
+   "key": "trace-underdash-connectors",
    "title": "Trace the unplugged under-dash connectors",
    "phase": 2,
    "notes": "Several connectors hang unplugged in the passenger footwell near an under-dash module, and yellow (airbag/SRS) connectors are exposed around the column. Disconnect the battery and wait a few minutes before working near the yellow connectors, and never probe them with a meter. Ask Cody before reconnecting anything airbag-related. Match the others by connector shape and wire colors; the wiring box sort may help.",
@@ -2147,22 +2187,6 @@
     "harness-2-dash-s6m"
    ],
    "createdAt": "2026-10-08T11:35:00-05:00"
-  },
-  {
-   "title": "Refinish interior",
-   "phase": 3,
-   "notes": "Do before reinstalling trim. Pick one color for everything first (check factory color vs all-black). Remove trim in sections, photograph and bag fasteners per panel. Clean everything (no protectants), prep by material: plastic scuff + prep cleaner + adhesion promoter; carpet clean and dry; vinyl/leather alcohol prep. Use one coating line per material (e.g. SEM Color Coat). Light coats, full cure before reinstall. Do NOT coat airbag covers (steering wheel center, panels marked SRS/Airbag) and do not unplug yellow SRS connectors: ask Cody first. Leather/vinyl balm for seats and vinyl only.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-09T22:57:00-05:00"
-  },
-  {
-   "title": "Evaluate potential performance upgrades",
-   "phase": 4,
-   "notes": "Review the upgrade options on the Home page (ECU tune, limited-slip differential, intake manifold, turbo or supercharger) once the car drives reliably and a compression and leak-down test looks good. Go over the plan with Cody before buying anything that touches brakes, suspension or the ECU.",
-   "done": false,
-   "parts": [],
-   "createdAt": "2026-10-12T03:45:00-05:00"
   }
  ],
  "notes": [

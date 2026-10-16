@@ -280,6 +280,7 @@ export function validateTask(input: unknown = {}, { create = false }: ValidateOp
     const body = asBody(input);
     const errors: string[] = [];
     const out = compact<TaskInput>({
+        key: keyField(body, errors),
         title: text(body, 'title', errors, { required: create, nonEmpty: true, max: 200 }),
         // intIn checks the 1-4 range; anything else is reported and done() throws.
         phase: intIn(body, 'phase', errors, 1, 4) as Phase | undefined,

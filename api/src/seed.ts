@@ -5,7 +5,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { PoolClient } from 'pg';
 import { pool, tx } from './db.js';
+import crypto from 'node:crypto';
 import { processPhoto, removePhotoFiles } from './lib/photos.js';
+import { photoSource } from './services/common.js';
 import type { PhotoFileRow, SeedFile } from './types.js';
 
 // Resolves to api/seed from both src/ (tsx) and dist/ (compiled).
@@ -38,9 +40,10 @@ export async function seedIfEmpty(): Promise<void> {
             const buf = await fs.readFile(path.join(seedDir, 'photos', path.basename(name)));
             const p = await processPhoto(buf);
             written.push({ filename: p.filename, thumb_filename: p.thumbFilename });
+            const photoId = crypto.randomUUID();
             await c.query(
-                `INSERT INTO photos (${col}, filename, thumb_filename, width, height, sort_order, source) VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-                [id, p.filename, p.thumbFilename, p.width, p.height, order++, path.basename(name)],
+                `INSERT INTO photos (id, ${col}, filename, thumb_filename, width, height, sort_order, source) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+                [photoId, id, p.filename, p.thumbFilename, p.width, p.height, order++, photoSource(name, photoId)],
             );
         }
     }
@@ -105,9 +108,9 @@ export async function seedIfEmpty(): Promise<void> {
             }
             for (const t of seed.tasks || []) {
                 const r = await c.query<{ id: string }>(
-                    `INSERT INTO tasks (title, phase, notes, done, done_at, created_at)
-           VALUES ($1,$2,$3,$4,CASE WHEN $4 THEN now() END,COALESCE($5::timestamptz, now())) RETURNING id`,
-                    [t.title, t.phase || 3, t.notes || '', Boolean(t.done), ts(t.createdAt)],
+                    `INSERT INTO tasks (key, title, phase, notes, done, done_at, created_at)
+           VALUES ($1,$2,$3,$4,$5,CASE WHEN $5 THEN now() END,COALESCE($6::timestamptz, now())) RETURNING id`,
+                    [t.key || null, t.title, t.phase || 3, t.notes || '', Boolean(t.done), ts(t.createdAt)],
                 );
                 for (const [i, key] of (t.parts || []).entries()) {
                     if (partIds[key]) {

@@ -19,11 +19,14 @@
 export class HttpError extends Error {
     status: number;
     details: unknown;
+    /** More fields for the error body, e.g. `current` on a 412. */
+    extra?: Record<string, unknown>;
 
-    constructor(status: number, message: string, details?: unknown) {
+    constructor(status: number, message: string, details?: unknown, extra?: Record<string, unknown>) {
         super(message);
         this.status = status;
         this.details = details;
+        this.extra = extra;
     }
 }
 

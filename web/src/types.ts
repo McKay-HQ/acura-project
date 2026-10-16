@@ -42,6 +42,8 @@ export interface PartTaskRef {
 export interface Part {
     id: string;
     key: string | null;
+    /** Bumped by the API on every change; sent back as If-Match on writes. */
+    version: number;
     label: string;
     partNumber: string;
     fits: string;
@@ -70,6 +72,8 @@ export interface ContainerPartRef {
 export interface Container {
     id: string;
     key: string | null;
+    /** Bumped by the API on every change; sent back as If-Match on writes. */
+    version: number;
     name: string;
     location: string;
     notes: string;
@@ -86,6 +90,8 @@ export interface Container {
 export interface Tossed {
     id: string;
     key: string | null;
+    /** Bumped by the API on every change; sent back as If-Match on writes. */
+    version: number;
     label: string;
     partNumber: string;
     reason: string;
@@ -106,6 +112,9 @@ export interface TaskPartRef {
 
 export interface Task {
     id: string;
+    key: string | null;
+    /** Bumped by the API on every change; sent back as If-Match on writes. */
+    version: number;
     title: string;
     phase: Phase;
     notes: string;
@@ -119,11 +128,16 @@ export interface Task {
 export interface Note {
     id: string;
     key: string | null;
+    /** Bumped by the API on every change; sent back as If-Match on writes. */
+    version: number;
     title: string;
     items: string[];
     createdAt: string;
     updatedAt: string;
 }
+
+/** Any record the API versions (optimistic locking). */
+export type VersionedRecord = Part | Container | Tossed | Task | Note;
 
 export interface Summary {
     parts: { total: number; verified: number; unverified: number; unknown: number };

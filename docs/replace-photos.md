@@ -10,7 +10,7 @@ Replaces the photos of a part, container or tossed item on the deployed app: upl
 |---|---|
 | `-h` | Show this page |
 
-The first photo becomes the main one. If the upload fails (wrong key, bad file), nothing is deleted.
+The first photo becomes the main one. If the upload fails (wrong key, bad file, or someone changed the record meanwhile), nothing is deleted. Each write sends the record's version (`If-Match`). For catalog photos, `bin/sync` is usually the better tool.
 
 ## Examples
 

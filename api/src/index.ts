@@ -5,7 +5,7 @@ import { config, describeDb } from './config.js';
 import { pool, waitForDb } from './db.js';
 import { migrate } from './migrate.js';
 import { seedIfEmpty } from './seed.js';
-import { backfillPhotoSources } from './backfill.js';
+import { backfillPhotoSources, backfillTaskKeys } from './backfill.js';
 import { ensureUploadDir } from './lib/photos.js';
 import { api } from './routes.js';
 
@@ -18,10 +18,13 @@ interface ErrorLike {
     type?: string;
     message?: string;
     details?: unknown;
+    extra?: Record<string, unknown>;
 }
 
 const app = express();
 app.disable('x-powered-by');
+// Records carry their own ETag ("<version>"); Express's body-hash ETags would clash with it.
+app.set('etag', false);
 app.use(express.json({ limit: '1mb' }));
 
 app.use('/api', api);
@@ -49,6 +52,7 @@ app.use((err: ErrorLike, _req: Request, res: Response, _next: NextFunction) => {
     res.status(status).json({
         error: status >= 500 ? 'Something went wrong on the server' : err.message,
         details: err.details,
+        ...(status < 500 ? err.extra : undefined),
     });
 });
 
@@ -59,6 +63,7 @@ async function start(): Promise<void> {
     await migrate();
     if (config.seedOnEmpty) await seedIfEmpty();
     await backfillPhotoSources();
+    await backfillTaskKeys();
     const server = app.listen(config.port, () => console.log(`API listening on :${config.port}`));
     const stop = () => server.close(() => pool.end().then(() => process.exit(0)));
     process.on('SIGTERM', stop);

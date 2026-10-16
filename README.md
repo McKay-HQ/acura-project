@@ -39,7 +39,7 @@ Pulls, builds and pushes the images, then rolls out a new revision of the Azure 
 ./bin/sync -p
 ```
 
-Pulls the latest catalog and applies only what differs (names, notes, containers, photos) to the live app through its API, with no rebuild or redeploy. Add `-n` to preview. More in [docs/sync.md](docs/sync.md).
+Two-way sync between the catalog and the live app: edits made on either side are copied to the other, edits to different fields are merged, and conflicting edits are reported, never overwritten. No rebuild or redeploy. More in [docs/sync.md](docs/sync.md).
 
 ## API
 
@@ -60,9 +60,10 @@ bin/                         commands (see docs/)
   deploy                     create or update the Azure container app
   deploy.d/containerapp.yaml Azure Container Apps spec template
   replace-photos             swap a record's photos on the live app
-  sync                       make the live app match the catalog (sync.d/sync.py)
+  sync                       two-way sync of the catalog and the live app (sync.d/sync.py)
 lib/                         shared bash for bin/ (common.sh, azure.sh)
-docs/                        command pages, azure.md, docker.md
+docs/                        command pages, azure.md, docker.md, sync-design.md
+tools/artifact/              Claude's side of the sync (artifact <-> api/seed)
 api/
   docker/                    Dockerfile, .dockerignore, entrypoint
   migrations/                SQL schema, applied in order on startup

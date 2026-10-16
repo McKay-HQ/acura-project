@@ -7,8 +7,20 @@ export type ContainerIcon = 'trim' | 'engine' | 'electrical' | 'other' | 'askcod
 
 /** Tables that own photos. */
 export type PhotoTable = 'parts' | 'containers' | 'tossed';
-/** Tables whose records can be looked up by UUID or key. */
-export type KeyedTable = PhotoTable | 'notes';
+/** Tables whose records can be looked up by UUID or key; all are versioned and soft-deleted. */
+export type KeyedTable = PhotoTable | 'notes' | 'tasks';
+
+/** Columns every record row has for sync: version (bumped by triggers) and the soft-delete time. */
+export interface SyncRow {
+    version: number;
+    deleted_at: Date | null;
+}
+
+/** Fields every record in an API response has for sync. */
+export interface Versioned {
+    version: number;
+    deletedAt: Date | null;
+}
 
 // ---- photos ----
 
@@ -49,12 +61,13 @@ export interface ProcessedPhoto {
 
 export interface PartTaskRef {
     id: string;
+    key: string | null;
     title: string;
     phase: Phase;
     done: boolean;
 }
 
-export interface PartRow {
+export interface PartRow extends SyncRow {
     id: string;
     key: string | null;
     label: string;
@@ -91,7 +104,7 @@ export interface PartContainer extends ContainerRef {
     top: ContainerRef;
 }
 
-export interface Part {
+export interface Part extends Versioned {
     id: string;
     key: string | null;
     label: string;
@@ -133,7 +146,7 @@ export interface ContainerPartRef {
     status: PartStatus;
 }
 
-export interface ContainerRow {
+export interface ContainerRow extends SyncRow {
     id: string;
     key: string | null;
     name: string;
@@ -148,7 +161,7 @@ export interface ContainerRow {
     parts: ContainerPartRef[];
 }
 
-export interface Container {
+export interface Container extends Versioned {
     id: string;
     key: string | null;
     name: string;
@@ -166,7 +179,7 @@ export interface Container {
 
 // ---- tossed ----
 
-export interface TossedRow {
+export interface TossedRow extends SyncRow {
     id: string;
     key: string | null;
     label: string;
@@ -180,7 +193,7 @@ export interface TossedRow {
     photos: PhotoJson[];
 }
 
-export interface Tossed {
+export interface Tossed extends Versioned {
     id: string;
     key: string | null;
     label: string;
@@ -202,8 +215,9 @@ export interface TaskPartRef {
     status: PartStatus;
 }
 
-export interface TaskRow {
+export interface TaskRow extends SyncRow {
     id: string;
+    key: string | null;
     title: string;
     phase: Phase;
     notes: string;
@@ -214,8 +228,9 @@ export interface TaskRow {
     parts: TaskPartRef[];
 }
 
-export interface Task {
+export interface Task extends Versioned {
     id: string;
+    key: string | null;
     title: string;
     phase: Phase;
     notes: string;
@@ -228,7 +243,7 @@ export interface Task {
 
 // ---- notes ----
 
-export interface NoteRow {
+export interface NoteRow extends SyncRow {
     id: string;
     key: string | null;
     title: string;
@@ -237,7 +252,7 @@ export interface NoteRow {
     updated_at: Date;
 }
 
-export interface Note {
+export interface Note extends Versioned {
     id: string;
     key: string | null;
     title: string;
@@ -311,6 +326,7 @@ export interface TossedInput {
 }
 
 export interface TaskInput {
+    key?: string | null;
     title?: string;
     phase?: Phase;
     notes?: string;
@@ -364,6 +380,7 @@ export interface SeedTossed {
 }
 
 export interface SeedTask {
+    key?: string;
     title: string;
     phase?: number;
     notes?: string;

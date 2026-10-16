@@ -37,7 +37,17 @@ Parts, containers, tossed parts, tasks and notes for the Acura RSX Type-S projec
 Use **Authorize** to enter the key once; it is then sent with every request tried from this page.
 
 **Ids.** Path ids accept the record's UUID or its human-readable \`key\` (e.g. \`injen-intake\`),
-except tasks and photos, which only have UUIDs.
+except photos, which only have UUIDs. A key is generated from the name when a record is created without one.
+
+**Versions.** Parts, containers, tossed records, tasks and notes have a \`version\` (starting at 1) that the
+database bumps on every change, including adding, removing or reordering photos and changing a task's parts.
+Single-record responses carry it as \`ETag: "<version>"\`. Changing or deleting an existing record (PATCH,
+DELETE, toss, photo upload, reorder and delete) needs \`If-Match: "<version>"\` (a bare number or \`W/"n"\` works
+too): without it the answer is 428; if the record has changed since, 412 with the current record in \`current\`,
+and nothing is changed.
+
+**Deletes are soft.** A deleted record keeps its key and gets \`deletedAt\`; it is left out of every read
+(GET by id is a 404) except lists with \`includeDeleted=1\`.
 
 **Errors** are JSON: \`{ "error": "message" }\`, plus \`details\` (a list of field problems) for validation errors.
 
@@ -175,14 +185,31 @@ docs.use('/docs', swaggerUi.serveFiles(spec, uiOptions), swaggerUi.setup(spec, u
  *       description: The note's UUID or its key.
  *       schema:
  *         $ref: '#/components/schemas/Ref'
- *     taskId:
- *       name: id
+ *     taskRef:
+ *       name: ref
  *       in: path
  *       required: true
- *       description: The task's UUID (tasks have no key).
+ *       description: The task's UUID or its key.
+ *       schema:
+ *         $ref: '#/components/schemas/Ref'
+ *     ifMatch:
+ *       name: If-Match
+ *       in: header
+ *       required: true
+ *       description: >-
+ *         The version of the record this change is based on, as `"3"`, `W/"3"` or `3` (a comma-separated list
+ *         matches any of them; `*` matches any version). For DELETE /photos/{id}, the version of the record the
+ *         photo belongs to. Missing: 428. Not the current version: 412.
  *       schema:
  *         type: string
- *         format: uuid
+ *       example: '"3"'
+ *     includeDeleted:
+ *       name: includeDeleted
+ *       in: query
+ *       description: '`1` (or `true`) also lists deleted records (tombstones, with `deletedAt` set).'
+ *       schema:
+ *         type: string
+ *         enum: ['0', '1', 'false', 'true']
  *     photoId:
  *       name: id
  *       in: path
@@ -191,6 +218,12 @@ docs.use('/docs', swaggerUi.serveFiles(spec, uiOptions), swaggerUi.setup(spec, u
  *       schema:
  *         type: string
  *         format: uuid
+ *   headers:
+ *     ETag:
+ *       description: The record's version, quoted, e.g. `"3"`. Send it back in If-Match to change the record.
+ *       schema:
+ *         type: string
+ *       example: '"3"'
  *   requestBodies:
  *     PhotoUpload:
  *       required: true
@@ -242,6 +275,33 @@ docs.use('/docs', swaggerUi.serveFiles(spec, uiOptions), swaggerUi.setup(spec, u
  *             $ref: '#/components/schemas/Error'
  *           example:
  *             error: That key is already used by another record
+ *     PreconditionFailed:
+ *       description: >-
+ *         The record has changed since the version sent in If-Match. Nothing was changed; `current` is the record
+ *         as it is now (a Part, Container, Tossed, Task or Note).
+ *       content:
+ *         application/json:
+ *           schema:
+ *             allOf:
+ *               - $ref: '#/components/schemas/Error'
+ *               - type: object
+ *                 required: [current]
+ *                 properties:
+ *                   current:
+ *                     oneOf:
+ *                       - $ref: '#/components/schemas/Part'
+ *                       - $ref: '#/components/schemas/Container'
+ *                       - $ref: '#/components/schemas/Tossed'
+ *                       - $ref: '#/components/schemas/Task'
+ *                       - $ref: '#/components/schemas/Note'
+ *     PreconditionRequired:
+ *       description: The If-Match header with the record's version is missing.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Error'
+ *           example:
+ *             error: 'This change needs the record''s version in an If-Match header, e.g. If-Match: "3"'
  *     UnsupportedPhoto:
  *       description: An uploaded file could not be decoded as an image.
  *       content:

@@ -1,7 +1,7 @@
 // Add/edit forms for parts, containers and tossed records. Existing photos can be
 // reordered or deleted in place; new photos upload when the form is saved.
-import { useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react';
-import { api, errorMessage, type Resource } from '../api';
+import { useState, type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { api, errorMessage, CONFLICT_MESSAGE, PreconditionFailedError, type Resource } from '../api';
 import { PhotoEditor, FormButtons } from './ui';
 import { BOX_ICONS, isBoxIcon } from './Icons';
 import { STATUSES, FITS, SUGGESTED_TAGS, parseTags, topContainers, subContainers, isStatus } from '../constants';
@@ -11,8 +11,8 @@ import type {
     ContainerInput,
     OnSaved,
     Part,
+    PartInput,
     PartStatus,
-    Photo,
     Tossed,
     TossedInput,
 } from '../types';
@@ -25,64 +25,143 @@ type WithPhotos = Part | Container | Tossed;
 
 const num = (v: string | number | null | undefined): number | null => (v === '' || v == null ? null : Number(v));
 
-/** Shared state for a record's photos inside an edit form. */
-function usePhotos<T extends WithPhotos, I>(
-    resource: Resource<T, I>,
-    record: T | undefined,
-    onSaved: OnSaved<T>,
-    setError: (msg: string) => void,
-): { photos: Photo[]; editor: ReactNode } {
-    const [photos, setPhotos] = useState<Photo[]>(record?.photos || []);
-    const run = async (fn: () => Promise<T>) => {
-        setError('');
-        try {
-            const updated = await fn();
-            setPhotos(updated.photos);
-            onSaved(updated, { keepOpen: true });
-        } catch (err) {
-            setError(errorMessage(err));
-        }
-    };
-    return {
-        photos,
-        editor: record && (
-            <PhotoEditor
-                photos={photos}
-                onMakeMain={(p) =>
-                    run(() =>
-                        resource.reorderPhotos(record.id, [
-                            p.id,
-                            ...photos.filter((x) => x.id !== p.id).map((x) => x.id),
-                        ]),
-                    )
-                }
-                onDelete={(p) => run(() => api.deletePhoto<T>(p.id))}
-            />
-        ),
-    };
+/** Shown in a form after a 412; the form keeps the typed values and now holds the current version. */
+export const CONFLICT_IN_FORM = `${CONFLICT_MESSAGE} Your edits are still here: check them and save again to apply them.`;
+export const clashText = (labels: string[]) =>
+    labels.length ? ` Also changed by someone else: ${labels.join(', ')}.` : '';
+
+const sameValue = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+// Cast: Object.keys of a fully-keyed object lists exactly that object's keys.
+const keysOf = <O extends object>(o: O) => Object.keys(o) as (keyof O & string)[];
+
+export interface EditFields<F, I> {
+    f: F;
+    setF: Dispatch<SetStateAction<F>>;
+    /** Every field as request-body values (for creating a record). */
+    input: () => I;
+    changes: () => Partial<I>;
+    rebase: (next: F) => string[];
 }
 
-function useSubmit<T extends WithPhotos, I>(resource: Resource<T, I>, record: T | undefined, onSaved: OnSaved<T>) {
+/**
+ * A form's values (`f`) and the record values it started from (the snapshot). For an existing
+ * record only the fields the user changed are sent, so a save never writes back stale values of
+ * fields the user didn't touch. `toInput` maps the form values to the request body, key for key;
+ * values are compared after that mapping (so "5" and 5 are the same price).
+ */
+export function useEditFields<F extends object, I extends { [K in keyof F]: unknown }>(
+    initial: F,
+    toInput: (f: F) => I,
+    labels: { [K in keyof F]: string },
+): EditFields<F, I> {
+    const [f, setF] = useState<F>(initial);
+    const [base, setBase] = useState<F>(initial);
+    /** The fields changed since the snapshot, as request-body values. */
+    const changes = (): Partial<I> => {
+        const now = toInput(f);
+        const was = toInput(base);
+        const out: Partial<I> = {};
+        for (const k of keysOf(labels)) if (!sameValue(now[k], was[k])) out[k] = now[k];
+        return out;
+    };
+    /**
+     * Moves the form onto a newer version of the record: fields the user hasn't changed take the
+     * new values, changed ones keep what was typed. Returns the labels of fields the user changed
+     * that the other person also changed, to something different.
+     */
+    const rebase = (next: F): string[] => {
+        const now = toInput(f);
+        const was = toInput(base);
+        const then = toInput(next);
+        const clashes = keysOf(labels)
+            .filter((k) => !sameValue(now[k], was[k]) && !sameValue(then[k], was[k]) && !sameValue(then[k], now[k]))
+            .map((k) => labels[k]);
+        setF((cur) => {
+            const merged = { ...cur };
+            const curIn = toInput(cur);
+            for (const k of keysOf(labels)) if (sameValue(curIn[k], was[k])) merged[k] = next[k];
+            return merged;
+        });
+        setBase(next);
+        return clashes;
+    };
+    return { f, setF, input: () => toInput(f), changes, rebase };
+}
+
+/**
+ * Save + photo edits for a part, container or tossed form. `rec` is the record as of this form's
+ * last write: every write sends its version and the response replaces it, so a later write
+ * (photo edits, then Save) carries the new version. It is not refreshed from the lists, so
+ * someone else's change in the meantime gets a 412, and the form then rebases onto `current`.
+ */
+function useSubmit<T extends WithPhotos, RI, F extends object, I extends RI & { [K in keyof F]: unknown }>(
+    resource: Resource<T, RI>,
+    record: T | undefined,
+    onSaved: OnSaved<T>,
+    edit: EditFields<F, I>,
+    fromRecord: (r: T) => F,
+) {
+    const [rec, setRec] = useState<T | undefined>(record);
     const [files, setFiles] = useState<File[]>([]);
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
-    async function save(fields: I) {
+    /** Takes a newer version of the record into the form; returns the clash note, if any. */
+    const adopt = (r: T): string => {
+        setRec(r);
+        return clashText(edit.rebase(fromRecord(r)));
+    };
+    /** Message for a failed write; a 412 also rebases the form onto the current record. */
+    const failure = (err: unknown, r: T | undefined): string => {
+        if (!(err instanceof PreconditionFailedError)) return errorMessage(err);
+        const current = r && err.currentFor(r);
+        return CONFLICT_IN_FORM + (current ? adopt(current) : '');
+    };
+    async function save() {
         setBusy(true);
         setError('');
+        let current = rec;
         try {
             let saved: T;
-            if (record) {
-                saved = await resource.update(record.id, fields);
-                if (files.length) saved = await resource.addPhotos(record.id, files);
+            if (current) {
+                const body = edit.changes();
+                if (Object.keys(body).length) {
+                    current = await resource.update(current, body);
+                    setRec(current);
+                }
+                saved = files.length ? await resource.addPhotos(current, files) : current;
             } else {
-                saved = await resource.create(fields, files);
+                saved = await resource.create(edit.input(), files);
             }
             onSaved(saved);
         } catch (err) {
-            setError(errorMessage(err));
+            setError(failure(err, current));
             setBusy(false);
         }
     }
+    const photoEdit = async (fn: (r: T) => Promise<T>) => {
+        if (!rec) return;
+        setError('');
+        try {
+            const updated = await fn(rec);
+            // The response may carry someone else's field changes too; take them into the form.
+            setError(adopt(updated).trim());
+            onSaved(updated, { keepOpen: true });
+        } catch (err) {
+            setError(failure(err, rec));
+        }
+    };
+    const photos = rec?.photos || [];
+    const editor = rec && (
+        <PhotoEditor
+            photos={photos}
+            onMakeMain={(p) =>
+                photoEdit((r) =>
+                    resource.reorderPhotos(r, [p.id, ...photos.filter((x) => x.id !== p.id).map((x) => x.id)]),
+                )
+            }
+            onDelete={(p) => photoEdit((r) => resource.deletePhoto(r, p.id))}
+        />
+    );
     const fileInput = (
         <label>
             {record ? 'Add photos' : 'Photos'}
@@ -99,7 +178,7 @@ function useSubmit<T extends WithPhotos, I>(resource: Resource<T, I>, record: T 
             <FormButtons onCancel={onCancel} busy={busy} />
         </>
     );
-    return { save, fileInput, buttons, setError };
+    return { save, fileInput, buttons, editor };
 }
 
 interface PartFields {
@@ -116,6 +195,40 @@ interface PartFields {
     notes: string;
 }
 
+const partFields = (part?: Part): PartFields => ({
+    label: part?.label || '',
+    partNumber: part?.partNumber || '',
+    status: part?.status || 'Unverified',
+    fits: part?.fits || '',
+    tags: (part?.tags || []).join(', '),
+    valueLow: part?.valueLow ?? '',
+    valueHigh: part?.valueHigh ?? '',
+    containerId: part?.container?.id || '',
+    notes: part?.notes || '',
+});
+const partInput = (f: PartFields): PartInput => ({
+    label: f.label,
+    partNumber: f.partNumber,
+    status: f.status,
+    fits: f.fits,
+    tags: parseTags(f.tags),
+    valueLow: num(f.valueLow),
+    valueHigh: num(f.valueHigh),
+    containerId: f.containerId || null,
+    notes: f.notes,
+});
+const PART_LABELS: Record<keyof PartFields, string> = {
+    label: 'Name',
+    partNumber: 'Part number',
+    status: 'Status',
+    fits: 'Fits',
+    tags: 'Tags',
+    valueLow: 'Value (low)',
+    valueHigh: 'Value (high)',
+    containerId: 'Container',
+    notes: 'Notes',
+};
+
 interface PartFormProps {
     part?: Part;
     containers: Container[];
@@ -125,35 +238,15 @@ interface PartFormProps {
 }
 
 export function PartForm({ part, containers, tagOptions, onSaved, onCancel }: PartFormProps) {
-    const [f, setF] = useState<PartFields>(() => ({
-        label: part?.label || '',
-        partNumber: part?.partNumber || '',
-        status: part?.status || 'Unverified',
-        fits: part?.fits || '',
-        tags: (part?.tags || []).join(', '),
-        valueLow: part?.valueLow ?? '',
-        valueHigh: part?.valueHigh ?? '',
-        containerId: part?.container?.id || '',
-        notes: part?.notes || '',
-    }));
+    const edit = useEditFields(partFields(part), partInput, PART_LABELS);
+    const { f, setF } = edit;
     const set = (k: TextKeys<PartFields>) => (e: FieldEvent) => setF({ ...f, [k]: e.target.value });
-    const { save, fileInput, buttons, setError } = useSubmit(api.parts, part, onSaved);
-    const { editor } = usePhotos(api.parts, part, onSaved, setError);
+    const { save, fileInput, buttons, editor } = useSubmit(api.parts, part, onSaved, edit, partFields);
     const tagList = [...new Set([...SUGGESTED_TAGS, ...(tagOptions || [])])];
 
     const submit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        save({
-            label: f.label,
-            partNumber: f.partNumber,
-            status: f.status,
-            fits: f.fits,
-            tags: parseTags(f.tags),
-            valueLow: num(f.valueLow),
-            valueHigh: num(f.valueHigh),
-            containerId: f.containerId || null,
-            notes: f.notes,
-        });
+        save();
     };
 
     return (
@@ -287,6 +380,22 @@ interface ContainerFields {
     icon: ContainerIcon;
 }
 
+const containerFields = (container?: Container): ContainerFields => ({
+    name: container?.name || '',
+    location: container?.location || '',
+    notes: container?.notes || '',
+    parentId: container?.parentId || '',
+    icon: container?.icon || 'box',
+});
+const containerInput = (f: ContainerFields): Required<ContainerInput> => ({ ...f, parentId: f.parentId || null });
+const CONTAINER_LABELS: Record<keyof ContainerFields, string> = {
+    name: 'Name',
+    location: 'Location',
+    notes: 'Notes',
+    parentId: 'Inside',
+    icon: 'Icon',
+};
+
 interface ContainerFormProps {
     container?: Container;
     containers?: Container[];
@@ -295,25 +404,19 @@ interface ContainerFormProps {
 }
 
 export function ContainerForm({ container, containers = [], onSaved, onCancel }: ContainerFormProps) {
-    const [f, setF] = useState<ContainerFields>({
-        name: container?.name || '',
-        location: container?.location || '',
-        notes: container?.notes || '',
-        parentId: container?.parentId || '',
-        icon: container?.icon || 'box',
-    });
+    const edit = useEditFields(containerFields(container), containerInput, CONTAINER_LABELS);
+    const { f, setF } = edit;
     const hasSubs = container !== undefined && subContainers(containers, container.id).length > 0;
     const parents = topContainers(containers).filter((b) => b.id !== container?.id);
     const set = (k: TextKeys<ContainerFields>) => (e: FieldEvent) => setF({ ...f, [k]: e.target.value });
-    const { save, fileInput, buttons, setError } = useSubmit(api.containers, container, onSaved);
-    const { editor } = usePhotos(api.containers, container, onSaved, setError);
+    const { save, fileInput, buttons, editor } = useSubmit(api.containers, container, onSaved, edit, containerFields);
     return (
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                const { parentId, ...rest } = f;
-                const fields: ContainerInput = hasSubs ? rest : { ...rest, parentId: parentId || null };
-                save(fields);
+                // A container with sub-containers can't move (its Inside select is disabled), so its
+                // parentId never counts as changed and isn't sent.
+                save();
             }}
         >
             <h3 id="form-title">{container ? 'Edit container' : 'Add container'}</h3>
@@ -385,6 +488,20 @@ interface TossedFields {
     tossedOn: string;
 }
 
+const tossedFields = (item?: Tossed): TossedFields => ({
+    label: item?.label || '',
+    partNumber: item?.partNumber || '',
+    reason: item?.reason || '',
+    tossedOn: item?.tossedOn || new Date().toLocaleDateString('en-CA'),
+});
+const tossedInput = (f: TossedFields): TossedInput => ({ ...f, tossedOn: f.tossedOn || null });
+const TOSSED_LABELS: Record<keyof TossedFields, string> = {
+    label: 'Name',
+    partNumber: 'Part number',
+    reason: 'Why it was tossed',
+    tossedOn: 'Date tossed',
+};
+
 interface TossedFormProps {
     item?: Tossed;
     onSaved: OnSaved<Tossed>;
@@ -392,21 +509,15 @@ interface TossedFormProps {
 }
 
 export function TossedForm({ item, onSaved, onCancel }: TossedFormProps) {
-    const [f, setF] = useState<TossedFields>({
-        label: item?.label || '',
-        partNumber: item?.partNumber || '',
-        reason: item?.reason || '',
-        tossedOn: item?.tossedOn || new Date().toLocaleDateString('en-CA'),
-    });
+    const edit = useEditFields(tossedFields(item), tossedInput, TOSSED_LABELS);
+    const { f, setF } = edit;
     const set = (k: TextKeys<TossedFields>) => (e: FieldEvent) => setF({ ...f, [k]: e.target.value });
-    const { save, fileInput, buttons, setError } = useSubmit(api.tossed, item, onSaved);
-    const { editor } = usePhotos(api.tossed, item, onSaved, setError);
+    const { save, fileInput, buttons, editor } = useSubmit(api.tossed, item, onSaved, edit, tossedFields);
     return (
         <form
             onSubmit={(e) => {
                 e.preventDefault();
-                const fields: TossedInput = { ...f, tossedOn: f.tossedOn || null };
-                save(fields);
+                save();
             }}
         >
             <h3 id="form-title">{item ? 'Edit tossed item' : 'Log a tossed item'}</h3>
@@ -444,13 +555,20 @@ export function TossPartForm({ part, onDone, onCancel }: TossPartFormProps) {
     const [reason, setReason] = useState<string>('');
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [rec, setRec] = useState<Part>(part);
     const submit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setBusy(true);
         try {
-            onDone(await api.parts.toss(part.id, { reason }));
+            onDone(await api.parts.toss(rec, { reason }));
         } catch (err) {
-            setError(errorMessage(err));
+            if (err instanceof PreconditionFailedError) {
+                const current = err.currentFor(rec);
+                if (current) setRec(current);
+                setError(`${CONFLICT_MESSAGE} Check it and toss it again if you still want to.`);
+            } else {
+                setError(errorMessage(err));
+            }
             setBusy(false);
         }
     };

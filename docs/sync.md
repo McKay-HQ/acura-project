@@ -1,41 +1,41 @@
 # bin/sync
 
-Makes the live app match the catalog in `api/seed/seed.json`, through the app's API. Only the differences are applied, so there is no rebuild or redeploy: new photos go straight to the app's photo storage (the Azure file share).
+Two-way sync between the catalog (`api/seed/`) and the live app, through the app's API. Changes made on either side since the last sync are copied to the other; no rebuild or redeploy is needed.
 
 ```sh
-./bin/sync [-n] [-p] [-h]
+./bin/sync [-n] [-N] [-C | -A] [-p] [-h]
 ```
 
 | Option | |
 |---|---|
 | `-n` | Dry run: list the changes without making them |
+| `-N` | Don't commit and push the updated catalog |
+| `-C` | Settle conflicts in favour of the catalog |
+| `-A` | Settle conflicts in favour of the app |
 | `-p` | `git pull` first, then sync what was pulled |
 | `-h` | Show this page |
 
 ## Everyday use
 
 ```sh
-./bin/sync -pn     # pull the latest catalog and see what would change
-./bin/sync -p      # pull and apply
+./bin/sync -p      # pull the latest catalog, sync both ways, push what came from the app
 ```
 
-## What it compares
+Then tell Claude to "pull app changes into the artifact" if the app side changed.
 
-Records are matched by key (tasks by title):
+## How it decides
 
-| Record | Fields |
-|---|---|
-| Containers | name, location, notes, icon, order, parent container, photos |
-| Parts | label, part number, fits, status, tags, values, notes, container, photos |
-| Tossed | label, part number, reason, date, photos |
-| Tasks | phase, notes, done, linked parts |
-| Notes | title, items |
+Each record (matched by key) is compared three ways: the catalog, the app, and how both looked at the last sync (`api/seed/sync-state.json`).
 
-Missing records are created. Records that are in the app but not in the catalog are listed and left alone; nothing is deleted except photos that a record shouldn't have.
+- **Changed on one side:** copied to the other, including creates and deletes. Photos added in the app are downloaded into `api/seed/photos/`.
+- **Changed on both sides, different fields:** merged.
+- **The same field changed on both sides:** a **conflict**. It's reported and that record is left alone on both sides until you pick a side with `-C` or `-A`, or make them match.
 
-## Photos
+Writes to the app carry the version the sync just read (`If-Match`). If someone saves an edit in the app at that moment, the app refuses the write (412), nothing is overwritten, and the record is reported; the next run picks it up.
 
-Each photo remembers the file it was uploaded from (`source`). Catalog photos are named after their catalog id, e.g. `77dd58464b9a5e54c6bdc3f6f251c440.jpg`, so sync can tell which ones a record already has: it uploads the missing ones from `api/seed/photos`, removes the others, and puts them in the catalog's order.
+When the run pulled anything from the app, it commits `api/seed/` and pushes, so the artifact can take the changes in.
+
+Exit status: 0 in sync, 3 when conflicts were left, 1 on errors.
 
 ## Environment
 
@@ -44,8 +44,8 @@ Each photo remembers the file it was uploaded from (`source`). Catalog photos ar
 | `APP_URL` | the Azure app's address (looked up with `az`) |
 | `API_KEY` | the app's `api-key` secret (looked up with `az`) |
 
-For a local copy: `APP_URL=http://localhost:8080 API_KEY=... ./bin/sync`.
+For a local copy: `APP_URL=http://localhost:8080 API_KEY=... ./bin/sync -N`.
 
 ## Needs
 
-`python3` (part of Ubuntu), and `az` signed in unless both `APP_URL` and `API_KEY` are set.
+`python3` (part of Ubuntu), `git`, and `az` signed in unless both `APP_URL` and `API_KEY` are set. Design notes: [sync-design.md](sync-design.md).

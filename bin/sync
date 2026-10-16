@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
-# Makes the live app match the catalog in api/seed/seed.json, through the app's API.
+# Two-way sync between the catalog (api/seed/) and the live app, through the app's API.
 # Help: ./bin/sync -h (docs/sync.md)
 source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 source "$ROOT/lib/azure.sh"
 
 PULL=0
 DRY_RUN=0
+COMMIT=1
+PREFER=""
 ARGS=()
-while getopts ":nph" opt; do
+while getopts ":nNCAph" opt; do
     case $opt in
+        C) PREFER=catalog; ARGS+=(-C) ;;
+        A) PREFER=app; ARGS+=(-A) ;;
         n) DRY_RUN=1; ARGS+=(-n) ;;
+        N) COMMIT=0; ARGS+=(-N) ;;
         p) PULL=1 ;;
         h) show_help; exit 0 ;;
         *) bad_option "$OPTARG" ;;
@@ -26,4 +31,15 @@ fi
 APP_URL=${APP_URL:-$(app_url)}
 API_KEY=${API_KEY:-$(app_secret api-key)}
 
-APP_URL="$APP_URL" API_KEY="$API_KEY" ROOT="$ROOT" DRY_RUN="$DRY_RUN" exec python3 -I "$ROOT/bin/sync.d/sync.py"
+STATUS=0
+APP_URL="$APP_URL" API_KEY="$API_KEY" ROOT="$ROOT" DRY_RUN="$DRY_RUN" PREFER="$PREFER" python3 -I "$ROOT/bin/sync.d/sync.py" || STATUS=$?
+[ "$STATUS" = 1 ] && exit 1
+
+# Share what was pulled from the app (catalog, photos, sync state) so the artifact can pick it up.
+if [ "$DRY_RUN" = 0 ] && [ "$COMMIT" = 1 ] && [ -n "$(git -C "$ROOT" status --porcelain -- api/seed)" ]; then
+    echo "Committing the updated catalog..."
+    git -C "$ROOT" add api/seed
+    git -C "$ROOT" commit -q -m "sync: catalog from the app ($(date '+%Y-%m-%d %H:%M'))"
+    git -C "$ROOT" push -q
+fi
+exit "$STATUS"

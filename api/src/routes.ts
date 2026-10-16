@@ -1,5 +1,6 @@
 import express from 'express';
 import type { Request } from 'express';
+import type { PoolClient } from 'pg';
 import multer from 'multer';
 import { config } from './config.js';
 import { query } from './db.js';
@@ -22,10 +23,12 @@ import * as containers from './services/containers.js';
 import * as tossed from './services/tossed.js';
 import * as tasks from './services/tasks.js';
 import * as notes from './services/notes.js';
-import { resolveId, addPhotos, reorderPhotos, deletePhoto } from './services/common.js';
+import { addRecordPhotos, reorderPhotos, deletePhoto } from './services/common.js';
+import { etag, ifMatch, includeDeleted, sendRecord } from './lib/preconditions.js';
+import type { IfMatch } from './lib/preconditions.js';
 import { getSummary } from './services/summary.js';
 import { docs } from './openapi.js';
-import type { PhotoTable, ValidateOptions } from './types.js';
+import type { PhotoTable, ValidateOptions, Versioned } from './types.js';
 
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -214,52 +217,54 @@ api.get('/tags', async (_req, res) => {
 });
 
 /** The service functions behind a record type with photos. T is the API shape, I the validated input. */
-interface PhotoResource<T, I> {
+interface PhotoResource<T extends Versioned, I> {
     noun: string;
-    list: (q: Request['query']) => Promise<T[]>;
-    get: (ref: string) => Promise<T>;
+    list: (q: Request['query'], includeDeleted: boolean) => Promise<T[]>;
+    get: (ref: string, client?: PoolClient) => Promise<T>;
     create: (data: I, files?: Express.Multer.File[]) => Promise<T>;
-    update: (ref: string, data: I) => Promise<T>;
-    remove: (ref: string) => Promise<void>;
+    update: (ref: string, data: I, im: IfMatch) => Promise<T>;
+    /** Soft-deletes; returns the tombstone's version. */
+    remove: (ref: string, im: IfMatch) => Promise<number>;
     validate: (body: unknown, opts?: ValidateOptions) => I;
 }
 
 /**
  * Standard routes for a record type with photos:
- *   GET /<name>, GET /<name>/:ref, POST /<name> (JSON, or multipart with "photos" files),
+ *   GET /<name> (?includeDeleted=1), GET /<name>/:ref, POST /<name> (JSON, or multipart with "photos" files),
  *   PATCH /<name>/:ref, DELETE /<name>/:ref,
  *   POST /<name>/:ref/photos (multipart "photos"), PUT /<name>/:ref/photos/order { ids: [...] }
- * :ref is a UUID or the record's key.
+ * :ref is a UUID or the record's key. Writes to an existing record need If-Match with its version;
+ * single-record responses carry ETag: "<version>".
  */
-function photoResource<T, I>(
+function photoResource<T extends Versioned, I>(
     name: PhotoTable,
     { list, get, create, update, remove, validate, noun }: PhotoResource<T, I>,
 ): void {
     api.get(`/${name}`, async (req, res) => {
-        res.json(await list(req.query));
+        res.json(await list(req.query, includeDeleted(req)));
     });
     api.get(`/${name}/:ref`, async (req, res) => {
-        res.json(await get(assertRef(req.params.ref, noun)));
+        sendRecord(res, 200, await get(assertRef(req.params.ref, noun)));
     });
     api.post(`/${name}`, upload.array('photos'), async (req, res) => {
-        res.status(201).json(await create(validate(req.body || {}, { create: true }), uploadedFiles(req)));
+        sendRecord(res, 201, await create(validate(req.body || {}, { create: true }), uploadedFiles(req)));
     });
     api.patch(`/${name}/:ref`, async (req, res) => {
-        res.json(await update(assertRef(req.params.ref, noun), validate(req.body || {})));
+        const im = ifMatch(req);
+        sendRecord(res, 200, await update(assertRef(req.params.ref, noun), validate(req.body || {}), im));
     });
     api.delete(`/${name}/:ref`, async (req, res) => {
-        await remove(assertRef(req.params.ref, noun));
-        res.status(204).end();
+        const im = ifMatch(req);
+        const version = await remove(assertRef(req.params.ref, noun), im);
+        res.status(204).set('ETag', etag(version)).end();
     });
     api.post(`/${name}/:ref/photos`, upload.array('photos'), async (req, res) => {
-        const id = await resolveId(name, assertRef(req.params.ref, noun));
-        await addPhotos(name, id, uploadedFiles(req));
-        res.status(201).json(await get(id));
+        const im = ifMatch(req);
+        sendRecord(res, 201, await addRecordPhotos(name, assertRef(req.params.ref, noun), uploadedFiles(req), im, get));
     });
     api.put(`/${name}/:ref/photos/order`, async (req, res) => {
-        const id = await resolveId(name, assertRef(req.params.ref, noun));
-        await reorderPhotos(name, id, req.body?.ids);
-        res.json(await get(id));
+        const im = ifMatch(req);
+        sendRecord(res, 200, await reorderPhotos(name, assertRef(req.params.ref, noun), req.body?.ids, im, get));
     });
 }
 
@@ -271,6 +276,7 @@ function photoResource<T, I>(
  *     summary: List parts
  *     description: Filters are optional and combined with AND. Oldest first.
  *     parameters:
+ *       - $ref: '#/components/parameters/includeDeleted'
  *       - name: status
  *         in: query
  *         description: Only parts with any of these statuses (repeat the parameter or separate with commas).
@@ -358,6 +364,9 @@ function photoResource<T, I>(
  *     responses:
  *       201:
  *         description: The created part.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -381,6 +390,9 @@ function photoResource<T, I>(
  *     responses:
  *       200:
  *         description: The part.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -402,9 +414,14 @@ function photoResource<T, I>(
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/PartInput'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The updated part.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -417,20 +434,36 @@ function photoResource<T, I>(
  *         $ref: '#/components/responses/NotFound'
  *       409:
  *         $ref: '#/components/responses/Conflict'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  *   delete:
  *     tags: [Parts]
  *     summary: Delete a part
- *     description: Deletes the part and its photos. To keep it on the Tossed list instead, use POST /parts/{ref}/toss.
+ *     description: >-
+ *       Soft-deletes the part: it becomes a tombstone (`deletedAt` set, version bumped) that only lists with
+ *       `includeDeleted=1` show, and its key stays taken. Its photos are deleted and it is removed from tasks (their
+ *       versions are bumped). To keep it on the Tossed list instead, use POST /parts/{ref}/toss.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       204:
- *         description: Deleted.
+ *         description: Deleted; the ETag is the tombstone's version.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  * /parts/{ref}/photos:
  *   parameters:
  *     - $ref: '#/components/parameters/partRef'
@@ -441,9 +474,14 @@ function photoResource<T, I>(
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       $ref: '#/components/requestBodies/PhotoUpload'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
  *         description: The part with its photos.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -456,6 +494,10 @@ function photoResource<T, I>(
  *         $ref: '#/components/responses/NotFound'
  *       415:
  *         $ref: '#/components/responses/UnsupportedPhoto'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  * /parts/{ref}/photos/order:
  *   parameters:
  *     - $ref: '#/components/parameters/partRef'
@@ -465,9 +507,14 @@ function photoResource<T, I>(
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       $ref: '#/components/requestBodies/PhotoOrder'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The part with its photos in the new order.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -478,10 +525,14 @@ function photoResource<T, I>(
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 photoResource('parts', {
     noun: 'part id',
-    list: (q) => parts.listParts(q),
+    list: (q, all) => parts.listParts(q, all),
     get: parts.getPart,
     create: parts.createPart,
     update: parts.updatePart,
@@ -499,9 +550,9 @@ photoResource('parts', {
  *     tags: [Parts, Tossed]
  *     summary: Toss a part
  *     description: >-
- *       Moves the part to the Tossed list: creates a tossed record with its name, part number, key (unless another
- *       tossed record already uses that key, then none) and photos, then deletes the part and its task links. The
- *       body is optional.
+ *       Moves the part to the Tossed list: creates a tossed record with its name, part number, key (if another
+ *       tossed record already has that key, with -2, -3... added) and photos, then soft-deletes the part and removes
+ *       it from its tasks. The body is optional. The ETag is the new tossed record's version.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       required: false
@@ -509,9 +560,14 @@ photoResource('parts', {
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/PartTossInput'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
  *         description: The new tossed record.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -522,11 +578,16 @@ photoResource('parts', {
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 api.post('/parts/:ref/toss', async (req, res) => {
+    const im = ifMatch(req);
     const v = validateTossed({ reason: req.body?.reason ?? '', tossedOn: req.body?.tossedOn ?? null });
-    const id = await parts.tossPart(assertRef(req.params.ref, 'part id'), v);
-    res.status(201).json(await tossed.getTossed(id));
+    const id = await parts.tossPart(assertRef(req.params.ref, 'part id'), v, im);
+    sendRecord(res, 201, await tossed.getTossed(id));
 });
 
 /**
@@ -536,6 +597,8 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     tags: [Containers]
  *     summary: List containers
  *     description: All containers, top-level and sub-containers, in display order (sortOrder, then oldest first).
+ *     parameters:
+ *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
  *         description: The containers.
@@ -582,6 +645,9 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     responses:
  *       201:
  *         description: The created container.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -605,6 +671,9 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     responses:
  *       200:
  *         description: The container.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -626,9 +695,14 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/ContainerInput'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The updated container.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -641,20 +715,36 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *         $ref: '#/components/responses/NotFound'
  *       409:
  *         $ref: '#/components/responses/Conflict'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  *   delete:
  *     tags: [Containers]
  *     summary: Delete a container
- *     description: Deletes the container and its photos. Parts in a sub-container move up to its parent; parts in a top-level container are left without a container, and its sub-containers become top-level.
+ *     description: >-
+ *       Soft-deletes the container (a tombstone, as for parts) and deletes its photos. Parts in a sub-container move
+ *       up to its parent; parts in a top-level container are left without a container, and its sub-containers become
+ *       top-level (each part or container that moves gets a new version).
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       204:
- *         description: Deleted.
+ *         description: Deleted; the ETag is the tombstone's version.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  * /containers/{ref}/photos:
  *   parameters:
  *     - $ref: '#/components/parameters/containerRef'
@@ -665,9 +755,14 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       $ref: '#/components/requestBodies/PhotoUpload'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
  *         description: The container with its photos.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -680,6 +775,10 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *         $ref: '#/components/responses/NotFound'
  *       415:
  *         $ref: '#/components/responses/UnsupportedPhoto'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  * /containers/{ref}/photos/order:
  *   parameters:
  *     - $ref: '#/components/parameters/containerRef'
@@ -689,9 +788,14 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       $ref: '#/components/requestBodies/PhotoOrder'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The container with its photos in the new order.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -702,10 +806,14 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 photoResource('containers', {
     noun: 'container id',
-    list: () => containers.listContainers(),
+    list: (_q, all) => containers.listContainers(all),
     get: containers.getContainer,
     create: containers.createContainer,
     update: containers.updateContainer,
@@ -720,6 +828,8 @@ photoResource('containers', {
  *     tags: [Tossed]
  *     summary: List tossed records
  *     description: Tossed parts in display order.
+ *     parameters:
+ *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
  *         description: The tossed records.
@@ -766,6 +876,9 @@ photoResource('containers', {
  *     responses:
  *       201:
  *         description: The created tossed record.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -789,6 +902,9 @@ photoResource('containers', {
  *     responses:
  *       200:
  *         description: The tossed record.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -810,9 +926,14 @@ photoResource('containers', {
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/TossedInput'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The updated tossed record.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -825,20 +946,33 @@ photoResource('containers', {
  *         $ref: '#/components/responses/NotFound'
  *       409:
  *         $ref: '#/components/responses/Conflict'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  *   delete:
  *     tags: [Tossed]
  *     summary: Delete a tossed record
- *     description: Deletes the record and its photos.
+ *     description: Soft-deletes the record (a tombstone, as for parts) and deletes its photos.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       204:
- *         description: Deleted.
+ *         description: Deleted; the ETag is the tombstone's version.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  * /tossed/{ref}/photos:
  *   parameters:
  *     - $ref: '#/components/parameters/tossedRef'
@@ -849,9 +983,14 @@ photoResource('containers', {
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       $ref: '#/components/requestBodies/PhotoUpload'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
  *         description: The tossed record with its photos.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -864,6 +1003,10 @@ photoResource('containers', {
  *         $ref: '#/components/responses/NotFound'
  *       415:
  *         $ref: '#/components/responses/UnsupportedPhoto'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  * /tossed/{ref}/photos/order:
  *   parameters:
  *     - $ref: '#/components/parameters/tossedRef'
@@ -873,9 +1016,14 @@ photoResource('containers', {
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       $ref: '#/components/requestBodies/PhotoOrder'
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The tossed record with its photos in the new order.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -886,10 +1034,14 @@ photoResource('containers', {
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 photoResource('tossed', {
     noun: 'tossed id',
-    list: () => tossed.listTossed(),
+    list: (_q, all) => tossed.listTossed(all),
     get: tossed.getTossed,
     create: tossed.createTossed,
     update: tossed.updateTossed,
@@ -910,9 +1062,14 @@ photoResource('tossed', {
  *       Deletes one photo of a part, container or tossed record (and its files), and responds with the updated record
  *       it belonged to - a Part, Container or Tossed object depending on the owner.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
  *         description: The record the photo belonged to.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -926,11 +1083,15 @@ photoResource('tossed', {
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 api.delete('/photos/:id', async (req, res) => {
-    const [table, id] = await deletePhoto(assertUuid(req.params.id, 'photo id'));
-    const get = { parts: parts.getPart, containers: containers.getContainer, tossed: tossed.getTossed }[table];
-    res.json(await get(id));
+    const im = ifMatch(req);
+    const getters = { parts: parts.getPart, containers: containers.getContainer, tossed: tossed.getTossed };
+    sendRecord(res, 200, await deletePhoto(assertUuid(req.params.id, 'photo id'), im, getters));
 });
 
 // ---- tasks ----
@@ -941,6 +1102,8 @@ api.delete('/photos/:id', async (req, res) => {
  *     tags: [Tasks]
  *     summary: List tasks
  *     description: By phase; within a phase open tasks first, then oldest first.
+ *     parameters:
+ *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
  *         description: The tasks.
@@ -953,8 +1116,8 @@ api.delete('/photos/:id', async (req, res) => {
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-api.get('/tasks', async (_req, res) => {
-    res.json(await tasks.listTasks());
+api.get('/tasks', async (req, res) => {
+    res.json(await tasks.listTasks(includeDeleted(req)));
 });
 /**
  * @openapi
@@ -976,6 +1139,9 @@ api.get('/tasks', async (_req, res) => {
  *     responses:
  *       201:
  *         description: The created task.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -986,19 +1152,23 @@ api.get('/tasks', async (_req, res) => {
  *         $ref: '#/components/responses/Unauthorized'
  */
 api.post('/tasks', async (req, res) => {
-    res.status(201).json(await tasks.createTask(validateTask(req.body || {}, { create: true })));
+    sendRecord(res, 201, await tasks.createTask(validateTask(req.body || {}, { create: true })));
 });
 /**
  * @openapi
- * /tasks/{id}:
+ * /tasks/{ref}:
  *   get:
  *     tags: [Tasks]
  *     summary: Get a task
+ *     description: By UUID or key.
  *     parameters:
- *       - $ref: '#/components/parameters/taskId'
+ *       - $ref: '#/components/parameters/taskRef'
  *     responses:
  *       200:
  *         description: The task.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -1010,19 +1180,20 @@ api.post('/tasks', async (req, res) => {
  *       404:
  *         $ref: '#/components/responses/NotFound'
  */
-api.get('/tasks/:id', async (req, res) => {
-    res.json(await tasks.getTask(assertUuid(req.params.id)));
+api.get('/tasks/:ref', async (req, res) => {
+    sendRecord(res, 200, await tasks.getTask(assertRef(req.params.ref, 'task id')));
 });
 /**
  * @openapi
- * /tasks/{id}:
+ * /tasks/{ref}:
  *   patch:
  *     tags: [Tasks]
  *     summary: Update a task
  *     description: Changes only the fields sent; `partIds`, when sent, replaces the task's parts.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     parameters:
- *       - $ref: '#/components/parameters/taskId'
+ *       - $ref: '#/components/parameters/ifMatch'
+ *       - $ref: '#/components/parameters/taskRef'
  *     requestBody:
  *       required: true
  *       content:
@@ -1033,6 +1204,9 @@ api.get('/tasks/:id', async (req, res) => {
  *     responses:
  *       200:
  *         description: The updated task.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -1043,33 +1217,51 @@ api.get('/tasks/:id', async (req, res) => {
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
-api.patch('/tasks/:id', async (req, res) => {
-    res.json(await tasks.updateTask(assertUuid(req.params.id), validateTask(req.body || {})));
+api.patch('/tasks/:ref', async (req, res) => {
+    const im = ifMatch(req);
+    sendRecord(
+        res,
+        200,
+        await tasks.updateTask(assertRef(req.params.ref, 'task id'), validateTask(req.body || {}), im),
+    );
 });
 /**
  * @openapi
- * /tasks/{id}:
+ * /tasks/{ref}:
  *   delete:
  *     tags: [Tasks]
  *     summary: Delete a task
- *     description: The parts it used are not affected.
+ *     description: Soft-deletes the task (a tombstone, as for parts). The parts it used are not affected.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     parameters:
- *       - $ref: '#/components/parameters/taskId'
+ *       - $ref: '#/components/parameters/ifMatch'
+ *       - $ref: '#/components/parameters/taskRef'
  *     responses:
  *       204:
- *         description: Deleted.
+ *         description: Deleted; the ETag is the tombstone's version.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
-api.delete('/tasks/:id', async (req, res) => {
-    await tasks.deleteTask(assertUuid(req.params.id));
-    res.status(204).end();
+api.delete('/tasks/:ref', async (req, res) => {
+    const im = ifMatch(req);
+    const version = await tasks.deleteTask(assertRef(req.params.ref, 'task id'), im);
+    res.status(204).set('ETag', etag(version)).end();
 });
 
 // ---- notes ----
@@ -1080,6 +1272,8 @@ api.delete('/tasks/:id', async (req, res) => {
  *     tags: [Notes]
  *     summary: List notes
  *     description: Oldest first.
+ *     parameters:
+ *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
  *         description: The notes.
@@ -1092,8 +1286,8 @@ api.delete('/tasks/:id', async (req, res) => {
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-api.get('/notes', async (_req, res) => {
-    res.json(await notes.listNotes());
+api.get('/notes', async (req, res) => {
+    res.json(await notes.listNotes(includeDeleted(req)));
 });
 /**
  * @openapi
@@ -1106,6 +1300,9 @@ api.get('/notes', async (_req, res) => {
  *     responses:
  *       200:
  *         description: The note.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -1118,7 +1315,7 @@ api.get('/notes', async (_req, res) => {
  *         $ref: '#/components/responses/NotFound'
  */
 api.get('/notes/:ref', async (req, res) => {
-    res.json(await notes.getNote(assertRef(req.params.ref, 'note id')));
+    sendRecord(res, 200, await notes.getNote(assertRef(req.params.ref, 'note id')));
 });
 /**
  * @openapi
@@ -1140,6 +1337,9 @@ api.get('/notes/:ref', async (req, res) => {
  *     responses:
  *       201:
  *         description: The created note.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -1152,7 +1352,7 @@ api.get('/notes/:ref', async (req, res) => {
  *         $ref: '#/components/responses/Conflict'
  */
 api.post('/notes', async (req, res) => {
-    res.status(201).json(await notes.createNote(validateNote(req.body || {}, { create: true })));
+    sendRecord(res, 201, await notes.createNote(validateNote(req.body || {}, { create: true })));
 });
 /**
  * @openapi
@@ -1163,6 +1363,7 @@ api.post('/notes', async (req, res) => {
  *     description: Changes only the fields sent; `items`, when sent, replaces the list.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *       - $ref: '#/components/parameters/noteRef'
  *     requestBody:
  *       required: true
@@ -1173,6 +1374,9 @@ api.post('/notes', async (req, res) => {
  *     responses:
  *       200:
  *         description: The updated note.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *         content:
  *           application/json:
  *             schema:
@@ -1185,9 +1389,18 @@ api.post('/notes', async (req, res) => {
  *         $ref: '#/components/responses/NotFound'
  *       409:
  *         $ref: '#/components/responses/Conflict'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 api.patch('/notes/:ref', async (req, res) => {
-    res.json(await notes.updateNote(assertRef(req.params.ref, 'note id'), validateNote(req.body || {})));
+    const im = ifMatch(req);
+    sendRecord(
+        res,
+        200,
+        await notes.updateNote(assertRef(req.params.ref, 'note id'), validateNote(req.body || {}), im),
+    );
 });
 /**
  * @openapi
@@ -1195,20 +1408,30 @@ api.patch('/notes/:ref', async (req, res) => {
  *   delete:
  *     tags: [Notes]
  *     summary: Delete a note
+ *     description: Soft-deletes the note (a tombstone, as for parts).
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
  *       - $ref: '#/components/parameters/noteRef'
  *     responses:
  *       204:
- *         description: Deleted.
+ *         description: Deleted; the ETag is the tombstone's version.
+ *         headers:
+ *           ETag:
+ *             $ref: '#/components/headers/ETag'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  *       404:
  *         $ref: '#/components/responses/NotFound'
+ *       412:
+ *         $ref: '#/components/responses/PreconditionFailed'
+ *       428:
+ *         $ref: '#/components/responses/PreconditionRequired'
  */
 api.delete('/notes/:ref', async (req, res) => {
-    await notes.deleteNote(assertRef(req.params.ref, 'note id'));
-    res.status(204).end();
+    const im = ifMatch(req);
+    const version = await notes.deleteNote(assertRef(req.params.ref, 'note id'), im);
+    res.status(204).set('ETag', etag(version)).end();
 });

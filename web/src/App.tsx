@@ -1,5 +1,14 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { api, keyStore, authEvents, errorMessage, ApiError } from './api';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type Dispatch,
+    type FormEvent,
+    type ReactNode,
+    type SetStateAction,
+} from 'react';
+import { api, keyStore, authEvents, errorMessage, ApiError, PreconditionFailedError, CONFLICT_MESSAGE } from './api';
 import { Icon } from './components/Icons';
 import Modal from './components/Modal';
 import Home from './components/Home';
@@ -168,11 +177,11 @@ export default function App() {
     const toastTimer = useRef<ReturnType<typeof setTimeout>>();
     const listScroll = useRef<number>(0);
 
-    const showToast = (msg: string) => {
+    const showToast = useCallback((msg: string, ms = 3000) => {
         setToast(msg);
         clearTimeout(toastTimer.current);
-        toastTimer.current = setTimeout(() => setToast(''), 3000);
-    };
+        toastTimer.current = setTimeout(() => setToast(''), ms);
+    }, []);
 
     const canEdit = cfg !== null && (!cfg.keyRequiredForChanges || unlocked);
     const readsLocked = Boolean(cfg?.keyRequiredForReads) && !unlocked;
@@ -221,12 +230,20 @@ export default function App() {
         window.addEventListener('focus', onFocus);
         const onNeedKey = () => setModal((m) => m || { type: 'key' });
         authEvents.addEventListener('needkey', onNeedKey);
+        // A write hit a 412 (someone else changed the record first): reload in place and say so.
+        // Any open form stays open; it shows the same message and keeps what was typed.
+        const onConflict = () => {
+            showToast(CONFLICT_MESSAGE, 7000);
+            refresh();
+        };
+        authEvents.addEventListener('conflict', onConflict);
         return () => {
             clearInterval(timer);
             window.removeEventListener('focus', onFocus);
             authEvents.removeEventListener('needkey', onNeedKey);
+            authEvents.removeEventListener('conflict', onConflict);
         };
-    }, [refresh]);
+    }, [refresh, showToast]);
 
     // Hash routing: #home, #parts, #containers, #tossed, #tasks, #part/<key>, #container/<key>, #task/<id>.
     useEffect(() => {
@@ -265,24 +282,38 @@ export default function App() {
         else window.scrollTo(0, 0);
     }, []);
 
+    // Put a record returned by a write into state right away, so the next write sends its new version.
+    const replaceIn =
+        <T extends { id: string }>(setList: Dispatch<SetStateAction<T[]>>) =>
+        (rec: T) =>
+            setList((list) => list.map((x) => (x.id === rec.id ? rec : x)));
+    const replacePart = replaceIn(setParts);
+    const replaceContainer = replaceIn(setContainers);
+    const replaceTossed = replaceIn(setTossed);
+    const replaceTask = replaceIn(setTasks);
+
     const run = async (fn: () => Promise<unknown>, okMsg?: string) => {
         try {
             await fn();
             if (okMsg) showToast(okMsg);
         } catch (err) {
-            showToast(errorMessage(err));
+            // A 412 has already been reported and reloaded by the "conflict" listener.
+            if (!(err instanceof PreconditionFailedError)) showToast(errorMessage(err));
         }
         refresh();
     };
 
     const close = () => setModal(null);
-    const saved = (msg: string) => (_rec: unknown, opts?: SavedOptions) => {
-        if (!opts?.keepOpen) {
-            close();
-            showToast(msg);
-        }
-        refresh();
-    };
+    const saved =
+        <T extends { id: string }>(msg: string, replace: (rec: T) => void) =>
+        (rec: T, opts?: SavedOptions) => {
+            replace(rec);
+            if (!opts?.keepOpen) {
+                close();
+                showToast(msg);
+            }
+            refresh();
+        };
     const tagOptions = [...new Set(parts.flatMap((p) => p.tags || []))];
     const openTasks = tasks.filter((t) => !t.done).length;
     const topCount = topContainers(containers).length;
@@ -292,18 +323,20 @@ export default function App() {
         onToggleSale: (p) =>
             run(
                 () =>
-                    api.parts.update(p.id, {
-                        tags: isForSale(p)
-                            ? p.tags.filter((t) => t !== FOR_SALE)
-                            : [...p.tags.filter((t) => t !== 'Potential sale'), FOR_SALE],
-                    }),
+                    api.parts
+                        .update(p, {
+                            tags: isForSale(p)
+                                ? p.tags.filter((t) => t !== FOR_SALE)
+                                : [...p.tags.filter((t) => t !== 'Potential sale'), FOR_SALE],
+                        })
+                        .then(replacePart),
                 isForSale(p) ? `Took "${p.label}" off sale.` : `Marked "${p.label}" for sale.`,
             ),
         onToss: (p) => setModal({ type: 'toss', record: p }),
         onDelete: (p) =>
             run(
                 () =>
-                    api.parts.remove(p.id).then(() => {
+                    api.parts.remove(p).then(() => {
                         if (route.view === 'part') go('parts');
                     }),
                 `Deleted "${p.label}".`,
@@ -314,7 +347,7 @@ export default function App() {
         onDelete: (c) =>
             run(
                 () =>
-                    api.containers.remove(c.id).then(() => {
+                    api.containers.remove(c).then(() => {
                         if (!c.parentId && route.view === 'container') go('containers');
                     }),
                 `Removed "${c.name}".`,
@@ -323,13 +356,13 @@ export default function App() {
     const taskActs: TaskActionHandlers = {
         onToggle: (t, done) => {
             setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, done } : x)));
-            run(() => api.tasks.update(t.id, { done }));
+            run(() => api.tasks.update(t, { done }).then(replaceTask));
         },
         onEdit: (task) => setModal({ type: 'task', record: task }),
         onDelete: (t) =>
             run(
                 () =>
-                    api.tasks.remove(t.id).then(() => {
+                    api.tasks.remove(t).then(() => {
                         if (route.view === 'task') go('tasks');
                     }),
                 `Deleted "${t.title}".`,
@@ -398,7 +431,7 @@ export default function App() {
                 canEdit={canEdit}
                 onAdd={() => setModal({ type: 'tossed' })}
                 onEdit={(x) => setModal({ type: 'tossed', record: x })}
-                onDelete={(x) => run(() => api.tossed.remove(x.id), `Deleted the record for "${x.label}".`)}
+                onDelete={(x) => run(() => api.tossed.remove(x), `Deleted the record for "${x.label}".`)}
             />
         );
     } else if (route.view === 'tasks') {
@@ -518,7 +551,7 @@ export default function App() {
                             containers={containers}
                             tagOptions={tagOptions}
                             onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Part added.')}
+                            onSaved={saved(modal.record ? 'Saved.' : 'Part added.', replacePart)}
                         />
                     )}
                     {modal?.type === 'container' && (
@@ -526,14 +559,14 @@ export default function App() {
                             container={modal.record}
                             containers={containers}
                             onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Container added.')}
+                            onSaved={saved(modal.record ? 'Saved.' : 'Container added.', replaceContainer)}
                         />
                     )}
                     {modal?.type === 'tossed' && (
                         <TossedForm
                             item={modal.record}
                             onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Logged.')}
+                            onSaved={saved(modal.record ? 'Saved.' : 'Logged.', replaceTossed)}
                         />
                     )}
                     {modal?.type === 'toss' && (
@@ -549,7 +582,12 @@ export default function App() {
                         />
                     )}
                     {modal?.type === 'task' && (
-                        <TaskForm task={modal.record} parts={parts} onCancel={close} onSaved={saved('Saved.')} />
+                        <TaskForm
+                            task={modal.record}
+                            parts={parts}
+                            onCancel={close}
+                            onSaved={saved('Saved.', replaceTask)}
+                        />
                     )}
                 </Modal>
 

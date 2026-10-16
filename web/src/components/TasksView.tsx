@@ -1,6 +1,7 @@
 // Tasks, grouped by phase: name, done checkbox and edit/delete icons. Click a task for its page.
 import { useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'react';
-import { api, errorMessage } from '../api';
+import { api, errorMessage, PreconditionFailedError } from '../api';
+import { useEditFields, clashText, CONFLICT_IN_FORM } from './forms';
 import { RowActions, AddButton, FormButtons } from './ui';
 import { PHASES, PHASE_NUMBERS, phaseClass, href, isWithin } from '../constants';
 import type { Part, Phase, Task, TaskActionHandlers, TaskInput } from '../types';
@@ -16,25 +17,44 @@ interface TaskFields {
     /** The <select> value, "1".."4". */
     phase: string;
     notes: string;
+    partIds: string[];
 }
 
+const taskFields = (task?: Task): TaskFields => ({
+    title: task?.title || '',
+    phase: String(task?.phase || 1),
+    notes: task?.notes || '',
+    partIds: (task?.parts || []).map((p) => p.id),
+});
+// Cast: the phase <select> only offers the PHASES keys 1..4. Part ids are sorted so order doesn't count as a change.
+const taskInput = (f: TaskFields): Omit<TaskInput, 'done'> => ({
+    title: f.title,
+    phase: Number(f.phase) as Phase,
+    notes: f.notes,
+    partIds: [...f.partIds].sort(),
+});
+const TASK_LABELS: Record<keyof TaskFields, string> = {
+    title: 'Task',
+    phase: 'Phase',
+    notes: 'Description',
+    partIds: 'Parts for this task',
+};
+
 export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
-    const [f, setF] = useState<TaskFields>({
-        title: task?.title || '',
-        phase: String(task?.phase || 1),
-        notes: task?.notes || '',
-    });
-    const [picked, setPicked] = useState<Set<string>>(() => new Set((task?.parts || []).map((p) => p.id)));
+    const edit = useEditFields(taskFields(task), taskInput, TASK_LABELS);
+    const { f, setF } = edit;
+    const picked = new Set(f.partIds);
     const [q, setQ] = useState<string>('');
+    // The task as of this form's last write; its version goes with the save (not refreshed from the list).
+    const [rec, setRec] = useState<Task | undefined>(task);
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
-    const set = (k: keyof TaskFields) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-        setF({ ...f, [k]: e.target.value });
-    const toggle = (id: string) => {
-        const n = new Set(picked);
-        n.has(id) ? n.delete(id) : n.add(id);
-        setPicked(n);
-    };
+    const set =
+        (k: Exclude<keyof TaskFields, 'partIds'>) =>
+        (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+            setF({ ...f, [k]: e.target.value });
+    const toggle = (id: string) =>
+        setF({ ...f, partIds: picked.has(id) ? f.partIds.filter((x) => x !== id) : [...f.partIds, id] });
     const sorted = [...parts].sort(
         (a, b) => Number(picked.has(b.id)) - Number(picked.has(a.id)) || a.label.localeCompare(b.label),
     );
@@ -44,17 +64,27 @@ export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
         e.preventDefault();
         setBusy(true);
         setError('');
-        // Cast: the phase <select> only offers the PHASES keys 1..4.
-        const body: Omit<TaskInput, 'done'> = {
-            title: f.title,
-            phase: Number(f.phase) as Phase,
-            notes: f.notes,
-            partIds: [...picked],
-        };
         try {
-            onSaved(task ? await api.tasks.update(task.id, body) : await api.tasks.create(body));
+            if (rec) {
+                // Only the fields the user changed, so other people's changes to the rest survive.
+                const body = edit.changes();
+                onSaved(Object.keys(body).length ? await api.tasks.update(rec, body) : rec);
+            } else {
+                onSaved(await api.tasks.create(edit.input()));
+            }
         } catch (err) {
-            setError(errorMessage(err));
+            if (err instanceof PreconditionFailedError && rec) {
+                // Keep the typed values; take the current values for untouched fields and its version.
+                const current = err.currentFor(rec);
+                let clashes = '';
+                if (current) {
+                    setRec(current);
+                    clashes = clashText(edit.rebase(taskFields(current)));
+                }
+                setError(CONFLICT_IN_FORM + clashes);
+            } else {
+                setError(errorMessage(err));
+            }
             setBusy(false);
         }
     }
