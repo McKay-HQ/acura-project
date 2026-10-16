@@ -3,13 +3,15 @@
 Builds the `api` and `web` images and pushes them to the Azure Container Registry.
 
 ```sh
-./bin/build [-p] [-h]
+./bin/build [-P] [-h]
 ```
 
 | Option | |
 |---|---|
-| `-p` | `git pull` first, then build what was pulled |
+| `-P` | Don't run `git pull` first |
 | `-h` | Show this page |
+
+Lowercase options turn something on; uppercase ones turn a default off.
 
 ## What it does
 
@@ -34,8 +36,8 @@ These win over `IMAGE_REGISTRY` / `IMAGE_TAG` in `.env`, so the registry you sig
 ## Examples
 
 ```sh
-./bin/build                      # build and push :latest
-./bin/build -p                   # pull, then build and push
+./bin/build                      # pull, then build and push :latest
+./bin/build -P                   # build what you have, without pulling
 IMAGE_TAG=2026-10-14 ./bin/build # push a dated tag (:latest is left as it was)
 ```
 

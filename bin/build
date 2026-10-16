@@ -4,17 +4,18 @@
 source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 source "$ROOT/lib/azure.sh"
 
-PULL=0
-while getopts ":ph" opt; do
+PULL=1
+while getopts ":Ph" opt; do
     case $opt in
-        p) PULL=1 ;;
+        P) PULL=0 ;;
         h) show_help; exit 0 ;;
         *) bad_option "$OPTARG" ;;
     esac
 done
 shift $((OPTIND - 1))
 
-[ "$PULL" = 1 ] && pull_and_restart
+# Pull by default; the restarted run gets -P so it doesn't pull again.
+[ "$PULL" = 1 ] && pull_and_restart -P
 
 need az "see docs/azure.md"
 need docker "Docker Desktop with WSL integration, or Docker Engine with the compose plugin"

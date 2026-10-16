@@ -20,7 +20,7 @@ Runs the app with a local Postgres at http://localhost:8080 and loads the starte
 ## Build the images
 
 ```sh
-./bin/build -p
+./bin/build
 ```
 
 Pulls the latest code, then builds both images and pushes them to the Azure Container Registry. More in [docs/build.md](docs/build.md).
@@ -28,7 +28,7 @@ Pulls the latest code, then builds both images and pushes them to the Azure Cont
 ## Deploy
 
 ```sh
-./bin/deploy -bp
+./bin/deploy -b
 ```
 
 Pulls, builds and pushes the images, then rolls out a new revision of the Azure container app. First-time Azure setup is in [docs/azure.md](docs/azure.md); options in [docs/deploy.md](docs/deploy.md).

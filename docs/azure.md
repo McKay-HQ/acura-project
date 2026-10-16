@@ -17,7 +17,7 @@ The app scales to zero when idle (the first visit after a quiet spell takes a fe
 ## Day to day
 
 ```sh
-./bin/deploy -bp                                                         # ship changes
+./bin/deploy -b                                                          # ship changes
 az containerapp logs show -n acura -g acura-project --container api --follow   # API logs
 az containerapp revision list -n acura -g acura-project -o table         # revisions
 ```

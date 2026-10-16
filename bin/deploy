@@ -5,19 +5,20 @@ source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 source "$ROOT/lib/azure.sh"
 
 BUILD=0
-PULL=0
+PULL=1
 ARGS=()
-while getopts ":bph" opt; do
+while getopts ":bPh" opt; do
     case $opt in
         b) BUILD=1; ARGS+=(-b) ;;
-        p) PULL=1 ;;
+        P) PULL=0 ;;
         h) show_help; exit 0 ;;
         *) bad_option "$OPTARG" ;;
     esac
 done
 shift $((OPTIND - 1))
 
-[ "$PULL" = 1 ] && pull_and_restart "${ARGS[@]}"
+# Pull by default; the restarted run gets -P so it doesn't pull again.
+[ "$PULL" = 1 ] && pull_and_restart "${ARGS[@]}" -P
 
 need az "see docs/azure.md"
 need envsubst "sudo apt install -y gettext-base"
@@ -26,7 +27,7 @@ need jq "sudo apt install -y jq"
 REVISION_SUFFIX="r$(date +%y%m%d%H%M%S)"
 
 if [ "$BUILD" = 1 ]; then
-    ACR="$ACR" IMAGE_TAG="$IMAGE_TAG" "$ROOT/bin/build"
+    ACR="$ACR" IMAGE_TAG="$IMAGE_TAG" "$ROOT/bin/build" -P
     echo
 fi
 

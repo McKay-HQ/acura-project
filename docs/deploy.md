@@ -3,19 +3,21 @@
 Creates the Azure container app the first time and updates it after that. One app runs both containers: nginx (`web`, public) and the API (`api`, reached by nginx at `localhost:3000`).
 
 ```sh
-./bin/deploy [-b] [-p] [-h]
+./bin/deploy [-b] [-P] [-h]
 ```
 
 | Option | |
 |---|---|
 | `-b` | Run `bin/build` first (build and push both images) |
-| `-p` | `git pull` first, then deploy what was pulled |
+| `-P` | Don't run `git pull` first |
 | `-h` | Show this page |
+
+Lowercase options turn something on; uppercase ones turn a default off.
 
 ## Everyday use
 
 ```sh
-./bin/deploy -bp      # pull, build, push, roll out
+./bin/deploy -b       # pull, build, push, roll out
 ```
 
 ## First deploy
