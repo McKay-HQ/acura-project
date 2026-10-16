@@ -3,12 +3,13 @@
 Creates the Azure container app the first time and updates it after that. One app runs both containers: nginx (`web`, public) and the API (`api`, reached by nginx at `localhost:3000`).
 
 ```sh
-./bin/deploy [-b] [-P] [-h]
+./bin/deploy [-b] [-S] [-P] [-h]
 ```
 
 | Option | |
 |---|---|
 | `-b` | Run `bin/build` first (build and push both images) |
+| `-S` | Don't run `bin/sync` after the rollout |
 | `-P` | Don't run `git pull` first |
 | `-h` | Show this page |
 
@@ -17,7 +18,7 @@ Lowercase options turn something on; uppercase ones turn a default off.
 ## Everyday use
 
 ```sh
-./bin/deploy -b       # pull, build, push, roll out
+./bin/deploy -b       # pull, build, push, roll out, sync
 ```
 
 ## First deploy
@@ -33,8 +34,11 @@ It prompts for the password if `PG_PASSWORD` isn't set, creates the app, and pri
 1. Checks the Container Apps environment and its `uploads` photo storage.
 2. Creates the managed identity the app uses to pull images and grants it `AcrPull` on the registry (once; the first time it waits a minute for the permission to apply).
 3. Fills in `bin/deploy.d/containerapp.yaml` and applies it with `az containerapp create` or `update`. The filled-in copy holds secrets, so it lives in a private temp file that is always deleted.
+4. Waits for the new revision to start and the API to answer (up to 15 minutes, since the first start loads the starter data), then runs `./bin/sync` so the catalog and the app are in step. Skip it with `-S`.
 
 Every run creates a new revision (`revisionSuffix`), so Azure pulls the current images even when the tag hasn't changed.
+
+Exit status: 0 when deployed and in sync, 3 when the sync left conflicts (settle them with `./bin/sync -c` or `-a`, see [sync.md](sync.md)), 1 on errors.
 
 ## What carries over between deploys
 
@@ -64,4 +68,4 @@ Container sizes, scaling, environment variables and the photo volume are in `bin
 
 ## Needs
 
-`az` signed in, `envsubst` (`gettext-base`) and `jq`. The Azure resources from [azure.md](azure.md) must exist.
+`az` signed in, `envsubst` (`gettext-base`), `jq` and `curl`, plus what [sync.md](sync.md) needs. The Azure resources from [azure.md](azure.md) must exist.

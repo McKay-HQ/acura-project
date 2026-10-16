@@ -6,10 +6,12 @@ source "$ROOT/lib/azure.sh"
 
 BUILD=0
 PULL=1
+SYNC=1
 ARGS=()
-while getopts ":bPh" opt; do
+while getopts ":bSPh" opt; do
     case $opt in
         b) BUILD=1; ARGS+=(-b) ;;
+        S) SYNC=0; ARGS+=(-S) ;;
         P) PULL=0 ;;
         h) show_help; exit 0 ;;
         *) bad_option "$OPTARG" ;;
@@ -23,6 +25,7 @@ shift $((OPTIND - 1))
 need az "see docs/azure.md"
 need envsubst "sudo apt install -y gettext-base"
 need jq "sudo apt install -y jq"
+need curl "sudo apt install -y curl"
 
 REVISION_SUFFIX="r$(date +%y%m%d%H%M%S)"
 
@@ -87,8 +90,9 @@ else
     az containerapp create -n "$APP" -g "$RG" --yaml "$SPEC" -o none
 fi
 
+URL=$(app_url)
 echo
-echo "App: $(app_url)"
+echo "App: $URL"
 if [ "$EXISTS" = 0 ]; then
     echo "The first start creates the tables and loads the starter inventory and photos (a few minutes)."
 fi
@@ -98,3 +102,31 @@ if [ "$NEW_KEY" = 1 ]; then
     echo "Access key for making changes (save it in your password manager; the app asks for it once per browser):"
     echo "  $API_KEY"
 fi
+
+[ "$SYNC" = 1 ] || exit 0
+
+# Wait for the new revision to run and the API to answer (it starts listening only after the
+# migrations and, on the first start, the starter data), then sync the catalog with it.
+echo
+echo "Waiting for revision $REVISION_SUFFIX to start..."
+REVISION="$APP--$REVISION_SUFFIX"
+DEADLINE=$((SECONDS + 900))
+while :; do
+    STATE=$(az containerapp revision show -n "$APP" -g "$RG" --revision "$REVISION" --query properties.runningState -o tsv 2>/dev/null || true)
+    case $STATE in
+        Running | RunningAtMaxScale) break ;;
+        Failed | Degraded) die "revision $REVISION is $STATE; check the logs, then run ./bin/sync" ;;
+    esac
+    [ "$SECONDS" -lt "$DEADLINE" ] || die "revision $REVISION still isn't running (${STATE:-unknown}); run ./bin/sync once it is"
+    sleep 10
+done
+until curl -fsS -o /dev/null "$URL/api/health" 2>/dev/null; do
+    [ "$SECONDS" -lt "$DEADLINE" ] || die "the API isn't answering yet; run ./bin/sync once it is"
+    sleep 10
+done
+
+echo
+STATUS=0
+APP_URL="$URL" API_KEY="$API_KEY" "$ROOT/bin/sync" -P || STATUS=$?
+[ "$STATUS" = 3 ] && echo "Deployed, but the sync left conflicts (see above)."
+exit "$STATUS"

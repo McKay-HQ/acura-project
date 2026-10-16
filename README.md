@@ -31,7 +31,7 @@ Pulls the latest code, then builds both images and pushes them to the Azure Cont
 ./bin/deploy -b
 ```
 
-Pulls, builds and pushes the images, then rolls out a new revision of the Azure container app. First-time Azure setup is in [docs/azure.md](docs/azure.md); options in [docs/deploy.md](docs/deploy.md).
+Pulls, builds and pushes the images, rolls out a new revision of the Azure container app, then syncs the catalog with it. First-time Azure setup is in [docs/azure.md](docs/azure.md); options in [docs/deploy.md](docs/deploy.md).
 
 ## Sync the catalog
 
