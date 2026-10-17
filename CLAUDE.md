@@ -2,11 +2,11 @@
 
 ## Commit messages
 
-Start every commit subject with a type: `feat:`, `fix:`, `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:`. Add a scope when it helps: `feat(web): ...`, `fix(api): ...`, `ci(release): ...`. A pull request's title follows the same pattern, since squashing makes it the commit.
+Write commit subjects and pull request titles as a plain description of the change, with no type prefix or scope (no `feat:`, `fix(api):` and so on): the pull request's version label already says what kind of change it is. A pull request's title follows the same rule, since squashing makes it the commit.
 
 ## Version labels
 
-The release version bump comes from pull request labels, not commit types (docs/ci.md#versions). Give every pull request exactly one:
+The release version bump comes from pull request labels (docs/ci.md#versions). Give every pull request exactly one:
 
 - `breaking` a breaking change, or a new page or section in the app → major
 - `feature` a new feature or a change in what the app does → minor
@@ -15,7 +15,7 @@ The release version bump comes from pull request labels, not commit types (docs/
 
 ## Branches
 
-`main` deploys on every merge and only takes pull requests (squash or rebase). Work on a branch named `<kind>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`), open a pull request whose title has a type too (it becomes the squashed commit), and merge it. More conventions in the README.
+`main` deploys on every merge and only takes pull requests (squash or rebase). Work on a branch named `<kind>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`), open a pull request (its title becomes the squashed commit), and merge it. More conventions in the README.
 
 ## Code style
 

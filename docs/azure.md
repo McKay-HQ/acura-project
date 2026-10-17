@@ -99,7 +99,7 @@ For a subdomain such as `acura.mckayhq.com`:
 
 ## Secrets
 
-The app keeps two secrets: `pg-password` (the database password) and `api-key` (the access key for changes). `bin/deploy` reuses them on every update. To change one, pass it once: `API_KEY=... ./bin/deploy` or `PG_PASSWORD=... ./bin/deploy` (after changing the database password with `az postgres flexible-server update -g acura-project -n acura-project-db -p '...' -o none`).
+The app keeps two secrets: `pg-password` (the database password) and `api-key` (the access key for changes). `bin/deploy` reuses them on every update, and `./bin/access-key` prints the access key ([access-key.md](access-key.md)). To change one, pass it once: `API_KEY=... ./bin/deploy` or `PG_PASSWORD=... ./bin/deploy` (after changing the database password with `az postgres flexible-server update -g acura-project -n acura-project-db -p '...' -o none`).
 
 ## Troubleshooting
 

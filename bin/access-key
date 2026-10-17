@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Prints the deployed app's access key (its api-key secret), e.g. to unlock editing in the browser.
+# Help: ./bin/access-key -h (docs/access-key.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+source "$ROOT/lib/azure.sh"
+
+while getopts ":h" opt; do
+    case $opt in
+        h) show_help; exit 0 ;;
+        *) bad_option "$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+need az "see docs/azure.md"
+# Only the key goes to stdout, so it can be captured: API_KEY=$(./bin/access-key)
+key=$(app_secret api-key)
+[ -n "$key" ] || die "no api-key secret on $APP in $RG (is az signed in, and is the app deployed?)"
+echo "$key"

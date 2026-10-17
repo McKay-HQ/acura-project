@@ -7,6 +7,7 @@ name: Version label
 on:
   pull_request:
     types: [opened, reopened, synchronize, labeled, unlabeled]
+  merge_group: # the merge queue needs every required check to report on its merge commit too
   workflow_dispatch:
 
 permissions:
@@ -20,14 +21,28 @@ jobs:
       - name: Check the label
         env:
           GH_TOKEN: ${{ github.token }}
-          EVENT_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          QUEUE_REF: ${{ github.event.merge_group.head_ref }}
           BRANCH: ${{ github.ref_name }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-              labels=$(jq -r '.[]' <<< "$EVENT_LABELS")
+          # The pull request's labels as they are now, not as the triggering event saw them: the run for "opened" can
+          # start before the label lands, and a re-run replays its event.
+          if [ "$GITHUB_EVENT_NAME" = merge_group ]; then
+              # The queue's branch is gh-readonly-queue/main/pr-<number>-<sha>: check that pull request.
+              PR_NUMBER=$(sed -nE 's#.*/pr-([0-9]+)-[0-9a-f]+$#\1#p' <<< "$QUEUE_REF")
+              [ -n "$PR_NUMBER" ] || { echo "::error::Couldn't tell which pull request $QUEUE_REF is for"; exit 1; }
+          fi
+          if [ -n "$PR_NUMBER" ]; then
+              labels=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.labels[].name') \
+                  || { echo "::error::Couldn't read the labels of pull request #$PR_NUMBER"; exit 1; }
           else
-              labels=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:$BRANCH" \
-                  --jq '.[0].labels[].name')
+              prs=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:$BRANCH") \
+                  || { echo "::error::Couldn't look up the pull request for $BRANCH"; exit 1; }
+              if [ "$(jq length <<< "$prs")" = 0 ]; then
+                  echo "::error::$BRANCH has no open pull request to check"
+                  exit 1
+              fi
+              labels=$(jq -r '.[0].labels[].name' <<< "$prs")
           fi
           found=$(grep -xE 'breaking|feature|fix|sync' <<< "$labels" || true)
           case $(grep -c . <<< "$found") in

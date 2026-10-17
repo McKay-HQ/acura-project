@@ -56,7 +56,7 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 
 ## Conventions
 
-**Branches.** `main` is what's live: every merge into it deploys (see [GitHub Actions](#github-actions)). It only takes changes through pull requests (squash or rebase, linear history, no force pushes, no deleting it), so every change goes on a branch named `<kind>/<short-description>`, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`. The sync's branches are `sync/catalog-<date>-<time>`. With squash merges the pull request's title becomes the commit on `main`, so give the title a type too.
+**Branches.** `main` is what's live: every merge into it deploys (see [GitHub Actions](#github-actions)). It only takes changes through pull requests (squash or rebase, linear history, no force pushes, no deleting it), so every change goes on a branch named `<kind>/<short-description>`, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`. The sync's branches are `sync/catalog-<date>-<time>`. With squash merges the pull request's title becomes the commit on `main`, so write it like a commit subject.
 
 **Version labels.** Every pull request gets exactly one label, which decides how the next release raises the version ([docs/ci.md](docs/ci.md#versions)):
 
@@ -69,7 +69,7 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 
 The **Version label** check fails until a pull request has one. Pull requests the sync opens are labeled `sync`, so catalog changes alone never make a release.
 
-**Commit messages** start with a type that says what kind of change it is: `feat:`, `fix:`, `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:`, with a scope when it helps (`feat(web): photo captions`, `fix(api): reject empty step text`). The type doesn't affect the version; the label does. The sync's pull requests are titled `chore(sync): catalog from the app ...` and merge themselves.
+**Commit messages** and pull request titles say what changed in plain words, with no type prefix or scope (`Photo captions`, not `feat(web): photo captions`): the version label already says what kind of change it is. The sync's pull requests are titled `Catalog from the app ...` and merge themselves.
 
 **Versions** are semantic, starting at `v1.0.0`, tagged and released by the workflows; local deploys aren't released.
 
@@ -93,6 +93,7 @@ The **Version label** check fails until a pull request has one. Pull requests th
 | `docker-compose.localdb.yml` | Adds a local Postgres for development                                                                                             |
 | `.env.example`               | Settings for local runs; copy to `.env`                                                                                           |
 | `CLAUDE.md`                  | Conventions for Claude working in this repo                                                                                       |
+| `bin/access-key`             | Print the live app's access key                                                                                                   |
 | `bin/build`                  | Build both images and push them to the registry                                                                                   |
 | `bin/ci-setup`               | One-time Azure sign-in setup for GitHub Actions                                                                                   |
 | `bin/deploy`                 | Create or update the Azure container app; `bin/deploy.d/containerapp.yaml` is its spec template                                   |

@@ -40,7 +40,7 @@ share_catalog() {
     local stamp branch title url index main synced tree commit
     stamp=$(date '+%Y-%m-%d %H:%M')
     branch="sync/catalog-$(date '+%Y%m%d-%H%M%S')"
-    title="chore(sync): catalog from the app ($stamp)"
+    title="Catalog from the app ($stamp)"
     echo "Sharing the updated catalog on $branch..."
     git -C "$ROOT" fetch -q origin main
     main=$(git -C "$ROOT" rev-parse FETCH_HEAD)
