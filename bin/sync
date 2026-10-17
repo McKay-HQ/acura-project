@@ -34,19 +34,35 @@ API_KEY=${API_KEY:-$(app_secret api-key)}
 
 # Commit api/seed on a new sync/ branch, push it, and open a pull request into main that merges by
 # itself: auto-merge when the repo allows it, otherwise merged right away. Without gh, print the link.
+# The commit goes on top of origin/main and holds only what the sync changed in api/seed, whatever
+# branch is checked out: the pull request is labeled sync and merges unreviewed, so it can't carry code.
 share_catalog() {
-    local stamp branch base title url
+    local stamp branch title url index main synced tree commit
     stamp=$(date '+%Y-%m-%d %H:%M')
     branch="sync/catalog-$(date '+%Y%m%d-%H%M%S')"
-    base=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)
     title="Catalog from the app ($stamp)"
     echo "Sharing the updated catalog on $branch..."
-    git -C "$ROOT" switch -q -c "$branch"
-    git -C "$ROOT" add api/seed
-    git -C "$ROOT" commit -q -m "$title"
-    git -C "$ROOT" push -q -u origin "$branch"
-    # Back to where we were; the catalog reaches this branch with the next git pull once merged.
-    git -C "$ROOT" switch -q "$base"
+    git -C "$ROOT" fetch -q origin main
+    main=$(git -C "$ROOT" rev-parse FETCH_HEAD)
+    # Build the commit in a scratch index, so the checked-out branch and its index aren't touched.
+    index=$(mktemp)
+    # The sync's changes: api/seed as it is now, against HEAD...
+    GIT_INDEX_FILE=$index git -C "$ROOT" read-tree HEAD
+    GIT_INDEX_FILE=$index git -C "$ROOT" add -A -- api/seed
+    synced=$(GIT_INDEX_FILE=$index git -C "$ROOT" write-tree)
+    # ...applied to origin/main.
+    GIT_INDEX_FILE=$index git -C "$ROOT" read-tree "$main"
+    if ! git -C "$ROOT" diff --binary HEAD "$synced" -- api/seed | GIT_INDEX_FILE=$index git -C "$ROOT" apply --cached; then
+        rm -f "$index"
+        die "the catalog changes don't apply to origin/main; bring this branch up to date with main and run again"
+    fi
+    tree=$(GIT_INDEX_FILE=$index git -C "$ROOT" write-tree)
+    rm -f "$index"
+    commit=$(git -C "$ROOT" commit-tree "$tree" -p "$main" -m "$title")
+    git -C "$ROOT" push -q origin "$commit:refs/heads/$branch"
+    # Leave the current branch as it was; the catalog reaches it with the next git pull once merged.
+    git -C "$ROOT" restore --source=HEAD --staged --worktree -- api/seed
+    git -C "$ROOT" clean -fdq -- api/seed
     if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
         echo "Open a pull request for $branch to get it into main (gh isn't set up to do it)."
         return
