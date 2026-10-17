@@ -5,6 +5,8 @@ interface PhotoViewerProps {
     photos: string[];
     index: number;
     label: string;
+    /** One per photo, shown under it. */
+    captions?: string[];
     onClose: () => void;
 }
 
@@ -13,7 +15,7 @@ const TAP_ZOOM = 2.5;
 
 // Full-screen photo viewer. Swiping between photos is native scroll-snap. Zoom is a CSS transform on
 // the current photo: pinch or double-tap on touch screens, click and drag with a mouse.
-export default function PhotoViewer({ photos, index, label, onClose }: PhotoViewerProps) {
+export default function PhotoViewer({ photos, index, label, captions, onClose }: PhotoViewerProps) {
     const strip = useRef<HTMLDivElement>(null);
     const closeBtn = useRef<HTMLButtonElement>(null);
     const [i, setI] = useState<number>(index);
@@ -234,6 +236,11 @@ export default function PhotoViewer({ photos, index, label, onClose }: PhotoView
                     </div>
                 ))}
             </div>
+            {captions?.[i] && (
+                <div className="vcap" aria-live="polite">
+                    {captions[i]}
+                </div>
+            )}
             <div className="vhint">Swipe for more · pinch or double-tap to zoom</div>
             <button className="vnav prev" aria-label="Previous photo" disabled={i === 0} onClick={() => go(i - 1)}>
                 <Icon.prev />

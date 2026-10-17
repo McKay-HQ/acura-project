@@ -63,14 +63,16 @@ export default function CarView({ tasks }: CarViewProps) {
                         <h3>{s.title}</h3>
                         <div className="cargrid">
                             {photos.map((p, i) => (
-                                <button
-                                    key={p.src}
-                                    className="cthumb"
-                                    aria-label={`Open ${s.title} photo ${i + 1} of ${photos.length}`}
-                                    onClick={() => setOpen({ photos, index: i, label: s.title })}
-                                >
-                                    <img src={p.thumb} alt="" loading="lazy" draggable="false" />
-                                </button>
+                                <figure className="cfig" key={p.src}>
+                                    <button
+                                        className="cthumb"
+                                        aria-label={`Open ${s.title} photo ${i + 1} of ${photos.length}: ${p.caption}`}
+                                        onClick={() => setOpen({ photos, index: i, label: s.title })}
+                                    >
+                                        <img src={p.thumb} alt="" loading="lazy" draggable="false" />
+                                    </button>
+                                    <figcaption>{p.caption}</figcaption>
+                                </figure>
                             ))}
                         </div>
                     </div>
@@ -79,6 +81,7 @@ export default function CarView({ tasks }: CarViewProps) {
             {open && (
                 <PhotoViewer
                     photos={open.photos.map((p) => p.src)}
+                    captions={open.photos.map((p) => p.caption)}
                     index={open.index}
                     label={open.label}
                     onClose={() => setOpen(null)}

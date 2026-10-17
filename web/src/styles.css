@@ -2171,9 +2171,26 @@ a.ibtn {
 .cargrid::-webkit-scrollbar {
     display: none;
 }
-.cthumb {
+.cfig {
     flex: 0 0 86%;
     scroll-snap-align: start;
+    margin: 0;
+    min-width: 0;
+}
+.cfig figcaption,
+.tpfig figcaption {
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--muted);
+    margin-top: 6px;
+}
+.tpfig figcaption b {
+    font: 700 0.9rem var(--display);
+    color: var(--ink);
+    margin-right: 4px;
+}
+.cthumb {
+    width: 100%;
     display: block;
     border: 0;
     padding: 0;
@@ -2201,7 +2218,7 @@ a.ibtn {
         margin-inline: 0;
         padding-inline: 0;
     }
-    .cthumb {
+    .cfig {
         flex: none;
     }
 }
@@ -2278,6 +2295,12 @@ a.ibtn {
 }
 .viewer.zoomed .vslide img {
     cursor: grab;
+}
+.vcap {
+    text-align: center;
+    padding: 10px 16px 0;
+    font-size: 0.95rem;
+    color: #fff;
 }
 .vhint {
     text-align: center;
@@ -2378,11 +2401,6 @@ a.ibtn {
 .slink:hover {
     border-color: currentColor;
 }
-.sphotos {
-    display: flex;
-    gap: 6px;
-    flex-basis: 100%;
-}
 .sphoto {
     width: 96px;
     aspect-ratio: 4/3;
@@ -2469,5 +2487,65 @@ a.ibtn {
     .sbtns {
         grid-column: 2;
         justify-content: flex-end;
+    }
+}
+
+/* Step photo footnotes and the photos under the steps */
+.sfn {
+    font: 700 0.72rem var(--body);
+    margin-left: 2px;
+}
+.sfn a {
+    color: var(--accent);
+    text-decoration: none;
+    padding: 0 2px;
+}
+.sfn a:hover {
+    text-decoration: underline;
+}
+.sfn + .sfn::before {
+    content: ',';
+    color: var(--muted);
+}
+.tphotos {
+    margin-top: 16px;
+}
+.tphotos h3 {
+    margin: 0 0 8px;
+}
+.tpgrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+@media (min-width: 720px) {
+    .tpgrid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+}
+.tpfig {
+    margin: 0;
+    min-width: 0;
+    border-radius: 8px;
+}
+.tpfig .sphoto {
+    width: 100%;
+}
+.tpfig.flash {
+    animation: fnflash 1.4s ease-out;
+}
+@keyframes fnflash {
+    0%,
+    40% {
+        box-shadow: 0 0 0 3px var(--tag);
+    }
+    100% {
+        box-shadow: 0 0 0 3px transparent;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tpfig.flash {
+        animation: none;
+        box-shadow: 0 0 0 3px var(--tag);
     }
 }

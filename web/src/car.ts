@@ -17,12 +17,65 @@ export const CAR_SECTIONS: CarSection[] = [
 export interface CarPhoto {
     src: string;
     thumb: string;
+    caption: string;
 }
+
+/** What each photo shows, in photo order. */
+const CAPTIONS: Record<CarSection['key'], string[]> = {
+    exterior: [
+        "Front: black bumper, hood and fenders; the hood's clear coat is peeling",
+        'Front left, with the silver driver door',
+        'Driver side: black fender, silver door and rear quarter',
+        'Rear left: silver hatch and quarter, dark blue rear bumper',
+        'Rear: dark blue bumper, silver hatch and spoiler, missing center emblem',
+        'Rear right: bare body filler on the quarter panel behind the passenger door',
+        'Passenger side: dark blue door and mirror, filler patch on the quarter panel',
+        'Front right: black fender and dark blue passenger door',
+    ],
+    engine: [
+        'Engine bay from the front: no intake, Mishimoto radiator, battery on the right',
+        'Passenger-side strut tower: coilover top mount, Hasport engine mount',
+        'Power steering reservoir (red cap) and pump, with cut wires beside it',
+        'Intake manifold and power steering pump',
+        'Throttle body open (no intake) and the battery',
+        'Battery (NAPA Legend, dated 4/23) and bubbled paint next to it',
+        'Under-hood fuse box and driver-side strut tower',
+        'Brake and clutch fluid reservoirs at the firewall, steering rack below',
+        'Shift cables on the transmission and a rusty ground terminal',
+        'Valve cover: oil filler cap, dipstick (orange) and coil packs',
+        'Open throttle body and the breather hose',
+        'Steering rack, tie rods and transmission from above',
+        'Open breather hose and fuel lines behind the throttle body',
+        'Aftermarket headers with no heat shield; oily grime along the head above',
+        'Headers and the crumpled heat shield over the crossmember',
+        'Steering rack boot and tie rod',
+    ],
+    interior: [
+        'Driver door with the panel off; the moisture barrier is torn',
+        'Driver seat: torn seat bottom bolster',
+        'Front seats from the passenger side: both seat bottoms torn',
+        'Dash and steering wheel; trim around the column is off',
+        'Radio opening: radio missing, wiring loose',
+        'Behind the radio opening: wiring and modules',
+        'Passenger door and footwell',
+        'Passenger seat: torn cushion',
+        'Passenger side of the dash, with unplugged connectors hanging',
+        'Unplugged connectors in the passenger footwell',
+        'Center stack from the driver side: rusty dash support bracket',
+        'Glovebox out: rusty dash support beam and the heater box',
+        'Under the steering column: yellow airbag connectors and the pedals',
+        'Under-dash fuse box and rusty steering column bracket',
+    ],
+};
 
 export function carPhotos(s: CarSection): CarPhoto[] {
     return Array.from({ length: s.count }, (_, i) => {
         const n = String(i + 1).padStart(2, '0');
-        return { src: `/car/${s.key}/${n}.jpg`, thumb: `/car/${s.key}/${n}-t.jpg` };
+        return {
+            src: `/car/${s.key}/${n}.jpg`,
+            thumb: `/car/${s.key}/${n}-t.jpg`,
+            caption: CAPTIONS[s.key][i] || `${s.title} photo ${i + 1}`,
+        };
     });
 }
 
