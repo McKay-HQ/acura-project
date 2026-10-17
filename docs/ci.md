@@ -2,19 +2,19 @@
 
 Four workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs the others and starts by itself on every push to `main`.
 
-| Workflow | What it does |
-|---|---|
-| **Build** (`build.yml`) | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`) |
-| **Sync** (`sync.yml`) | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app is committed back to `main` |
+| Workflow                    | What it does                                                                                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Build** (`build.yml`)     | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`)                                                  |
+| **Sync** (`sync.yml`)       | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app is committed back to `main`                                                      |
 | **Release** (`release.yml`) | Tags a commit with the next [semantic version](https://semver.org) and publishes a GitHub release with notes generated from the commits since the previous version |
-| **Deploy** (`deploy.yml`) | Build → roll out the new images and wait for the app to answer → Sync → Release |
+| **Deploy** (`deploy.yml`)   | Build → roll out the new images and wait for the app to answer → Sync → Release                                                                                    |
 
 ## What a push to main does
 
-| What changed | Jobs |
-|---|---|
+| What changed                                                                                                                                                                   | Jobs                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
 | Code: `api/src/`, `api/migrations/`, `api/docker/`, `api/scripts/`, `api/*.json`, `web/`, `docker-compose.yml`, `bin/build`, `bin/deploy`, `bin/deploy.d/`, `lib/`, `.github/` | Build, roll out, Sync, Release |
-| Anything else, e.g. the catalog in `api/seed/` | Sync only |
+| Anything else, e.g. the catalog in `api/seed/`                                                                                                                                 | Sync only                      |
 
 Running **Deploy** by hand builds, rolls out and releases even with no code change (untick the box to only sync). Deploys never overlap: a push while one is going waits for it.
 
@@ -36,12 +36,12 @@ The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Bu
 
 Releases use [semantic versioning](https://semver.org), starting at `v1.0.0`. Each release raises one part of the version, chosen from the commit messages since the previous release. A commit message starts with its type, optionally a scope, then a colon:
 
-| Type | For | Bumps |
-|---|---|---|
-| `page:` | A new page or section (e.g. The Car tab) | major: `v1.4.2` → `v2.0.0` |
-| `feat:` | A change in what the app does (new controls, new behavior) | minor: `v1.4.2` → `v1.5.0` |
-| `fix:` | A fix | patch: `v1.4.2` → `v1.4.3` |
-| anything else (`docs:`, `ci:`, `refactor:`, `style:`, `chore:`, ...) | Changes that aren't features or fixes | patch |
+| Type                                                                 | For                                                        | Bumps                      |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------- |
+| `page:`                                                              | A new page or section (e.g. The Car tab)                   | major: `v1.4.2` → `v2.0.0` |
+| `feat:`                                                              | A change in what the app does (new controls, new behavior) | minor: `v1.4.2` → `v1.5.0` |
+| `fix:`                                                               | A fix                                                      | patch: `v1.4.2` → `v1.4.3` |
+| anything else (`docs:`, `ci:`, `refactor:`, `style:`, `chore:`, ...) | Changes that aren't features or fixes                      | patch                      |
 
 The biggest bump among the commits wins. A scope goes in parentheses: `feat(web): photo captions`, `fix(api): reject empty step text`.
 

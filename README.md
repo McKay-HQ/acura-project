@@ -54,30 +54,56 @@ Interactive docs (Swagger UI) at **`/api/docs/`** on any running copy, e.g. http
 
 Everything else is in [docs/](docs/README.md). Each command shows its page with `-h`.
 
+## Conventions
+
+**Branches.** `main` is what's live: every push to it deploys (see [GitHub Actions](#github-actions)). Small changes can go straight to `main`; for anything bigger, work on a branch named `<type>/<short-description>` with the same types as commit messages, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`, `page/the-car`, and merge it when it's ready.
+
+**Commit messages** start with a type, which also decides the release version bump ([docs/ci.md](docs/ci.md#versions)):
+
+| Type                                                               | For                           | Release bump |
+| ------------------------------------------------------------------ | ----------------------------- | ------------ |
+| `page:`                                                            | A new page or section         | major        |
+| `feat:`                                                            | A change in what the app does | minor        |
+| `fix:`                                                             | A fix                         | patch        |
+| `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:` | Everything else               | patch        |
+
+Add a scope when it helps: `feat(web): photo captions`, `fix(api): reject empty step text`. Commits the sync makes (`sync: catalog from the app ...`) come from `github-actions[bot]` or `bin/sync`.
+
+**Versions** are semantic, starting at `v1.0.0`, tagged and released by the workflows; local deploys aren't released.
+
+**Code style.** TypeScript (strict) in `api/` and `web/`, formatted with Prettier: 4-space indentation, single quotes, 120 columns; YAML and Markdown use 2 spaces (`.prettierrc`, `.editorconfig`). The API is documented with `@openapi` blocks next to each route, and `npm run lint:openapi` checks them.
+
+**Commands** live in `bin/` with no file extension, share helpers from `lib/`, and each prints its page in `docs/` with `-h`. Options: lowercase turns something on (`-b` build first, `-d` dry run), uppercase turns a default off (`-P` don't `git pull`, `-S` don't sync, `-C` don't commit).
+
+**Records** (parts, containers, tossed parts, tasks, notes) have a human-readable `key` (`injen-intake`), usable anywhere the API takes an id, and a `version` that every write must send back as `If-Match`. Deletes are soft. Photos keep a stable file name (`source`) so the catalog and the app can match them.
+
+**The catalog** in `api/seed/` is the bridge between the claude.ai artifact and the app ([docs/sync-design.md](docs/sync-design.md)). Edit records in the app or the artifact, not in `seed.json` by hand.
+
+**Secrets** never go in the repo: `.env` is ignored, the app's database password and access key live as Container App secrets, and GitHub signs in to Azure without a stored key.
+
 ## Project layout
 
-```
-.github/workflows/           build, sync, release, deploy (docs/ci.md)
-docker-compose.yml           api + web
-docker-compose.localdb.yml   adds the local Postgres for dev/testing
-.env.example
-bin/                         commands (see docs/)
-  build                      build both images and push them to the registry
-  ci-setup                   one-time Azure sign-in setup for GitHub Actions
-  deploy                     create or update the Azure container app
-  deploy.d/containerapp.yaml Azure Container Apps spec template
-  replace-photos             swap a record's photos on the live app
-  sync                       two-way sync of the catalog and the live app (sync.d/sync.py)
-lib/                         shared bash for bin/ (common.sh, azure.sh)
-docs/                        command pages, azure.md, docker.md, sync-design.md
-tools/artifact/              Claude's side of the sync (artifact <-> api/seed)
-api/
-  docker/                    Dockerfile, .dockerignore, entrypoint
-  migrations/                SQL schema, applied in order on startup
-  scripts/                   lint-openapi.ts (npm run lint:openapi)
-  seed/                      the catalog: starter data (seed.json), photos, history/
-  src/                       routes.ts, schemas.ts, openapi.ts, services/, lib/, ...
-web/
-  docker/                    Dockerfile, .dockerignore, nginx config template
-  src/                       App.tsx, components/, types.ts, ...
-```
+| Path                         | What's there                                                                                             |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `.github/workflows/`         | Build, Sync, Release and Deploy ([docs/ci.md](docs/ci.md))                                               |
+| `.github/actions/azure/`     | Shared Azure sign-in steps for the workflows                                                             |
+| `docker-compose.yml`         | The api and web containers                                                                               |
+| `docker-compose.localdb.yml` | Adds a local Postgres for development                                                                    |
+| `.env.example`               | Settings for local runs; copy to `.env`                                                                  |
+| `CLAUDE.md`                  | Conventions for Claude working in this repo                                                              |
+| `bin/build`                  | Build both images and push them to the registry                                                          |
+| `bin/ci-setup`               | One-time Azure sign-in setup for GitHub Actions                                                          |
+| `bin/deploy`                 | Create or update the Azure container app; `bin/deploy.d/containerapp.yaml` is its spec template          |
+| `bin/replace-photos`         | Swap a record's photos on the live app                                                                   |
+| `bin/sync`                   | Two-way sync of the catalog and the live app; the engine is `bin/sync.d/sync.py`                         |
+| `lib/`                       | Shared bash for `bin/` (`common.sh`, `azure.sh`)                                                         |
+| `docs/`                      | A page per command, plus `azure.md`, `docker.md`, `ci.md`, `sync-design.md`                              |
+| `tools/artifact/`            | Claude's side of the sync (artifact ⇄ `api/seed/`)                                                       |
+| `api/docker/`                | API Dockerfile and entrypoint                                                                            |
+| `api/migrations/`            | SQL schema changes, applied in order on startup                                                          |
+| `api/scripts/`               | `lint-openapi.ts` (`npm run lint:openapi`)                                                               |
+| `api/seed/`                  | The catalog: `seed.json`, its photos, `sync-state.json`, `history/`                                      |
+| `api/src/`                   | The API: `routes.ts`, `schemas.ts`, `openapi.ts`, `services/` (one per record type), `lib/`              |
+| `web/docker/`                | Web Dockerfile and the nginx config template                                                             |
+| `web/public/`                | Static files: icons, Home photos, The Car photos (`car/`)                                                |
+| `web/src/`                   | The React app: `App.tsx`, `components/`, `car.ts` (The Car tab's photos and notes), `api.ts`, `types.ts` |

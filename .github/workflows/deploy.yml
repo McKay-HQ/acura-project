@@ -5,88 +5,88 @@
 name: Deploy
 
 on:
-    push:
-        branches: [main]
-    workflow_dispatch:
-        inputs:
-            deploy:
-                description: Build, deploy and release even if no code changed
-                type: boolean
-                default: true
-            bump:
-                description: Release version bump (auto reads the commit messages, as pushes do)
-                type: choice
-                options: [auto, patch, minor, major]
-                default: auto
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Build, deploy and release even if no code changed
+        type: boolean
+        default: true
+      bump:
+        description: Release version bump (auto reads the commit messages, as pushes do)
+        type: choice
+        options: [auto, patch, minor, major]
+        default: auto
 
 # One deploy at a time; a newer push waits for the current run instead of cancelling it mid-rollout.
 concurrency:
-    group: deploy
-    cancel-in-progress: false
+  group: deploy
+  cancel-in-progress: false
 
 permissions:
-    contents: write
-    id-token: write
+  contents: write
+  id-token: write
 
 jobs:
-    changes:
-        runs-on: ubuntu-24.04
-        outputs:
-            code: ${{ steps.filter.outputs.code == 'true' || (github.event_name == 'workflow_dispatch' && inputs.deploy) }}
-        steps:
-            - uses: actions/checkout@v7
-            - uses: dorny/paths-filter@v4
-              id: filter
-              with:
-                  filters: |
-                      code:
-                        - 'api/src/**'
-                        - 'api/migrations/**'
-                        - 'api/scripts/**'
-                        - 'api/docker/**'
-                        - 'api/*.json'
-                        - 'web/**'
-                        - 'docker-compose.yml'
-                        - 'bin/build'
-                        - 'bin/deploy'
-                        - 'bin/deploy.d/**'
-                        - 'lib/**'
-                        - '.github/workflows/**'
-                        - '.github/actions/**'
-
-    build:
-        needs: changes
-        if: needs.changes.outputs.code == 'true'
-        uses: ./.github/workflows/build.yml
-
-    rollout:
-        needs: build
-        runs-on: ubuntu-24.04
-        environment: production
-        steps:
-            - uses: actions/checkout@v7
-            - uses: ./.github/actions/azure
-              with:
-                  client-id: ${{ vars.AZURE_CLIENT_ID }}
-                  tenant-id: ${{ vars.AZURE_TENANT_ID }}
-                  subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-            # Rolls out the images Build just pushed and waits until the new revision answers.
-            - name: Roll out
-              env:
-                  IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
-              run: ./bin/deploy -P -S
-
-    # After a rollout, or on its own when no code changed.
-    sync:
-        needs: [changes, rollout]
-        if: ${{ !cancelled() && !failure() }}
-        uses: ./.github/workflows/sync.yml
-
-    release:
-        needs: [build, rollout, sync]
-        if: ${{ !cancelled() && needs.rollout.result == 'success' }}
-        uses: ./.github/workflows/release.yml
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      code: ${{ steps.filter.outputs.code == 'true' || (github.event_name == 'workflow_dispatch' && inputs.deploy) }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
         with:
-            sha: ${{ github.sha }}
-            image-tag: ${{ needs.build.outputs.image-tag }}
-            bump: ${{ inputs.bump || 'auto' }}
+          filters: |
+            code:
+              - 'api/src/**'
+              - 'api/migrations/**'
+              - 'api/scripts/**'
+              - 'api/docker/**'
+              - 'api/*.json'
+              - 'web/**'
+              - 'docker-compose.yml'
+              - 'bin/build'
+              - 'bin/deploy'
+              - 'bin/deploy.d/**'
+              - 'lib/**'
+              - '.github/workflows/**'
+              - '.github/actions/**'
+
+  build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    uses: ./.github/workflows/build.yml
+
+  rollout:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/azure
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # Rolls out the images Build just pushed and waits until the new revision answers.
+      - name: Roll out
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+        run: ./bin/deploy -P -S
+
+  # After a rollout, or on its own when no code changed.
+  sync:
+    needs: [changes, rollout]
+    if: ${{ !cancelled() && !failure() }}
+    uses: ./.github/workflows/sync.yml
+
+  release:
+    needs: [build, rollout, sync]
+    if: ${{ !cancelled() && needs.rollout.result == 'success' }}
+    uses: ./.github/workflows/release.yml
+    with:
+      sha: ${{ github.sha }}
+      image-tag: ${{ needs.build.outputs.image-tag }}
+      bump: ${{ inputs.bump || 'auto' }}

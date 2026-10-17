@@ -10,3 +10,7 @@ Start every commit subject with a type, which decides the release version bump (
 - `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:` → patch
 
 Add a scope when it helps: `feat(web): ...`, `fix(api): ...`, `ci(release): ...`.
+
+## Branches
+
+`main` deploys on every push. For bigger changes use a branch named `<type>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`). More conventions in the README.
