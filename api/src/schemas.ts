@@ -813,3 +813,48 @@
  *             type: string
  *             maxLength: 2000
  */
+
+// ---- Config (GET /config) ----
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Config:
+ *       type: object
+ *       required: [keyRequiredForChanges, keyRequiredForReads, statuses, phases, icons, maxUploadMb]
+ *       properties:
+ *         keyRequiredForChanges:
+ *           type: boolean
+ *           description: True when API_KEY is set.
+ *         keyRequiredForReads:
+ *           type: boolean
+ *           description: True when API_KEY is set and API_KEY_FOR_READS=true.
+ *         statuses:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/PartStatus'
+ *         phases:
+ *           type: object
+ *           description: Phase number to name.
+ *           required: ['1', '2', '3', '4']
+ *           properties:
+ *             '1':
+ *               type: string
+ *               example: Before Driving
+ *             '2':
+ *               type: string
+ *               example: Priority
+ *             '3':
+ *               type: string
+ *               example: Non-Priority
+ *             '4':
+ *               type: string
+ *               example: Performance
+ *         icons:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/ContainerIcon'
+ *         maxUploadMb:
+ *           type: number
+ *           description: Largest photo upload accepted, in MB.
+ */
