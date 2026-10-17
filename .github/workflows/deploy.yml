@@ -13,6 +13,11 @@ on:
                 description: Build, deploy and release even if no code changed
                 type: boolean
                 default: true
+            bump:
+                description: Release version bump (pushes always bump the patch)
+                type: choice
+                options: [patch, minor, major]
+                default: patch
 
 # One deploy at a time; a newer push waits for the current run instead of cancelling it mid-rollout.
 concurrency:
@@ -84,3 +89,4 @@ jobs:
         with:
             sha: ${{ github.sha }}
             image-tag: ${{ needs.build.outputs.image-tag }}
+            bump: ${{ inputs.bump || 'patch' }}

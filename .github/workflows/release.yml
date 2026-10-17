@@ -1,11 +1,18 @@
-# Tag a commit and publish a GitHub release for it, with notes generated from the commits since the
-# last release. Versions are dated: v2026.10.17.1, then .2 for a second release the same day.
+# Tag a commit with the next semantic version and publish a GitHub release for it, with notes
+# generated from the commits since the previous version. The first release is v1.0.0; after that
+# each release bumps the patch number unless asked for a minor or major bump.
 # Runs on its own from the Actions tab (tags the branch tip), or as the last step of Deploy (tags
 # the commit that was deployed).
 name: Release
 
 on:
     workflow_dispatch:
+        inputs:
+            bump:
+                description: Which part of the version to raise
+                type: choice
+                options: [patch, minor, major]
+                default: patch
     workflow_call:
         inputs:
             sha:
@@ -16,9 +23,14 @@ on:
                 description: Tag of the deployed images, listed in the notes
                 type: string
                 required: false
+            bump:
+                description: patch, minor or major
+                type: string
+                required: false
+                default: patch
         outputs:
             version:
-                description: The release's tag, e.g. v2026.10.17.1
+                description: The release's tag, e.g. v1.2.3
                 value: ${{ jobs.release.outputs.version }}
 
 permissions:
@@ -38,13 +50,25 @@ jobs:
               id: tag
               env:
                   SHA: ${{ inputs.sha || github.sha }}
+                  BUMP: ${{ inputs.bump || 'patch' }}
               run: |
-                  day=$(TZ=America/Chicago date +%Y.%m.%d)
-                  n=$(git tag -l "v$day.*" | sed "s/^v$day\.//" | sort -n | tail -1)
-                  version="v$day.$(( ${n:-0} + 1 ))"
+                  # Latest vMAJOR.MINOR.PATCH tag (other tags, like the old dated ones, are ignored).
+                  last=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+                  if [ -z "$last" ]; then
+                      version=v1.0.0
+                  else
+                      IFS=. read -r major minor patch <<< "${last#v}"
+                      case $BUMP in
+                          major) version="v$((major + 1)).0.0" ;;
+                          minor) version="v$major.$((minor + 1)).0" ;;
+                          patch) version="v$major.$minor.$((patch + 1))" ;;
+                          *) echo "::error::bump must be patch, minor or major (got $BUMP)"; exit 1 ;;
+                      esac
+                  fi
                   echo "version=$version" >> "$GITHUB_OUTPUT"
+                  echo "previous=$last" >> "$GITHUB_OUTPUT"
                   echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-                  echo "Releasing $SHA as $version"
+                  echo "Releasing $SHA as $version (previous: ${last:-none})"
 
             - name: Tag and publish
               env:
@@ -52,9 +76,12 @@ jobs:
                   VERSION: ${{ steps.tag.outputs.version }}
                   SHA: ${{ steps.tag.outputs.sha }}
                   IMAGE_TAG: ${{ inputs.image-tag }}
+                  PREVIOUS: ${{ steps.tag.outputs.previous }}
               run: |
                   notes=""
                   if [ -n "$IMAGE_TAG" ]; then
                       notes=$(printf 'Deployed images:\n- `acuraproject.azurecr.io/acura-api:%s`\n- `acuraproject.azurecr.io/acura-web:%s`\n' "$IMAGE_TAG" "$IMAGE_TAG")
                   fi
-                  gh release create "$VERSION" --target "$SHA" --title "$VERSION" --generate-notes --notes "$notes"
+                  since=()
+                  [ -n "$PREVIOUS" ] && since=(--notes-start-tag "$PREVIOUS")
+                  gh release create "$VERSION" --target "$SHA" --title "$VERSION" --generate-notes "${since[@]}" --notes "$notes"

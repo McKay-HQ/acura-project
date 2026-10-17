@@ -6,7 +6,7 @@ Four workflows in `.github/workflows/`. Each can be run on its own from the Acti
 |---|---|
 | **Build** (`build.yml`) | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`) |
 | **Sync** (`sync.yml`) | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app is committed back to `main` |
-| **Release** (`release.yml`) | Tags a commit with a dated version (`v2026.10.17.1`, then `.2` the same day) and publishes a GitHub release with notes generated from the commits since the last one |
+| **Release** (`release.yml`) | Tags a commit with the next [semantic version](https://semver.org) and publishes a GitHub release with notes generated from the commits since the previous version |
 | **Deploy** (`deploy.yml`) | Build → roll out the new images and wait for the app to answer → Sync → Release |
 
 ## What a push to main does
@@ -31,6 +31,10 @@ Once, from WSL (signed in with `az login`):
 Until then the Azure jobs stop at their first step with a message naming the missing variables. See [ci-setup.md](ci-setup.md). The workflows sign in to Azure with OpenID Connect, so no password or key is stored in GitHub.
 
 The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Build, Sync and the rollout. Jobs run on `ubuntu-24.04` (pinned, so GitHub moving `ubuntu-latest` to a new release doesn't change anything); move it forward deliberately when there's a reason to.
+
+## Versions
+
+Releases use semantic versioning, starting at `v1.0.0`. A deploy from a push bumps the patch number (`v1.0.0` → `v1.0.1`). To bump the minor or major number instead, run **Deploy** (or **Release** on its own) from the Actions tab and pick `minor` (`v1.0.1` → `v1.1.0`) or `major` (→ `v2.0.0`).
 
 ## The local commands still work
 
