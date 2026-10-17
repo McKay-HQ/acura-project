@@ -262,8 +262,7 @@ export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onStep, onE
                         {task.steps.length > 0 && (
                             <span className="sprog">
                                 {' '}
-                                {task.steps.filter((s) => s.done).length} of {task.steps.length} steps · checks itself
-                                when every step is done
+                                {task.steps.filter((s) => s.done).length} of {task.steps.length} steps
                             </span>
                         )}
                     </label>
