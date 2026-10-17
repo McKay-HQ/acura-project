@@ -16,12 +16,12 @@ permissions:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         environment: production
         outputs:
             image-tag: ${{ github.sha }}
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
             - uses: ./.github/actions/azure
               with:
                   client-id: ${{ vars.AZURE_CLIENT_ID }}

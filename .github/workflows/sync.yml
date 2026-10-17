@@ -14,11 +14,11 @@ permissions:
 
 jobs:
     sync:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-24.04
         environment: production
         steps:
             # The branch tip, not the triggering commit: earlier jobs may have pushed since.
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
               with:
                   ref: ${{ github.ref_name }}
             - uses: ./.github/actions/azure

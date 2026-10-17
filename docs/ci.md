@@ -30,7 +30,7 @@ Once, from WSL (signed in with `az login`):
 
 Until then the Azure jobs stop at their first step with a message naming the missing variables. See [ci-setup.md](ci-setup.md). The workflows sign in to Azure with OpenID Connect, so no password or key is stored in GitHub.
 
-The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Build, Sync and the rollout.
+The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Build, Sync and the rollout. Jobs run on `ubuntu-24.04` (pinned, so GitHub moving `ubuntu-latest` to a new release doesn't change anything); move it forward deliberately when there's a reason to.
 
 ## The local commands still work
 
