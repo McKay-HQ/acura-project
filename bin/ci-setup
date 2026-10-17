@@ -6,7 +6,7 @@
 source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
 source "$ROOT/lib/azure.sh"
 
-REPO=${REPO:-patrick-vandy/acura-project}
+REPO=${REPO:-McKay-HQ/acura-project}
 SP_NAME=${SP_NAME:-acura-github-deploy}
 while getopts ":h" opt; do
     case $opt in
@@ -31,6 +31,7 @@ az ad sp show --id "$CLIENT_ID" -o none 2>/dev/null || az ad sp create --id "$CL
 # The workflow's job runs in the "production" environment, so that's the identity GitHub presents.
 # GitHub's token subject names the repo either as owner/repo or, in its newer format, with the owner
 # and repo ids (owner@123/repo@456). Trust both. Override with SUBJECT=... if GitHub reports another.
+# Each credential is named after the repo, so moving or renaming it adds new ones beside the old ones.
 echo "Trusting GitHub Actions runs of $REPO in the production environment..."
 add_subject() {
     local name=$1 subject=$2
@@ -43,19 +44,20 @@ add_subject() {
         }"
     fi
 }
-add_subject github-production "repo:$REPO:environment:production"
+CRED=github-${REPO//\//-}-production
+add_subject "$CRED" "repo:$REPO:environment:production"
 OWNER_ID=${OWNER_ID:-}
 REPO_ID=${REPO_ID:-}
 if [ -z "$REPO_ID" ] && command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
     read -r OWNER_ID REPO_ID < <(gh api "repos/$REPO" --jq '"\(.owner.id) \(.id)"')
 fi
 if [ -n "$OWNER_ID" ] && [ -n "$REPO_ID" ]; then
-    add_subject github-production-ids "repo:${REPO%%/*}@$OWNER_ID/${REPO#*/}@$REPO_ID:environment:production"
+    add_subject "$CRED-ids" "repo:${REPO%%/*}@$OWNER_ID/${REPO#*/}@$REPO_ID:environment:production"
 else
     echo "  (Couldn't look up the repo ids without gh; if Azure sign-in fails, rerun with the subject"
     echo "   from the error: SUBJECT='repo:...:environment:production' ./bin/ci-setup)"
 fi
-[ -n "${SUBJECT:-}" ] && add_subject github-custom "$SUBJECT"
+[ -n "${SUBJECT:-}" ] && add_subject "$CRED-custom" "$SUBJECT"
 
 echo "Granting Contributor on the resource group $RG..."
 if [ -z "$(az role assignment list --assignee "$CLIENT_ID" --scope "$RG_ID" --role Contributor --query '[0].id' -o tsv)" ]; then
