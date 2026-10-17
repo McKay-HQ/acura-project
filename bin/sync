@@ -51,13 +51,14 @@ share_catalog() {
         echo "Open a pull request for $branch to get it into main (gh isn't set up to do it)."
         return
     fi
-    url=$(cd "$ROOT" && gh pr create --base main --head "$branch" --title "$title" \
+    url=$(cd "$ROOT" && gh pr create --base main --head "$branch" --title "$title" --label fix \
         --body "Changes made in the app, pulled into the catalog by \`bin/sync\`.")
     echo "Pull request: $url"
     # A pull request opened by a workflow's own token doesn't start other workflows, so start the
     # checks by hand; required checks then report on it like on any other pull request.
     if [ -n "${GITHUB_ACTIONS:-}" ]; then
         (cd "$ROOT" && gh workflow run check.yml --ref "$branch" >/dev/null 2>&1) || true
+        (cd "$ROOT" && gh workflow run labels.yml --ref "$branch" >/dev/null 2>&1) || true
     fi
     if (cd "$ROOT" && gh pr merge "$url" --auto --squash --delete-branch >/dev/null 2>&1); then
         echo "It merges by itself once its checks pass."

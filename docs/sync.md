@@ -35,7 +35,7 @@ Each record (matched by key) is compared three ways: the catalog, the app, and h
 
 Writes to the app carry the version the sync just read (`If-Match`). If someone saves an edit in the app at that moment, the app refuses the write (412), nothing is overwritten, and the record is reported; the next run picks it up.
 
-When the run pulled anything from the app, it commits `api/seed/` on a new `sync/catalog-<date>-<time>` branch, pushes it and opens a pull request into `main` that merges itself (with auto-merge once checks pass, if the repo allows auto-merge; otherwise right away). Without `gh` signed in, it prints the branch to open a pull request for. Your current branch is left as it was; `git pull` brings the catalog in once the pull request is merged. `-C` skips all of this.
+When the run pulled anything from the app, it commits `api/seed/` on a new `sync/catalog-<date>-<time>` branch, pushes it and opens a pull request into `main`, labeled `fix`, that merges itself (with auto-merge once checks pass, if the repo allows auto-merge; otherwise right away). Without `gh` signed in, it prints the branch to open a pull request for. Your current branch is left as it was; `git pull` brings the catalog in once the pull request is merged. `-C` skips all of this.
 
 Exit status: 0 in sync, 3 when conflicts were left, 1 on errors.
 
