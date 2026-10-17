@@ -15,22 +15,22 @@ IMAGE_TAG=${IMAGE_TAG:-latest}
 
 # True when the container app already exists.
 app_exists() {
-    az containerapp show -n "$APP" -g "$RG" -o none 2>/dev/null
+    az containerapp show --only-show-errors -n "$APP" -g "$RG" -o none 2>/dev/null
 }
 
 # The app's public address, e.g. https://acura.<random>.centralus.azurecontainerapps.io
 app_url() {
-    echo "https://$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)"
+    echo "https://$(az containerapp show --only-show-errors -n "$APP" -g "$RG" --query properties.configuration.ingress.fqdn -o tsv)"
 }
 
 # The value of one of the app's secrets (pg-password, api-key).
 app_secret() {
-    az containerapp secret list -n "$APP" -g "$RG" --show-values --query "[?name=='$1'].value | [0]" -o tsv
+    az containerapp secret list --only-show-errors -n "$APP" -g "$RG" --show-values --query "[?name=='$1'].value | [0]" -o tsv
 }
 
 # The custom domains bound to the app, as compact JSON ([] when there are none).
 app_custom_domains() {
     local json
-    json=$(az containerapp show -n "$APP" -g "$RG" --query properties.configuration.ingress.customDomains -o json | jq -c '. // []')
+    json=$(az containerapp show --only-show-errors -n "$APP" -g "$RG" --query properties.configuration.ingress.customDomains -o json | jq -c '. // []')
     echo "${json:-[]}"
 }

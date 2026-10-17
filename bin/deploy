@@ -58,15 +58,15 @@ CUSTOM_DOMAINS='[]'
 [ "$EXISTS" = 1 ] && CUSTOM_DOMAINS=$(app_custom_domains)
 
 echo "Checking the environment and its photo storage..."
-ENV_ID=$(az containerapp env show -n "$ENV" -g "$RG" --query id -o tsv)
-az containerapp env storage show -n "$ENV" -g "$RG" --storage-name uploads -o none
+ENV_ID=$(az containerapp env show --only-show-errors -n "$ENV" -g "$RG" --query id -o tsv)
+az containerapp env storage show --only-show-errors -n "$ENV" -g "$RG" --storage-name uploads -o none
 
 echo "Setting up the identity the app uses to pull images..."
 az identity create -n "$IDENTITY" -g "$RG" -l "$LOCATION" -o none
 IDENTITY_ID=$(az identity show -n "$IDENTITY" -g "$RG" --query id -o tsv)
 PRINCIPAL_ID=$(az identity show -n "$IDENTITY" -g "$RG" --query principalId -o tsv)
 ACR_ID=$(az acr show -n "$ACR" -g "$RG" --query id -o tsv)
-if [ -z "$(az role assignment list --assignee "$PRINCIPAL_ID" --scope "$ACR_ID" --role AcrPull --query '[0].id' -o tsv)" ]; then
+if [ -z "$(az role assignment list --scope "$ACR_ID" --role AcrPull --query "[?principalId=='$PRINCIPAL_ID'].id | [0]" -o tsv)" ]; then
     az role assignment create --assignee-object-id "$PRINCIPAL_ID" --assignee-principal-type ServicePrincipal \
         --role AcrPull --scope "$ACR_ID" -o none
     echo "Waiting a minute for the registry permission to take effect..."
@@ -84,10 +84,10 @@ envsubst "$SPEC_VARS" < "$ROOT/bin/deploy.d/containerapp.yaml" > "$SPEC"
 
 if [ "$EXISTS" = 1 ]; then
     echo "Updating container app $APP (revision $REVISION_SUFFIX)..."
-    az containerapp update -n "$APP" -g "$RG" --yaml "$SPEC" -o none
+    az containerapp update --only-show-errors -n "$APP" -g "$RG" --yaml "$SPEC" -o none
 else
     echo "Creating container app $APP..."
-    az containerapp create -n "$APP" -g "$RG" --yaml "$SPEC" -o none
+    az containerapp create --only-show-errors -n "$APP" -g "$RG" --yaml "$SPEC" -o none
 fi
 
 URL=$(app_url)
@@ -112,7 +112,7 @@ echo "Waiting for revision $REVISION_SUFFIX to start..."
 REVISION="$APP--$REVISION_SUFFIX"
 DEADLINE=$((SECONDS + 900))
 while :; do
-    STATE=$(az containerapp revision show -n "$APP" -g "$RG" --revision "$REVISION" --query properties.runningState -o tsv 2>/dev/null || true)
+    STATE=$(az containerapp revision show --only-show-errors -n "$APP" -g "$RG" --revision "$REVISION" --query properties.runningState -o tsv 2>/dev/null || true)
     case $STATE in
         Running | RunningAtMaxScale) break ;;
         Failed | Degraded) die "revision $REVISION is $STATE; check the logs, then run ./bin/sync" ;;
