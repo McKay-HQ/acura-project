@@ -25,7 +25,7 @@ Once, from WSL (signed in with `az login`):
 ./bin/ci-setup
 ```
 
-Until then the workflow is skipped. See [ci-setup.md](ci-setup.md). The workflow signs in to Azure with OpenID Connect, so no password or key is stored in GitHub.
+Until then runs stop at the first step with a message naming the missing variables. See [ci-setup.md](ci-setup.md). The workflow signs in to Azure with OpenID Connect, so no password or key is stored in GitHub.
 
 ## The local commands still work
 

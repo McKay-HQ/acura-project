@@ -28,11 +28,27 @@ permissions:
 
 jobs:
     deploy:
-        # Skipped until bin/ci-setup has stored the Azure sign-in details as repo variables.
-        if: vars.AZURE_CLIENT_ID != ''
         runs-on: ubuntu-latest
         environment: production
         steps:
+            # The Azure sign-in details come from bin/ci-setup, as repository or production-environment
+            # variables. (They're checked here rather than in a job condition, which can't see
+            # environment variables.)
+            - name: Check the Azure settings
+              env:
+                  CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+                  TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+                  SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+              run: |
+                  missing=""
+                  [ -n "$CLIENT_ID" ] || missing="$missing AZURE_CLIENT_ID"
+                  [ -n "$TENANT_ID" ] || missing="$missing AZURE_TENANT_ID"
+                  [ -n "$SUBSCRIPTION_ID" ] || missing="$missing AZURE_SUBSCRIPTION_ID"
+                  if [ -n "$missing" ]; then
+                      echo "::error::Missing variables:$missing. Run ./bin/ci-setup, or add them under Settings > Secrets and variables > Actions > Variables (not Secrets)."
+                      exit 1
+                  fi
+
             - uses: actions/checkout@v4
 
             - name: What changed
