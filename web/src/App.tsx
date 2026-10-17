@@ -410,14 +410,23 @@ export default function App() {
                 run(async () => {
                     const latest = tasksRef.current.find((item) => item.id === task.id);
                     if (!latest) return;
-                    const want = pendingSteps.current[task.id] || {};
+                    const want = { ...pendingSteps.current[task.id] };
                     const steps = latest.steps.map((step, stepIndex) =>
                         stepIndex in want ? { ...step, done: want[stepIndex] } : step,
                     );
-                    const saved = await api.tasks.update(latest, { steps });
-                    delete pendingSteps.current[task.id];
-                    tasksRef.current = tasksRef.current.map((item) => (item.id === saved.id ? saved : item));
-                    replaceTask(saved);
+                    try {
+                        const saved = await api.tasks.update(latest, { steps });
+                        tasksRef.current = tasksRef.current.map((item) => (item.id === saved.id ? saved : item));
+                        replaceTask(saved);
+                    } finally {
+                        // Forget only the checks this save sent (saved, or failed and reloaded): a click made while
+                        // it was in flight is still waiting for the next save in the queue.
+                        const pending = pendingSteps.current[task.id] || {};
+                        for (const [stepIndex, done] of Object.entries(want)) {
+                            if (pending[Number(stepIndex)] === done) delete pending[Number(stepIndex)];
+                        }
+                        if (!Object.keys(pending).length) delete pendingSteps.current[task.id];
+                    }
                 }),
             );
         },

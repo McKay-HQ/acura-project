@@ -19,7 +19,9 @@ Seven workflows in `.github/workflows/`. Each can be run on its own from the Act
 | Code: `api/src/`, `api/migrations/`, `api/docker/`, `api/scripts/`, `api/*.json`, `web/`, `docker-compose.yml`, `bin/build`, `bin/deploy`, `bin/deploy.d/`, `lib/`, `.github/` | Build, roll out, Sync, Release |
 | Anything else, e.g. the catalog in `api/seed/`                                                                                                                                 | Sync only                      |
 
-Running **Deploy** by hand builds, rolls out and releases even with no code change (untick the box to only sync). Deploys never overlap: a push while one is going waits for it.
+"What changed" is counted since the last release (the last commit Deploy rolled out), not just in the push, so code that didn't go out (its rollout failed, or its run was cancelled while waiting) goes out with the next push, even one that only touches the catalog. With no release yet, every push deploys.
+
+Running **Deploy** by hand builds, rolls out and releases even with no code change (untick the box to only sync). Deploys never overlap: a push while one is going waits for it, and when another push arrives too, GitHub cancels the waiting run and keeps the newest (which then deploys the code of both).
 
 A run fails (red X) if the build or rollout fails, or if the sync finds a **conflict** (the same field changed in both the catalog and the app). The release still happens after a sync conflict, since the code was deployed. Settle the conflict locally with `./bin/sync -c` (catalog wins) or `./bin/sync -a` (app wins), see [sync.md](sync.md). Merges the workflows make themselves (the sync's pull requests) don't start a deploy.
 

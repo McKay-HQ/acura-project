@@ -32,30 +32,39 @@ permissions:
   id-token: write
 
 jobs:
+  # Code changed since the last release, i.e. the last commit Deploy rolled out, not just in this push: a push
+  # waiting for the running deploy is cancelled when another one arrives, and a rollout can fail, so the code of an
+  # earlier push may not have gone out yet.
   changes:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     outputs:
-      code: ${{ steps.filter.outputs.code == 'true' || (github.event_name == 'workflow_dispatch' && inputs.deploy) }}
+      code: ${{ steps.diff.outputs.code == 'true' || (github.event_name == 'workflow_dispatch' && inputs.deploy) }}
     steps:
       - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v4
-        id: filter
         with:
-          filters: |
-            code:
-              - 'api/src/**'
-              - 'api/migrations/**'
-              - 'api/scripts/**'
-              - 'api/docker/**'
-              - 'api/*.json'
-              - 'web/**'
-              - 'docker-compose.yml'
-              - 'bin/build'
-              - 'bin/deploy'
-              - 'bin/deploy.d/**'
-              - 'lib/**'
-              - '.github/workflows/**'
-              - '.github/actions/**'
+          fetch-depth: 0 # the version tags and the commits since the last one
+      - name: Did code change?
+        id: diff
+        run: |
+          last=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; } | sort -V | tail -1)
+          if [ -z "$last" ]; then
+              echo "No release yet, so deploying."
+              echo "code=true" >> "$GITHUB_OUTPUT"
+              exit 0
+          fi
+          code=$(git diff --name-only "$last" HEAD -- \
+              api/src api/migrations api/scripts api/docker ':(glob)api/*.json' web docker-compose.yml \
+              bin/build bin/deploy bin/deploy.d lib .github/workflows .github/actions)
+          if [ -n "$code" ]; then
+              echo "Code changed since $last:"
+              sed 's/^/  /' <<< "$code"
+              echo "code=true" >> "$GITHUB_OUTPUT"
+          else
+              echo "No code changed since $last."
+              echo "code=false" >> "$GITHUB_OUTPUT"
+          fi
 
   build:
     needs: changes
