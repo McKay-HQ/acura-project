@@ -8,6 +8,8 @@
 | [deploy.md](deploy.md) | `bin/deploy`: create or update the Azure container app |
 | [sync.md](sync.md) | `bin/sync`: two-way sync of the catalog and the live app |
 | [sync-design.md](sync-design.md) | How the two-way sync works: versions, `If-Match`, the 3-way rules |
+| [ci.md](ci.md) | GitHub Actions: build, deploy and sync on every push to `main` |
+| [ci-setup.md](ci-setup.md) | `bin/ci-setup`: one-time Azure sign-in setup for the workflow |
 | [replace-photos.md](replace-photos.md) | `bin/replace-photos`: swap a record's photos on the live app |
 
 The API documents itself: open `/api/docs/` on any running copy of the app.

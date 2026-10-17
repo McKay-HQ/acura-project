@@ -1,0 +1,81 @@
+# Build, deploy and sync on every push to main (see docs/ci.md).
+#   - Code changes (api/, web/, deploy scripts): build both images, push them to the registry and
+#     roll out a new revision of the container app (bin/deploy -b).
+#   - Then, always: two-way sync of the catalog (api/seed/) with the app (bin/sync). Anything it
+#     pulls from the app is committed back to main; pushes made with the workflow's token don't
+#     start another run.
+# Run it by hand from the Actions tab too, e.g. to force a deploy or to pull app changes.
+name: Deploy
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+        inputs:
+            deploy:
+                description: Build and deploy even if no code changed
+                type: boolean
+                default: false
+
+# One run at a time; a newer push waits for the current run instead of cancelling it mid-deploy.
+concurrency:
+    group: deploy
+    cancel-in-progress: false
+
+permissions:
+    contents: write # bin/sync commits what it pulls from the app
+    id-token: write # sign in to Azure with OpenID Connect (no stored password)
+
+jobs:
+    deploy:
+        # Skipped until bin/ci-setup has stored the Azure sign-in details as repo variables.
+        if: vars.AZURE_CLIENT_ID != ''
+        runs-on: ubuntu-latest
+        environment: production
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: What changed
+              uses: dorny/paths-filter@v3
+              id: changes
+              with:
+                  filters: |
+                      code:
+                        - 'api/src/**'
+                        - 'api/migrations/**'
+                        - 'api/scripts/**'
+                        - 'api/docker/**'
+                        - 'api/*.json'
+                        - 'web/**'
+                        - 'docker-compose.yml'
+                        - 'bin/build'
+                        - 'bin/deploy'
+                        - 'bin/deploy.d/**'
+                        - 'lib/**'
+                        - '.github/workflows/deploy.yml'
+
+            - name: Sign in to Azure
+              uses: azure/login@v2
+              with:
+                  client-id: ${{ vars.AZURE_CLIENT_ID }}
+                  tenant-id: ${{ vars.AZURE_TENANT_ID }}
+                  subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+            - name: Set up
+              run: |
+                  command -v envsubst >/dev/null || sudo apt-get install -y gettext-base
+                  az extension add --name containerapp --upgrade --only-show-errors
+                  git config user.name "github-actions[bot]"
+                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+            # Images are tagged with the commit, so every revision says exactly what it runs.
+            # bin/deploy waits for the new revision to answer, then runs the sync itself.
+            - name: Build, deploy and sync
+              if: steps.changes.outputs.code == 'true' || inputs.deploy
+              env:
+                  IMAGE_TAG: ${{ github.sha }}
+              run: ./bin/deploy -b -P
+
+            - name: Sync the catalog with the app
+              if: steps.changes.outputs.code != 'true' && !inputs.deploy
+              run: ./bin/sync -P

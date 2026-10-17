@@ -34,6 +34,10 @@ Pulls the latest code, then builds both images and pushes them to the Azure Cont
 
 Pulls, builds and pushes the images, rolls out a new revision of the Azure container app, then syncs the catalog with it. First-time Azure setup is in [docs/azure.md](docs/azure.md); options in [docs/deploy.md](docs/deploy.md).
 
+## GitHub Actions
+
+Every push to `main` builds and deploys when code changed, then syncs the catalog with the app. One-time setup: `./bin/ci-setup`. More in [docs/ci.md](docs/ci.md).
+
 ## Sync the catalog
 
 ```sh
@@ -53,11 +57,13 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 ## Project layout
 
 ```
+.github/workflows/deploy.yml build, deploy and sync on push to main
 docker-compose.yml           api + web
 docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
 bin/                         commands (see docs/)
   build                      build both images and push them to the registry
+  ci-setup                   one-time Azure sign-in setup for GitHub Actions
   deploy                     create or update the Azure container app
   deploy.d/containerapp.yaml Azure Container Apps spec template
   replace-photos             swap a record's photos on the live app

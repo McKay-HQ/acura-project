@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+# One-time setup so GitHub Actions can deploy: an Azure identity the workflow signs in as (OpenID
+# Connect, no stored password), with Contributor on the resource group, plus the repo variables
+# the workflow reads. Safe to run again.
+# Help: ./bin/ci-setup -h (docs/ci-setup.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+source "$ROOT/lib/azure.sh"
+
+REPO=${REPO:-patrick-vandy/acura-project}
+SP_NAME=${SP_NAME:-acura-github-deploy}
+while getopts ":h" opt; do
+    case $opt in
+        h) show_help; exit 0 ;;
+        *) bad_option "$OPTARG" ;;
+    esac
+done
+
+need az "see docs/azure.md"
+
+SUBSCRIPTION_ID=$(az account show --query id -o tsv)
+TENANT_ID=$(az account show --query tenantId -o tsv)
+RG_ID=$(az group show -n "$RG" --query id -o tsv)
+
+echo "Creating the app registration $SP_NAME (or reusing it)..."
+CLIENT_ID=$(az ad app list --display-name "$SP_NAME" --query '[0].appId' -o tsv)
+if [ -z "$CLIENT_ID" ]; then
+    CLIENT_ID=$(az ad app create --display-name "$SP_NAME" --query appId -o tsv)
+fi
+az ad sp show --id "$CLIENT_ID" -o none 2>/dev/null || az ad sp create --id "$CLIENT_ID" -o none
+
+# The workflow's job runs in the "production" environment, so that's the identity GitHub presents.
+echo "Trusting GitHub Actions runs of $REPO in the production environment..."
+SUBJECT="repo:$REPO:environment:production"
+if ! az ad app federated-credential list --id "$CLIENT_ID" --query "[?subject=='$SUBJECT'].name" -o tsv | grep -q .; then
+    az ad app federated-credential create --id "$CLIENT_ID" -o none --parameters "{
+        \"name\": \"github-production\",
+        \"issuer\": \"https://token.actions.githubusercontent.com\",
+        \"subject\": \"$SUBJECT\",
+        \"audiences\": [\"api://AzureADTokenExchange\"]
+    }"
+fi
+
+echo "Granting Contributor on the resource group $RG..."
+if [ -z "$(az role assignment list --assignee "$CLIENT_ID" --scope "$RG_ID" --role Contributor --query '[0].id' -o tsv)" ]; then
+    az role assignment create --assignee "$CLIENT_ID" --role Contributor --scope "$RG_ID" -o none
+fi
+
+if command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+    echo "Setting the repo variables..."
+    gh variable set AZURE_CLIENT_ID --repo "$REPO" --body "$CLIENT_ID"
+    gh variable set AZURE_TENANT_ID --repo "$REPO" --body "$TENANT_ID"
+    gh variable set AZURE_SUBSCRIPTION_ID --repo "$REPO" --body "$SUBSCRIPTION_ID"
+    echo
+    echo "Done. Push to main, or run the Deploy workflow from the Actions tab."
+else
+    echo
+    echo "Add these as repository variables (GitHub: Settings > Secrets and variables > Actions > Variables):"
+    echo "  AZURE_CLIENT_ID       $CLIENT_ID"
+    echo "  AZURE_TENANT_ID       $TENANT_ID"
+    echo "  AZURE_SUBSCRIPTION_ID $SUBSCRIPTION_ID"
+fi
