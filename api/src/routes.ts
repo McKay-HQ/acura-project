@@ -148,8 +148,7 @@ api.post('/auth/check', (req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Summary'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.get('/summary', async (_req, res) => {
     res.json(await getSummary());
@@ -171,8 +170,7 @@ api.get('/summary', async (_req, res) => {
  *               type: array
  *               items:
  *                 $ref: '#/components/schemas/Tag'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.get('/tags', async (_req, res) => {
     res.json(await parts.listTags());
@@ -245,14 +243,10 @@ function photoResource<T extends Versioned, I>(
  *       - $ref: '#/components/parameters/partContainerFilter'
  *       - $ref: '#/components/parameters/partSearch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/PartList'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/PartList' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  *   post:
  *     tags: [Parts]
  *     summary: Create a part
@@ -263,18 +257,12 @@ function photoResource<T extends Versioned, I>(
  *     requestBody:
  *       $ref: '#/components/requestBodies/PartCreate'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/PartCreated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       415:
- *         $ref: '#/components/responses/UnsupportedPhoto'
+ *       201: { $ref: '#/components/responses/PartCreated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       415: { $ref: '#/components/responses/UnsupportedPhoto' }
  * /parts/{ref}:
  *   parameters:
  *     - $ref: '#/components/parameters/partRef'
@@ -282,14 +270,10 @@ function photoResource<T extends Versioned, I>(
  *     tags: [Parts]
  *     summary: Get a part
  *     responses:
- *       200:
- *         $ref: '#/components/responses/Part'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/Part' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  *   patch:
  *     tags: [Parts]
  *     summary: Update a part
@@ -300,20 +284,13 @@ function photoResource<T extends Versioned, I>(
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/PartUpdated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/PartUpdated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  *   delete:
  *     tags: [Parts]
  *     summary: Delete a part
@@ -325,18 +302,12 @@ function photoResource<T extends Versioned, I>(
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       204:
- *         $ref: '#/components/responses/Deleted'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       204: { $ref: '#/components/responses/Deleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  * /parts/{ref}/photos:
  *   parameters:
  *     - $ref: '#/components/parameters/partRef'
@@ -350,20 +321,13 @@ function photoResource<T extends Versioned, I>(
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/PartPhotosAdded'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       415:
- *         $ref: '#/components/responses/UnsupportedPhoto'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       201: { $ref: '#/components/responses/PartPhotosAdded' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       415: { $ref: '#/components/responses/UnsupportedPhoto' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  * /parts/{ref}/photos/order:
  *   parameters:
  *     - $ref: '#/components/parameters/partRef'
@@ -376,18 +340,12 @@ function photoResource<T extends Versioned, I>(
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/PartPhotosReordered'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/PartPhotosReordered' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 photoResource('parts', {
     noun: 'part id',
@@ -418,18 +376,12 @@ photoResource('parts', {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/TossedFromPart'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       201: { $ref: '#/components/responses/TossedFromPart' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 api.post('/parts/:ref/toss', async (req, res) => {
     const im = ifMatch(req);
@@ -448,14 +400,10 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/ContainerList'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/ContainerList' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  *   post:
  *     tags: [Containers]
  *     summary: Create a container
@@ -466,18 +414,12 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     requestBody:
  *       $ref: '#/components/requestBodies/ContainerCreate'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/ContainerCreated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       415:
- *         $ref: '#/components/responses/UnsupportedPhoto'
+ *       201: { $ref: '#/components/responses/ContainerCreated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       415: { $ref: '#/components/responses/UnsupportedPhoto' }
  * /containers/{ref}:
  *   parameters:
  *     - $ref: '#/components/parameters/containerRef'
@@ -485,14 +427,10 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     tags: [Containers]
  *     summary: Get a container
  *     responses:
- *       200:
- *         $ref: '#/components/responses/Container'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/Container' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  *   patch:
  *     tags: [Containers]
  *     summary: Update a container
@@ -503,20 +441,13 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/ContainerUpdated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/ContainerUpdated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  *   delete:
  *     tags: [Containers]
  *     summary: Delete a container
@@ -528,18 +459,12 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       204:
- *         $ref: '#/components/responses/Deleted'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       204: { $ref: '#/components/responses/Deleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  * /containers/{ref}/photos:
  *   parameters:
  *     - $ref: '#/components/parameters/containerRef'
@@ -553,20 +478,13 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/ContainerPhotosAdded'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       415:
- *         $ref: '#/components/responses/UnsupportedPhoto'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       201: { $ref: '#/components/responses/ContainerPhotosAdded' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       415: { $ref: '#/components/responses/UnsupportedPhoto' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  * /containers/{ref}/photos/order:
  *   parameters:
  *     - $ref: '#/components/parameters/containerRef'
@@ -579,18 +497,12 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/ContainerPhotosReordered'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/ContainerPhotosReordered' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 photoResource('containers', {
     noun: 'container id',
@@ -612,14 +524,10 @@ photoResource('containers', {
  *     parameters:
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/TossedList'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/TossedList' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  *   post:
  *     tags: [Tossed]
  *     summary: Create a tossed record
@@ -630,18 +538,12 @@ photoResource('containers', {
  *     requestBody:
  *       $ref: '#/components/requestBodies/TossedCreate'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/TossedCreated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       415:
- *         $ref: '#/components/responses/UnsupportedPhoto'
+ *       201: { $ref: '#/components/responses/TossedCreated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       415: { $ref: '#/components/responses/UnsupportedPhoto' }
  * /tossed/{ref}:
  *   parameters:
  *     - $ref: '#/components/parameters/tossedRef'
@@ -649,14 +551,10 @@ photoResource('containers', {
  *     tags: [Tossed]
  *     summary: Get a tossed record
  *     responses:
- *       200:
- *         $ref: '#/components/responses/Tossed'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/Tossed' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  *   patch:
  *     tags: [Tossed]
  *     summary: Update a tossed record
@@ -667,20 +565,13 @@ photoResource('containers', {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/TossedUpdated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/TossedUpdated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  *   delete:
  *     tags: [Tossed]
  *     summary: Delete a tossed record
@@ -689,18 +580,12 @@ photoResource('containers', {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       204:
- *         $ref: '#/components/responses/Deleted'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       204: { $ref: '#/components/responses/Deleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  * /tossed/{ref}/photos:
  *   parameters:
  *     - $ref: '#/components/parameters/tossedRef'
@@ -714,20 +599,13 @@ photoResource('containers', {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/TossedPhotosAdded'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       415:
- *         $ref: '#/components/responses/UnsupportedPhoto'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       201: { $ref: '#/components/responses/TossedPhotosAdded' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       415: { $ref: '#/components/responses/UnsupportedPhoto' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  * /tossed/{ref}/photos/order:
  *   parameters:
  *     - $ref: '#/components/parameters/tossedRef'
@@ -740,18 +618,12 @@ photoResource('containers', {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/TossedPhotosReordered'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/TossedPhotosReordered' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 photoResource('tossed', {
     noun: 'tossed id',
@@ -779,18 +651,12 @@ photoResource('tossed', {
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/PhotoDeleted'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/PhotoDeleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 api.delete('/photos/:id', async (req, res) => {
     const im = ifMatch(req);
@@ -809,10 +675,8 @@ api.delete('/photos/:id', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/TaskList'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
+ *       200: { $ref: '#/components/responses/TaskList' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.get('/tasks', async (req, res) => {
     res.json(await tasks.listTasks(includeDeleted(req)));
@@ -828,12 +692,9 @@ api.get('/tasks', async (req, res) => {
  *     requestBody:
  *       $ref: '#/components/requestBodies/TaskCreate'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/TaskCreated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
+ *       201: { $ref: '#/components/responses/TaskCreated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.post('/tasks', async (req, res) => {
     sendRecord(res, 201, await tasks.createTask(validateTask(req.body || {}, { create: true })));
@@ -848,14 +709,10 @@ api.post('/tasks', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/taskRef'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/Task'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/Task' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  */
 api.get('/tasks/:ref', async (req, res) => {
     sendRecord(res, 200, await tasks.getTask(assertRef(req.params.ref, 'task id')));
@@ -874,18 +731,12 @@ api.get('/tasks/:ref', async (req, res) => {
  *     requestBody:
  *       $ref: '#/components/requestBodies/TaskUpdate'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/TaskUpdated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/TaskUpdated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 api.patch('/tasks/:ref', async (req, res) => {
     const im = ifMatch(req);
@@ -907,18 +758,12 @@ api.patch('/tasks/:ref', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *       - $ref: '#/components/parameters/taskRef'
  *     responses:
- *       204:
- *         $ref: '#/components/responses/Deleted'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       204: { $ref: '#/components/responses/Deleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 api.delete('/tasks/:ref', async (req, res) => {
     const im = ifMatch(req);
@@ -937,10 +782,8 @@ api.delete('/tasks/:ref', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/NoteList'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
+ *       200: { $ref: '#/components/responses/NoteList' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.get('/notes', async (req, res) => {
     res.json(await notes.listNotes(includeDeleted(req)));
@@ -954,14 +797,10 @@ api.get('/notes', async (req, res) => {
  *     parameters:
  *       - $ref: '#/components/parameters/noteRef'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/Note'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
+ *       200: { $ref: '#/components/responses/Note' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
  */
 api.get('/notes/:ref', async (req, res) => {
     sendRecord(res, 200, await notes.getNote(assertRef(req.params.ref, 'note id')));
@@ -977,14 +816,10 @@ api.get('/notes/:ref', async (req, res) => {
  *     requestBody:
  *       $ref: '#/components/requestBodies/NoteCreate'
  *     responses:
- *       201:
- *         $ref: '#/components/responses/NoteCreated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       409:
- *         $ref: '#/components/responses/Conflict'
+ *       201: { $ref: '#/components/responses/NoteCreated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       409: { $ref: '#/components/responses/Conflict' }
  */
 api.post('/notes', async (req, res) => {
     sendRecord(res, 201, await notes.createNote(validateNote(req.body || {}, { create: true })));
@@ -1003,20 +838,13 @@ api.post('/notes', async (req, res) => {
  *     requestBody:
  *       $ref: '#/components/requestBodies/NoteUpdate'
  *     responses:
- *       200:
- *         $ref: '#/components/responses/NoteUpdated'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       409:
- *         $ref: '#/components/responses/Conflict'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       200: { $ref: '#/components/responses/NoteUpdated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 api.patch('/notes/:ref', async (req, res) => {
     const im = ifMatch(req);
@@ -1038,18 +866,12 @@ api.patch('/notes/:ref', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *       - $ref: '#/components/parameters/noteRef'
  *     responses:
- *       204:
- *         $ref: '#/components/responses/Deleted'
- *       400:
- *         $ref: '#/components/responses/BadRequest'
- *       401:
- *         $ref: '#/components/responses/Unauthorized'
- *       404:
- *         $ref: '#/components/responses/NotFound'
- *       412:
- *         $ref: '#/components/responses/PreconditionFailed'
- *       428:
- *         $ref: '#/components/responses/PreconditionRequired'
+ *       204: { $ref: '#/components/responses/Deleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
  */
 api.delete('/notes/:ref', async (req, res) => {
     const im = ifMatch(req);
