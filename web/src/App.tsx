@@ -161,6 +161,20 @@ function KeyForm({ onDone, onCancel, readsLocked }: KeyFormProps) {
     );
 }
 
+/**
+ * For a refresh: the fetched list, except where state already holds a newer version of a record. A write's
+ * response goes into state right away, and a refresh that started before it would otherwise put the older one back.
+ */
+const keepNewer =
+    <T extends { id: string; version: number }>(fetched: T[]) =>
+    (list: T[]): T[] => {
+        const have = new Map(list.map((item) => [item.id, item]));
+        return fetched.map((item) => {
+            const mine = have.get(item.id);
+            return mine && mine.version > item.version ? mine : item;
+        });
+    };
+
 export default function App() {
     const [cfg, setCfg] = useState<AppConfig | null>(null);
     const [unlocked, setUnlocked] = useState<boolean>(false);
@@ -189,7 +203,11 @@ export default function App() {
     const canEdit = cfg !== null && (!cfg.keyRequiredForChanges || unlocked);
     const readsLocked = Boolean(cfg?.keyRequiredForReads) && !unlocked;
 
+    // Refreshes overlap (the timer, focus, one after each write) and can come back out of order: only the newest
+    // one's lists are used.
+    const refreshes = useRef<number>(0);
     const refresh = useCallback(async () => {
+        const current = ++refreshes.current;
         try {
             const [partList, containerList, tossedList, taskList] = await Promise.all([
                 api.parts.list(),
@@ -197,10 +215,11 @@ export default function App() {
                 api.tossed.list(),
                 api.tasks.list(),
             ]);
-            setParts(partList);
-            setContainers(containerList);
-            setTossed(tossedList);
-            setTasks(taskList);
+            if (current !== refreshes.current) return;
+            setParts(keepNewer(partList));
+            setContainers(keepNewer(containerList));
+            setTossed(keepNewer(tossedList));
+            setTasks(keepNewer(taskList));
             setLoadError('');
         } catch (err) {
             if (!(err instanceof ApiError && err.status === 401)) setLoadError(errorMessage(err));
@@ -300,6 +319,8 @@ export default function App() {
     tasksRef.current = tasks;
     const pendingSteps = useRef<Record<string, Record<number, boolean>>>({});
     const stepSaves = useRef<Record<string, Promise<unknown>>>({});
+    // Parts with a for-sale change in flight.
+    const saleSaves = useRef<Set<string>>(new Set());
 
     const run = async (fn: () => Promise<unknown>, okMsg?: string) => {
         try {
@@ -329,7 +350,10 @@ export default function App() {
 
     const partActs: PartActionHandlers = {
         onEdit: (part) => setModal({ type: 'part', record: part }),
-        onToggleSale: (part) =>
+        // A second click before the first is answered would send the same version again and get a 412.
+        onToggleSale: (part) => {
+            if (saleSaves.current.has(part.id)) return;
+            saleSaves.current.add(part.id);
             run(
                 () =>
                     api.parts
@@ -338,9 +362,11 @@ export default function App() {
                                 ? part.tags.filter((tag) => tag !== FOR_SALE)
                                 : [...part.tags.filter((tag) => tag !== 'Potential sale'), FOR_SALE],
                         })
-                        .then(replacePart),
+                        .then(replacePart)
+                        .finally(() => saleSaves.current.delete(part.id)),
                 isForSale(part) ? `Took "${part.label}" off sale.` : `Marked "${part.label}" for sale.`,
-            ),
+            );
+        },
         onToss: (part) => setModal({ type: 'toss', record: part }),
         onDelete: (part) =>
             run(
