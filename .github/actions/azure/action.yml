@@ -1,0 +1,47 @@
+# Shared setup for the jobs that talk to Azure: check the sign-in settings from bin/ci-setup, sign in
+# with OpenID Connect, add the containerapp CLI extension, and set a git identity for commits.
+name: Azure setup
+description: Sign in to Azure and get the deploy scripts' tools ready.
+inputs:
+    client-id:
+        description: vars.AZURE_CLIENT_ID
+        required: false
+    tenant-id:
+        description: vars.AZURE_TENANT_ID
+        required: false
+    subscription-id:
+        description: vars.AZURE_SUBSCRIPTION_ID
+        required: false
+runs:
+    using: composite
+    steps:
+        - name: Check the Azure settings
+          shell: bash
+          env:
+              CLIENT_ID: ${{ inputs.client-id }}
+              TENANT_ID: ${{ inputs.tenant-id }}
+              SUBSCRIPTION_ID: ${{ inputs.subscription-id }}
+          run: |
+              missing=""
+              [ -n "$CLIENT_ID" ] || missing="$missing AZURE_CLIENT_ID"
+              [ -n "$TENANT_ID" ] || missing="$missing AZURE_TENANT_ID"
+              [ -n "$SUBSCRIPTION_ID" ] || missing="$missing AZURE_SUBSCRIPTION_ID"
+              if [ -n "$missing" ]; then
+                  echo "::error::Missing variables:$missing. Run ./bin/ci-setup, or add them under Settings > Secrets and variables > Actions > Variables (not Secrets)."
+                  exit 1
+              fi
+
+        - name: Sign in to Azure
+          uses: azure/login@v2
+          with:
+              client-id: ${{ inputs.client-id }}
+              tenant-id: ${{ inputs.tenant-id }}
+              subscription-id: ${{ inputs.subscription-id }}
+
+        - name: Tools
+          shell: bash
+          run: |
+              command -v envsubst >/dev/null || sudo apt-get install -y gettext-base
+              az extension add --name containerapp --upgrade --only-show-errors
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

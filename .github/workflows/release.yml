@@ -1,0 +1,60 @@
+# Tag a commit and publish a GitHub release for it, with notes generated from the commits since the
+# last release. Versions are dated: v2026.10.17.1, then .2 for a second release the same day.
+# Runs on its own from the Actions tab (tags the branch tip), or as the last step of Deploy (tags
+# the commit that was deployed).
+name: Release
+
+on:
+    workflow_dispatch:
+    workflow_call:
+        inputs:
+            sha:
+                description: Commit to tag
+                type: string
+                required: true
+            image-tag:
+                description: Tag of the deployed images, listed in the notes
+                type: string
+                required: false
+        outputs:
+            version:
+                description: The release's tag, e.g. v2026.10.17.1
+                value: ${{ jobs.release.outputs.version }}
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.tag.outputs.version }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # all tags, for numbering and the notes
+
+            - name: Pick the version
+              id: tag
+              env:
+                  SHA: ${{ inputs.sha || github.sha }}
+              run: |
+                  day=$(TZ=America/Chicago date +%Y.%m.%d)
+                  n=$(git tag -l "v$day.*" | sed "s/^v$day\.//" | sort -n | tail -1)
+                  version="v$day.$(( ${n:-0} + 1 ))"
+                  echo "version=$version" >> "$GITHUB_OUTPUT"
+                  echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+                  echo "Releasing $SHA as $version"
+
+            - name: Tag and publish
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  VERSION: ${{ steps.tag.outputs.version }}
+                  SHA: ${{ steps.tag.outputs.sha }}
+                  IMAGE_TAG: ${{ inputs.image-tag }}
+              run: |
+                  notes=""
+                  if [ -n "$IMAGE_TAG" ]; then
+                      notes=$(printf 'Deployed images:\n- `acuraproject.azurecr.io/acura-api:%s`\n- `acuraproject.azurecr.io/acura-web:%s`\n' "$IMAGE_TAG" "$IMAGE_TAG")
+                  fi
+                  gh release create "$VERSION" --target "$SHA" --title "$VERSION" --generate-notes --notes "$notes"

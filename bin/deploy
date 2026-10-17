@@ -103,8 +103,6 @@ if [ "$NEW_KEY" = 1 ]; then
     echo "  $API_KEY"
 fi
 
-[ "$SYNC" = 1 ] || exit 0
-
 # Wait for the new revision to run and the API to answer (it starts listening only after the
 # migrations and, on the first start, the starter data), then sync the catalog with it.
 echo
@@ -115,15 +113,18 @@ while :; do
     STATE=$(az containerapp revision show --only-show-errors -n "$APP" -g "$RG" --revision "$REVISION" --query properties.runningState -o tsv 2>/dev/null || true)
     case $STATE in
         Running | RunningAtMaxScale) break ;;
-        Failed | Degraded) die "revision $REVISION is $STATE; check the logs, then run ./bin/sync" ;;
+        Failed | Degraded) die "revision $REVISION is $STATE; check the logs" ;;
     esac
-    [ "$SECONDS" -lt "$DEADLINE" ] || die "revision $REVISION still isn't running (${STATE:-unknown}); run ./bin/sync once it is"
+    [ "$SECONDS" -lt "$DEADLINE" ] || die "revision $REVISION still isn't running (${STATE:-unknown})"
     sleep 10
 done
 until curl -fsS -o /dev/null "$URL/api/health" 2>/dev/null; do
-    [ "$SECONDS" -lt "$DEADLINE" ] || die "the API isn't answering yet; run ./bin/sync once it is"
+    [ "$SECONDS" -lt "$DEADLINE" ] || die "the API isn't answering yet"
     sleep 10
 done
+
+echo "Revision $REVISION_SUFFIX is up."
+[ "$SYNC" = 1 ] || exit 0
 
 echo
 STATUS=0

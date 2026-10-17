@@ -1,10 +1,7 @@
-# Build, deploy and sync on every push to main (see docs/ci.md).
-#   - Code changes (api/, web/, deploy scripts): build both images, push them to the registry and
-#     roll out a new revision of the container app (bin/deploy -b).
-#   - Then, always: two-way sync of the catalog (api/seed/) with the app (bin/sync). Anything it
-#     pulls from the app is committed back to main; pushes made with the workflow's token don't
-#     start another run.
-# Run it by hand from the Actions tab too, e.g. to force a deploy or to pull app changes.
+# On every push to main (see docs/ci.md):
+#   - Code changed: Build -> roll out the new images -> Sync -> Release.
+#   - Only other files changed (e.g. the catalog in api/seed/): Sync.
+# Run it from the Actions tab to deploy without a push; Build, Sync and Release also run on their own.
 name: Deploy
 
 on:
@@ -13,47 +10,28 @@ on:
     workflow_dispatch:
         inputs:
             deploy:
-                description: Build and deploy even if no code changed
+                description: Build, deploy and release even if no code changed
                 type: boolean
-                default: false
+                default: true
 
-# One run at a time; a newer push waits for the current run instead of cancelling it mid-deploy.
+# One deploy at a time; a newer push waits for the current run instead of cancelling it mid-rollout.
 concurrency:
     group: deploy
     cancel-in-progress: false
 
 permissions:
-    contents: write # bin/sync commits what it pulls from the app
-    id-token: write # sign in to Azure with OpenID Connect (no stored password)
+    contents: write
+    id-token: write
 
 jobs:
-    deploy:
+    changes:
         runs-on: ubuntu-latest
-        environment: production
+        outputs:
+            code: ${{ steps.filter.outputs.code == 'true' || (github.event_name == 'workflow_dispatch' && inputs.deploy) }}
         steps:
-            # The Azure sign-in details come from bin/ci-setup, as repository or production-environment
-            # variables. (They're checked here rather than in a job condition, which can't see
-            # environment variables.)
-            - name: Check the Azure settings
-              env:
-                  CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-                  TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-                  SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-              run: |
-                  missing=""
-                  [ -n "$CLIENT_ID" ] || missing="$missing AZURE_CLIENT_ID"
-                  [ -n "$TENANT_ID" ] || missing="$missing AZURE_TENANT_ID"
-                  [ -n "$SUBSCRIPTION_ID" ] || missing="$missing AZURE_SUBSCRIPTION_ID"
-                  if [ -n "$missing" ]; then
-                      echo "::error::Missing variables:$missing. Run ./bin/ci-setup, or add them under Settings > Secrets and variables > Actions > Variables (not Secrets)."
-                      exit 1
-                  fi
-
             - uses: actions/checkout@v4
-
-            - name: What changed
-              uses: dorny/paths-filter@v3
-              id: changes
+            - uses: dorny/paths-filter@v3
+              id: filter
               with:
                   filters: |
                       code:
@@ -68,30 +46,41 @@ jobs:
                         - 'bin/deploy'
                         - 'bin/deploy.d/**'
                         - 'lib/**'
-                        - '.github/workflows/deploy.yml'
+                        - '.github/workflows/**'
+                        - '.github/actions/**'
 
-            - name: Sign in to Azure
-              uses: azure/login@v2
+    build:
+        needs: changes
+        if: needs.changes.outputs.code == 'true'
+        uses: ./.github/workflows/build.yml
+
+    rollout:
+        needs: build
+        runs-on: ubuntu-latest
+        environment: production
+        steps:
+            - uses: actions/checkout@v4
+            - uses: ./.github/actions/azure
               with:
                   client-id: ${{ vars.AZURE_CLIENT_ID }}
                   tenant-id: ${{ vars.AZURE_TENANT_ID }}
                   subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-            - name: Set up
-              run: |
-                  command -v envsubst >/dev/null || sudo apt-get install -y gettext-base
-                  az extension add --name containerapp --upgrade --only-show-errors
-                  git config user.name "github-actions[bot]"
-                  git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-            # Images are tagged with the commit, so every revision says exactly what it runs.
-            # bin/deploy waits for the new revision to answer, then runs the sync itself.
-            - name: Build, deploy and sync
-              if: steps.changes.outputs.code == 'true' || inputs.deploy
+            # Rolls out the images Build just pushed and waits until the new revision answers.
+            - name: Roll out
               env:
-                  IMAGE_TAG: ${{ github.sha }}
-              run: ./bin/deploy -b -P
+                  IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+              run: ./bin/deploy -P -S
 
-            - name: Sync the catalog with the app
-              if: steps.changes.outputs.code != 'true' && !inputs.deploy
-              run: ./bin/sync -P
+    # After a rollout, or on its own when no code changed.
+    sync:
+        needs: [changes, rollout]
+        if: ${{ !cancelled() && !failure() }}
+        uses: ./.github/workflows/sync.yml
+
+    release:
+        needs: [build, rollout, sync]
+        if: ${{ !cancelled() && needs.rollout.result == 'success' }}
+        uses: ./.github/workflows/release.yml
+        with:
+            sha: ${{ github.sha }}
+            image-tag: ${{ needs.build.outputs.image-tag }}

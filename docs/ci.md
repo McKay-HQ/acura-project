@@ -1,21 +1,24 @@
 # GitHub Actions
 
-`.github/workflows/deploy.yml` builds, deploys and syncs on every push to `main`, so you no longer need to run `bin/deploy` or `bin/sync` yourself.
+Four workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs the others and starts by itself on every push to `main`.
 
-| What changed | What the run does |
+| Workflow | What it does |
 |---|---|
-| Code (`api/src/`, `api/migrations/`, `api/docker/`, `api/scripts/`, `api/*.json`, `web/`, `docker-compose.yml`, `bin/build`, `bin/deploy`, `bin/deploy.d/`, `lib/`, the workflow) | Builds both images, pushes them tagged with the commit, rolls out a new revision, waits for it to answer, then syncs (`bin/deploy -b`) |
-| Anything else, e.g. the catalog in `api/seed/` | Syncs the catalog with the app (`bin/sync`) |
+| **Build** (`build.yml`) | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`) |
+| **Sync** (`sync.yml`) | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app is committed back to `main` |
+| **Release** (`release.yml`) | Tags a commit with a dated version (`v2026.10.17.1`, then `.2` the same day) and publishes a GitHub release with notes generated from the commits since the last one |
+| **Deploy** (`deploy.yml`) | Build → roll out the new images and wait for the app to answer → Sync → Release |
 
-Whatever the sync pulls from the app is committed back to `main` by `github-actions[bot]`. Commits made with the workflow's token don't start another run.
+## What a push to main does
 
-A run fails (red X) if the build or deploy fails, or if the sync finds a **conflict**: the same field changed in both the catalog and the app. Settle it locally with `./bin/sync -c` (catalog wins) or `./bin/sync -a` (app wins), see [sync.md](sync.md).
+| What changed | Jobs |
+|---|---|
+| Code: `api/src/`, `api/migrations/`, `api/docker/`, `api/scripts/`, `api/*.json`, `web/`, `docker-compose.yml`, `bin/build`, `bin/deploy`, `bin/deploy.d/`, `lib/`, `.github/` | Build, roll out, Sync, Release |
+| Anything else, e.g. the catalog in `api/seed/` | Sync only |
 
-## Running it by hand
+Running **Deploy** by hand builds, rolls out and releases even with no code change (untick the box to only sync). Deploys never overlap: a push while one is going waits for it.
 
-Actions tab > **Deploy** > **Run workflow**. With "Build and deploy even if no code changed" ticked it always builds and deploys; otherwise it only syncs, which is how to pull changes made in the app without pushing anything.
-
-Runs never overlap: a push while a run is going waits for it.
+A run fails (red X) if the build or rollout fails, or if the sync finds a **conflict** (the same field changed in both the catalog and the app). The release still happens after a sync conflict, since the code was deployed. Settle the conflict locally with `./bin/sync -c` (catalog wins) or `./bin/sync -a` (app wins), see [sync.md](sync.md). Commits made by the workflows (`github-actions[bot]`) don't start new runs.
 
 ## Setup
 
@@ -25,8 +28,10 @@ Once, from WSL (signed in with `az login`):
 ./bin/ci-setup
 ```
 
-Until then runs stop at the first step with a message naming the missing variables. See [ci-setup.md](ci-setup.md). The workflow signs in to Azure with OpenID Connect, so no password or key is stored in GitHub.
+Until then the Azure jobs stop at their first step with a message naming the missing variables. See [ci-setup.md](ci-setup.md). The workflows sign in to Azure with OpenID Connect, so no password or key is stored in GitHub.
+
+The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Build, Sync and the rollout.
 
 ## The local commands still work
 
-`./bin/deploy -b` and `./bin/sync` are unchanged, for when you want to deploy from your machine. Images from the workflow are tagged with the commit (`acura-api:<sha>`); local builds use `latest`.
+`./bin/deploy -b` and `./bin/sync` are unchanged, for when you want to deploy from your machine. Local builds use the `latest` tag and aren't released.

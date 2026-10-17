@@ -1,0 +1,30 @@
+# Two-way sync of the catalog (api/seed/) with the live app (bin/sync). Whatever it pulls from the
+# app is committed back to main (commits made with the workflow's token don't start other runs).
+# Runs on its own from the Actions tab (e.g. to pull changes made in the app), on pushes that only
+# touch the catalog, or as part of Deploy. Fails if the sync finds a conflict.
+name: Sync
+
+on:
+    workflow_dispatch:
+    workflow_call:
+
+permissions:
+    contents: write
+    id-token: write
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+        environment: production
+        steps:
+            # The branch tip, not the triggering commit: earlier jobs may have pushed since.
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.ref_name }}
+            - uses: ./.github/actions/azure
+              with:
+                  client-id: ${{ vars.AZURE_CLIENT_ID }}
+                  tenant-id: ${{ vars.AZURE_TENANT_ID }}
+                  subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+            - name: Sync
+              run: ./bin/sync -P

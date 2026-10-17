@@ -34,7 +34,8 @@ It prompts for the password if `PG_PASSWORD` isn't set, creates the app, and pri
 1. Checks the Container Apps environment and its `uploads` photo storage.
 2. Creates the managed identity the app uses to pull images and grants it `AcrPull` on the registry (once; the first time it waits a minute for the permission to apply).
 3. Fills in `bin/deploy.d/containerapp.yaml` and applies it with `az containerapp create` or `update`. The filled-in copy holds secrets, so it lives in a private temp file that is always deleted.
-4. Waits for the new revision to start and the API to answer (up to 15 minutes, since the first start loads the starter data), then runs `./bin/sync` so the catalog and the app are in step. Skip it with `-S`.
+4. Waits for the new revision to start and the API to answer (up to 15 minutes, since the first start loads the starter data); the deploy fails if it doesn't come up.
+5. Runs `./bin/sync` so the catalog and the app are in step. Skip it with `-S`.
 
 Every run creates a new revision (`revisionSuffix`), so Azure pulls the current images even when the tag hasn't changed.
 

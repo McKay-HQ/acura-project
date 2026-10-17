@@ -36,7 +36,7 @@ Pulls, builds and pushes the images, rolls out a new revision of the Azure conta
 
 ## GitHub Actions
 
-Every push to `main` builds and deploys when code changed, then syncs the catalog with the app. One-time setup: `./bin/ci-setup`. More in [docs/ci.md](docs/ci.md).
+Every push to `main` runs **Deploy**: when code changed it builds, rolls out, syncs and publishes a dated release; otherwise it just syncs. Build, Sync and Release also run on their own from the Actions tab. One-time setup: `./bin/ci-setup`. More in [docs/ci.md](docs/ci.md).
 
 ## Sync the catalog
 
@@ -57,7 +57,7 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 ## Project layout
 
 ```
-.github/workflows/deploy.yml build, deploy and sync on push to main
+.github/workflows/           build, sync, release, deploy (docs/ci.md)
 docker-compose.yml           api + web
 docker-compose.localdb.yml   adds the local Postgres for dev/testing
 .env.example
