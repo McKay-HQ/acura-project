@@ -31,12 +31,12 @@ ElectricSQL, PowerSync, Replicache and CRDT libraries (Automerge, Yjs) assume bo
 
 `api/seed/sync-state.json` records, per record, the app `version` and the content (`base`) at the last sync. For each record, compare the catalog and the app with that base:
 
-| Catalog vs base | App vs base | Action |
-|---|---|---|
-| same | same | nothing |
-| changed | same | push to the app with `If-Match: base version` (a 412 means someone just edited it: conflict) |
-| same | changed | pull into the catalog |
-| changed | changed | merge field by field when different fields changed; a field changed on both sides to different values is a **conflict**: reported, nothing changed for that record (or settled with `-c` / `-a`) |
+| Catalog vs base | App vs base | Action                                                                                                                                                                                           |
+| --------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| same            | same        | nothing                                                                                                                                                                                          |
+| changed         | same        | push to the app with `If-Match: base version` (a 412 means someone just edited it: conflict)                                                                                                     |
+| same            | changed     | pull into the catalog                                                                                                                                                                            |
+| changed         | changed     | merge field by field when different fields changed; a field changed on both sides to different values is a **conflict**: reported, nothing changed for that record (or settled with `-c` / `-a`) |
 
 Task steps (`steps`: text, done, links, photos) compare as one field, and a task with steps is done exactly when all its steps are; the API enforces that.
 

@@ -6,10 +6,10 @@ Builds the `api` and `web` images and pushes them to the Azure Container Registr
 ./bin/build [-P] [-h]
 ```
 
-| Option | |
-|---|---|
-| `-P` | Don't run `git pull` first |
-| `-h` | Show this page |
+| Option |                            |
+| ------ | -------------------------- |
+| `-P`   | Don't run `git pull` first |
+| `-h`   | Show this page             |
 
 Lowercase options turn something on; uppercase ones turn a default off.
 
@@ -22,10 +22,10 @@ Images are `acuraproject.azurecr.io/acura-api` and `acura-web`, built for `linux
 
 ## Environment
 
-| Variable | Default | |
-|---|---|---|
-| `ACR` | `acuraproject` | Registry name; images go to `$ACR.azurecr.io` |
-| `IMAGE_TAG` | `latest` | Tag to build and push |
+| Variable    | Default        |                                               |
+| ----------- | -------------- | --------------------------------------------- |
+| `ACR`       | `acuraproject` | Registry name; images go to `$ACR.azurecr.io` |
+| `IMAGE_TAG` | `latest`       | Tag to build and push                         |
 
 These win over `IMAGE_REGISTRY` / `IMAGE_TAG` in `.env`, so the registry you sign in to is the one you push to.
 

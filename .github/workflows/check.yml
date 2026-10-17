@@ -1,0 +1,55 @@
+# Quality checks for every pull request: types, lint, formatting, the OpenAPI docs, and the web build.
+# The job is named "check" so the ruleset can require it before a PR merges into main.
+name: Check
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+            web/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci
+          npm ci --prefix api
+          npm ci --prefix web
+
+      - name: Typecheck
+        run: |
+          npm run typecheck --prefix api
+          npm run typecheck --prefix web
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Prettier
+        run: npm run format:check
+
+      - name: OpenAPI docs
+        run: |
+          npm run build --prefix api
+          npm run lint:openapi --prefix api
+
+      - name: Web build
+        run: npm run build --prefix web

@@ -1,16 +1,16 @@
 # Docs
 
-| Page | What it covers |
-|---|---|
-| [docker.md](docker.md) | Running the app locally with Docker Compose, using a managed database, backups |
-| [azure.md](azure.md) | Setting up Azure once, deploying, custom domain, logs |
-| [build.md](build.md) | `bin/build`: build and push the images |
-| [deploy.md](deploy.md) | `bin/deploy`: create or update the Azure container app |
-| [sync.md](sync.md) | `bin/sync`: two-way sync of the catalog and the live app |
-| [sync-design.md](sync-design.md) | How the two-way sync works: versions, `If-Match`, the 3-way rules |
-| [ci.md](ci.md) | GitHub Actions: Build, Sync, Release, and Deploy on every push to `main` |
-| [ci-setup.md](ci-setup.md) | `bin/ci-setup`: one-time Azure sign-in setup for the workflow |
-| [replace-photos.md](replace-photos.md) | `bin/replace-photos`: swap a record's photos on the live app |
+| Page                                   | What it covers                                                                 |
+| -------------------------------------- | ------------------------------------------------------------------------------ |
+| [docker.md](docker.md)                 | Running the app locally with Docker Compose, using a managed database, backups |
+| [azure.md](azure.md)                   | Setting up Azure once, deploying, custom domain, logs                          |
+| [build.md](build.md)                   | `bin/build`: build and push the images                                         |
+| [deploy.md](deploy.md)                 | `bin/deploy`: create or update the Azure container app                         |
+| [sync.md](sync.md)                     | `bin/sync`: two-way sync of the catalog and the live app                       |
+| [sync-design.md](sync-design.md)       | How the two-way sync works: versions, `If-Match`, the 3-way rules              |
+| [ci.md](ci.md)                         | GitHub Actions: Build, Sync, Release, and Deploy on every push to `main`       |
+| [ci-setup.md](ci-setup.md)             | `bin/ci-setup`: one-time Azure sign-in setup for the workflow                  |
+| [replace-photos.md](replace-photos.md) | `bin/replace-photos`: swap a record's photos on the live app                   |
 
 The API documents itself: open `/api/docs/` on any running copy of the app.
 

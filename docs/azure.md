@@ -2,15 +2,15 @@
 
 The app runs as one **Container App** with two containers: nginx (`web`, public) and the API (`api`), which nginx reaches at `localhost:3000`. Around it:
 
-| Resource | Name | Purpose |
-|---|---|---|
-| Resource group | `acura-project` | Holds everything, in `centralus` |
-| Container registry | `acuraproject` | The `acura-api` and `acura-web` images |
-| PostgreSQL flexible server | `acura-project-db` | The database (Burstable B1ms) |
-| Container Apps environment | `acura-env` | Hosts the app, with the photo share attached as `uploads` |
-| Storage account / file share | `acuraprojectfiles` / `uploads` | Photos, mounted at `/data/uploads` in the API |
-| Managed identity | `acura-pull` | Lets the app pull images from the registry |
-| Container app | `acura` | The app itself |
+| Resource                     | Name                            | Purpose                                                   |
+| ---------------------------- | ------------------------------- | --------------------------------------------------------- |
+| Resource group               | `acura-project`                 | Holds everything, in `centralus`                          |
+| Container registry           | `acuraproject`                  | The `acura-api` and `acura-web` images                    |
+| PostgreSQL flexible server   | `acura-project-db`              | The database (Burstable B1ms)                             |
+| Container Apps environment   | `acura-env`                     | Hosts the app, with the photo share attached as `uploads` |
+| Storage account / file share | `acuraprojectfiles` / `uploads` | Photos, mounted at `/data/uploads` in the API             |
+| Managed identity             | `acura-pull`                    | Lets the app pull images from the registry                |
+| Container app                | `acura`                         | The app itself                                            |
 
 The app scales to zero when idle (the first visit after a quiet spell takes a few seconds) and to at most one copy.
 

@@ -15,12 +15,12 @@ One-time setup so the GitHub Actions workflow ([ci.md](ci.md)) can deploy to Azu
 
 ## Environment
 
-| Variable | Default |
-|---|---|
-| `REPO` | `patrick-vandy/acura-project` |
-| `SP_NAME` | `acura-github-deploy` |
+| Variable  | Default                                                             |
+| --------- | ------------------------------------------------------------------- |
+| `REPO`    | `patrick-vandy/acura-project`                                       |
+| `SP_NAME` | `acura-github-deploy`                                               |
 | `SUBJECT` | none; an extra subject to trust, copied from an Azure sign-in error |
-| `RG` | `acura-project` |
+| `RG`      | `acura-project`                                                     |
 
 ## Needs
 

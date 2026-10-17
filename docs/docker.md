@@ -2,11 +2,11 @@
 
 The app is two images, built from each package's `docker/` folder:
 
-| Service | Image | Built from |
-|---|---|---|
-| `api` | `acuraproject.azurecr.io/acura-api` | `api/docker/Dockerfile` (Node, TypeScript compiled to `dist/`) |
-| `web` | `acuraproject.azurecr.io/acura-web` | `web/docker/Dockerfile` (Vite build, served by nginx) |
-| `db` *(local only)* | `postgres:16-alpine` | `docker-compose.localdb.yml` |
+| Service             | Image                               | Built from                                                     |
+| ------------------- | ----------------------------------- | -------------------------------------------------------------- |
+| `api`               | `acuraproject.azurecr.io/acura-api` | `api/docker/Dockerfile` (Node, TypeScript compiled to `dist/`) |
+| `web`               | `acuraproject.azurecr.io/acura-web` | `web/docker/Dockerfile` (Vite build, served by nginx)          |
+| `db` _(local only)_ | `postgres:16-alpine`                | `docker-compose.localdb.yml`                                   |
 
 nginx serves the web app and forwards `/api` and `/uploads` to the API (`API_URL`, default `http://api:3000`), so everything is on one port.
 
@@ -38,12 +38,12 @@ DATABASE_URL=postgres://user:password@host:5432/dbname
 DATABASE_SSL=require                     # or no-verify for a self-signed certificate
 ```
 
-| Variable | Purpose |
-|---|---|
-| `DATABASE_URL` | Connection string, or set `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` |
-| `DATABASE_SSL` | `require`, `no-verify` or `disable`; overrides any `sslmode` in the URL |
-| `DATABASE_SSL_CA` | Optional CA certificate (PEM text or a path in the container) |
-| `DB_POOL_MAX` | Maximum connections the API opens (default 10) |
+| Variable          | Purpose                                                                            |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| `DATABASE_URL`    | Connection string, or set `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` |
+| `DATABASE_SSL`    | `require`, `no-verify` or `disable`; overrides any `sslmode` in the URL            |
+| `DATABASE_SSL_CA` | Optional CA certificate (PEM text or a path in the container)                      |
+| `DB_POOL_MAX`     | Maximum connections the API opens (default 10)                                     |
 
 ## Access key
 

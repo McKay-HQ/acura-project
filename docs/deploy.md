@@ -6,12 +6,12 @@ Creates the Azure container app the first time and updates it after that. One ap
 ./bin/deploy [-b] [-S] [-P] [-h]
 ```
 
-| Option | |
-|---|---|
-| `-b` | Run `bin/build` first (build and push both images) |
-| `-S` | Don't run `bin/sync` after the rollout |
-| `-P` | Don't run `git pull` first |
-| `-h` | Show this page |
+| Option |                                                    |
+| ------ | -------------------------------------------------- |
+| `-b`   | Run `bin/build` first (build and push both images) |
+| `-S`   | Don't run `bin/sync` after the rollout             |
+| `-P`   | Don't run `git pull` first                         |
+| `-h`   | Show this page                                     |
 
 Lowercase options turn something on; uppercase ones turn a default off.
 
@@ -51,17 +51,17 @@ On an update the script reads these from the running app, unless you set them:
 
 ## Environment
 
-| Variable | Default |
-|---|---|
-| `LOCATION` | `centralus` |
-| `RG` | `acura-project` |
-| `ACR` | `acuraproject` |
-| `APP` | `acura` |
-| `ENV` | `acura-env` |
-| `IDENTITY` | `acura-pull` |
+| Variable                                 | Default                                            |
+| ---------------------------------------- | -------------------------------------------------- |
+| `LOCATION`                               | `centralus`                                        |
+| `RG`                                     | `acura-project`                                    |
+| `ACR`                                    | `acuraproject`                                     |
+| `APP`                                    | `acura`                                            |
+| `ENV`                                    | `acura-env`                                        |
+| `IDENTITY`                               | `acura-pull`                                       |
 | `PG_SERVER` / `PG_ADMIN` / `PG_DATABASE` | `acura-project-db` / `acura_db_admin` / `postgres` |
-| `IMAGE_TAG` | `latest` |
-| `PG_PASSWORD`, `API_KEY` | read from the app's secrets on updates |
+| `IMAGE_TAG`                              | `latest`                                           |
+| `PG_PASSWORD`, `API_KEY`                 | read from the app's secrets on updates             |
 
 ## Changing the app's definition
 
