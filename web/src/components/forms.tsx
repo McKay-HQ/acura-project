@@ -1,6 +1,6 @@
 // Add/edit forms for parts, containers and tossed records. Existing photos can be
 // reordered or deleted in place; new photos upload when the form is saved.
-import { useState, type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { useRef, useState, type ChangeEvent, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { api, errorMessage, CONFLICT_MESSAGE, PreconditionFailedError, type Resource } from '../api';
 import { PhotoEditor, FormButtons } from './ui';
 import { BOX_ICONS, isBoxIcon } from './Icons';
@@ -107,7 +107,14 @@ function useSubmit<T extends WithPhotos, RI, F extends object, I extends RI & { 
     edit: EditFields<F, I>,
     fromRecord: (r: T) => F,
 ) {
-    const [rec, setRec] = useState<T | undefined>(record);
+    const [rec, setRecState] = useState<T | undefined>(record);
+    // The newest version too, for a photo edit clicked before the previous one's response has rendered.
+    const newest = useRef<T | undefined>(record);
+    const setRec = (newer: T) => {
+        newest.current = newer;
+        setRecState(newer);
+    };
+    const photoQueue = useRef<Promise<void>>(Promise.resolve());
     const [files, setFiles] = useState<File[]>([]);
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
@@ -144,17 +151,22 @@ function useSubmit<T extends WithPhotos, RI, F extends object, I extends RI & { 
             setBusy(false);
         }
     }
-    const photoEdit = async (fn: (r: T) => Promise<T>) => {
-        if (!rec) return;
-        setError('');
-        try {
-            const updated = await fn(rec);
-            // The response may carry someone else's field changes too; take them into the form.
-            setError(adopt(updated).trim());
-            onSaved(updated, { keepOpen: true });
-        } catch (err) {
-            setError(failure(err, rec));
-        }
+    // Photo edits go out one at a time, each from the version the previous one returned, so a second click before
+    // the first is answered doesn't send the same version again and get a 412.
+    const photoEdit = (fn: (r: T) => Promise<T>) => {
+        photoQueue.current = photoQueue.current.then(async () => {
+            const current = newest.current;
+            if (!current) return;
+            setError('');
+            try {
+                const updated = await fn(current);
+                // The response may carry someone else's field changes too; take them into the form.
+                setError(adopt(updated).trim());
+                onSaved(updated, { keepOpen: true });
+            } catch (err) {
+                setError(failure(err, current));
+            }
+        });
     };
     const photos = rec?.photos || [];
     const editor = rec && (
@@ -164,7 +176,7 @@ function useSubmit<T extends WithPhotos, RI, F extends object, I extends RI & { 
                 photoEdit((latest) =>
                     resource.reorderPhotos(latest, [
                         photo.id,
-                        ...photos.filter((other) => other.id !== photo.id).map((other) => other.id),
+                        ...latest.photos.filter((other) => other.id !== photo.id).map((other) => other.id),
                     ]),
                 )
             }

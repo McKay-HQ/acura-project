@@ -56,13 +56,16 @@ jobs:
           SHA: ${{ inputs.sha || github.sha }}
           BUMP: ${{ inputs.bump || 'auto' }}
         run: |
+          # A failed label lookup must stop the release, not quietly leave it at a patch bump.
+          set -o pipefail
           # Latest vMAJOR.MINOR.PATCH tag (other tags, like the old dated ones, are ignored).
-          last=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          last=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | { grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' || true; } | sort -V | tail -1)
           if [ -n "$last" ] && [ "$BUMP" = auto ]; then
               # The pull requests that brought in the commits since the last version, with their labels.
               prs=$(git log --format=%H "$last..$SHA" | while read -r commit; do
                   gh api "repos/$GITHUB_REPOSITORY/commits/$commit/pulls" \
-                      --jq '.[] | select(.merged_at != null) | "#\(.number) \([.labels[].name] | join(","))"'
+                      --jq '.[] | select(.merged_at != null) | "#\(.number) \([.labels[].name] | join(","))"' \
+                      || { echo "::error::Couldn't look up the pull request for $commit" >&2; exit 1; }
               done | sort -u)
               labels=$(cut -d' ' -f2- <<< "$prs" | tr ',' '\n')
               # Catalog syncs don't count toward the bump.
