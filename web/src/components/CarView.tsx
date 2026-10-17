@@ -3,6 +3,7 @@ import { CAR_SECTIONS, CONDITION, CONDITION_DATE, CONDITION_TASKS, carPhotos, ty
 import { findRef, href } from '../constants';
 import type { Task } from '../types';
 import PhotoViewer from './PhotoViewer';
+import CarStrip from './CarStrip';
 
 interface CarViewProps {
     tasks: Task[];
@@ -61,20 +62,11 @@ export default function CarView({ tasks }: CarViewProps) {
                 return (
                     <div className="panel" key={s.key}>
                         <h3>{s.title}</h3>
-                        <div className="cargrid">
-                            {photos.map((p, i) => (
-                                <figure className="cfig" key={p.src}>
-                                    <button
-                                        className="cthumb"
-                                        aria-label={`Open ${s.title} photo ${i + 1} of ${photos.length}: ${p.caption}`}
-                                        onClick={() => setOpen({ photos, index: i, label: s.title })}
-                                    >
-                                        <img src={p.thumb} alt="" loading="lazy" draggable="false" />
-                                    </button>
-                                    <figcaption>{p.caption}</figcaption>
-                                </figure>
-                            ))}
-                        </div>
+                        <CarStrip
+                            title={s.title}
+                            photos={photos}
+                            onOpen={(i) => setOpen({ photos, index: i, label: s.title })}
+                        />
                     </div>
                 );
             })}
