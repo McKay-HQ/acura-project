@@ -29,16 +29,33 @@ fi
 az ad sp show --id "$CLIENT_ID" -o none 2>/dev/null || az ad sp create --id "$CLIENT_ID" -o none
 
 # The workflow's job runs in the "production" environment, so that's the identity GitHub presents.
+# GitHub's token subject names the repo either as owner/repo or, in its newer format, with the owner
+# and repo ids (owner@123/repo@456). Trust both. Override with SUBJECT=... if GitHub reports another.
 echo "Trusting GitHub Actions runs of $REPO in the production environment..."
-SUBJECT="repo:$REPO:environment:production"
-if ! az ad app federated-credential list --id "$CLIENT_ID" --query "[?subject=='$SUBJECT'].name" -o tsv | grep -q .; then
-    az ad app federated-credential create --id "$CLIENT_ID" -o none --parameters "{
-        \"name\": \"github-production\",
-        \"issuer\": \"https://token.actions.githubusercontent.com\",
-        \"subject\": \"$SUBJECT\",
-        \"audiences\": [\"api://AzureADTokenExchange\"]
-    }"
+add_subject() {
+    local name=$1 subject=$2
+    if ! az ad app federated-credential list --id "$CLIENT_ID" --query "[?subject=='$subject'].name" -o tsv | grep -q .; then
+        az ad app federated-credential create --id "$CLIENT_ID" -o none --parameters "{
+            \"name\": \"$name\",
+            \"issuer\": \"https://token.actions.githubusercontent.com\",
+            \"subject\": \"$subject\",
+            \"audiences\": [\"api://AzureADTokenExchange\"]
+        }"
+    fi
+}
+add_subject github-production "repo:$REPO:environment:production"
+OWNER_ID=${OWNER_ID:-}
+REPO_ID=${REPO_ID:-}
+if [ -z "$REPO_ID" ] && command -v gh >/dev/null && gh auth status >/dev/null 2>&1; then
+    read -r OWNER_ID REPO_ID < <(gh api "repos/$REPO" --jq '"\(.owner.id) \(.id)"')
 fi
+if [ -n "$OWNER_ID" ] && [ -n "$REPO_ID" ]; then
+    add_subject github-production-ids "repo:${REPO%%/*}@$OWNER_ID/${REPO#*/}@$REPO_ID:environment:production"
+else
+    echo "  (Couldn't look up the repo ids without gh; if Azure sign-in fails, rerun with the subject"
+    echo "   from the error: SUBJECT='repo:...:environment:production' ./bin/ci-setup)"
+fi
+[ -n "${SUBJECT:-}" ] && add_subject github-custom "$SUBJECT"
 
 echo "Granting Contributor on the resource group $RG..."
 if [ -z "$(az role assignment list --assignee "$CLIENT_ID" --scope "$RG_ID" --role Contributor --query '[0].id' -o tsv)" ]; then
