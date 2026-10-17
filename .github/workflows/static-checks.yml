@@ -1,8 +1,8 @@
-# Checks that read the code without building it: types, ESLint and Prettier. Runs on every pull request,
+# Checks that read the code without building it: types, and ESLint (with Prettier's formatting as a rule). Runs on every pull request,
 # and on main so code scanning has a baseline to compare pull requests against.
 # The job is named "static-checks" so the ruleset can require it before a PR merges into main.
-# TypeScript and ESLint results go to GitHub code scanning as SARIF (docs/ci.md#sarif), which shows them
-# on the pull request's changed lines; Prettier has no SARIF output, so its result is just the log.
+# TypeScript and ESLint results (formatting included) go to GitHub code scanning as SARIF
+# (docs/ci.md#sarif), which shows them on the pull request's changed lines.
 name: Static Checks
 
 on:
@@ -48,16 +48,11 @@ jobs:
         continue-on-error: true
         run: npm run -s typecheck:sarif
 
-      - name: ESLint
+      - name: ESLint and Prettier
         id: eslint
         continue-on-error: true
         # On errors, run it again with the readable formatter so the log shows them too.
         run: npm run -s lint:sarif || { npm run -s lint; exit 1; }
-
-      - name: Prettier
-        id: prettier
-        continue-on-error: true
-        run: npm run format:check
 
       - name: Upload TypeScript results
         if: ${{ !cancelled() && hashFiles('typecheck.sarif') != '' }}
@@ -77,7 +72,6 @@ jobs:
         env:
           TYPECHECK: ${{ steps.typecheck.outcome }}
           ESLINT: ${{ steps.eslint.outcome }}
-          PRETTIER: ${{ steps.prettier.outcome }}
         run: |
-          echo "Typecheck: $TYPECHECK, ESLint: $ESLINT, Prettier: $PRETTIER"
-          [ "$TYPECHECK" = success ] && [ "$ESLINT" = success ] && [ "$PRETTIER" = success ]
+          echo "Typecheck: $TYPECHECK, ESLint and Prettier: $ESLINT"
+          [ "$TYPECHECK" = success ] && [ "$ESLINT" = success ]
