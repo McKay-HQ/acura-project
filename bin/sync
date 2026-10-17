@@ -51,7 +51,7 @@ share_catalog() {
         echo "Open a pull request for $branch to get it into main (gh isn't set up to do it)."
         return
     fi
-    url=$(cd "$ROOT" && gh pr create --base main --head "$branch" --title "$title" --label fix \
+    url=$(cd "$ROOT" && gh pr create --base main --head "$branch" --title "$title" --label sync \
         --body "Changes made in the app, pulled into the catalog by \`bin/sync\`.")
     echo "Pull request: $url"
     # A pull request opened by a workflow's own token doesn't start other workflows, so start the
