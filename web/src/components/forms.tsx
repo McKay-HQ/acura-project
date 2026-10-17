@@ -23,16 +23,17 @@ type TextKeys<F> = { [K in keyof F]-?: string extends F[K] ? K : never }[keyof F
 /** A record with photos: part, container or tossed item. */
 type WithPhotos = Part | Container | Tossed;
 
-const num = (v: string | number | null | undefined): number | null => (v === '' || v == null ? null : Number(v));
+const num = (value: string | number | null | undefined): number | null =>
+    value === '' || value == null ? null : Number(value);
 
 /** Shown in a form after a 412; the form keeps the typed values and now holds the current version. */
 export const CONFLICT_IN_FORM = `${CONFLICT_MESSAGE} Your edits are still here: check them and save again to apply them.`;
 export const clashText = (labels: string[]) =>
     labels.length ? ` Also changed by someone else: ${labels.join(', ')}.` : '';
 
-const sameValue = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+const sameValue = (left: unknown, right: unknown): boolean => JSON.stringify(left) === JSON.stringify(right);
 // Cast: Object.keys of a fully-keyed object lists exactly that object's keys.
-const keysOf = <O extends object>(o: O) => Object.keys(o) as (keyof O & string)[];
+const keysOf = <O extends object>(obj: O) => Object.keys(obj) as (keyof O & string)[];
 
 export interface EditFields<F, I> {
     f: F;
@@ -54,14 +55,14 @@ export function useEditFields<F extends object, I extends { [K in keyof F]: unkn
     toInput: (f: F) => I,
     labels: { [K in keyof F]: string },
 ): EditFields<F, I> {
-    const [f, setF] = useState<F>(initial);
+    const [fields, setF] = useState<F>(initial);
     const [base, setBase] = useState<F>(initial);
     /** The fields changed since the snapshot, as request-body values. */
     const changes = (): Partial<I> => {
-        const now = toInput(f);
+        const now = toInput(fields);
         const was = toInput(base);
         const out: Partial<I> = {};
-        for (const k of keysOf(labels)) if (!sameValue(now[k], was[k])) out[k] = now[k];
+        for (const key of keysOf(labels)) if (!sameValue(now[key], was[key])) out[key] = now[key];
         return out;
     };
     /**
@@ -70,22 +71,27 @@ export function useEditFields<F extends object, I extends { [K in keyof F]: unkn
      * that the other person also changed, to something different.
      */
     const rebase = (next: F): string[] => {
-        const now = toInput(f);
+        const now = toInput(fields);
         const was = toInput(base);
         const then = toInput(next);
         const clashes = keysOf(labels)
-            .filter((k) => !sameValue(now[k], was[k]) && !sameValue(then[k], was[k]) && !sameValue(then[k], now[k]))
-            .map((k) => labels[k]);
+            .filter(
+                (key) =>
+                    !sameValue(now[key], was[key]) &&
+                    !sameValue(then[key], was[key]) &&
+                    !sameValue(then[key], now[key]),
+            )
+            .map((key) => labels[key]);
         setF((cur) => {
             const merged = { ...cur };
             const curIn = toInput(cur);
-            for (const k of keysOf(labels)) if (sameValue(curIn[k], was[k])) merged[k] = next[k];
+            for (const key of keysOf(labels)) if (sameValue(curIn[key], was[key])) merged[key] = next[key];
             return merged;
         });
         setBase(next);
         return clashes;
     };
-    return { f, setF, input: () => toInput(f), changes, rebase };
+    return { f: fields, setF, input: () => toInput(fields), changes, rebase };
 }
 
 /**
@@ -106,14 +112,14 @@ function useSubmit<T extends WithPhotos, RI, F extends object, I extends RI & { 
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     /** Takes a newer version of the record into the form; returns the clash note, if any. */
-    const adopt = (r: T): string => {
-        setRec(r);
-        return clashText(edit.rebase(fromRecord(r)));
+    const adopt = (newer: T): string => {
+        setRec(newer);
+        return clashText(edit.rebase(fromRecord(newer)));
     };
     /** Message for a failed write; a 412 also rebases the form onto the current record. */
-    const failure = (err: unknown, r: T | undefined): string => {
+    const failure = (err: unknown, sent: T | undefined): string => {
         if (!(err instanceof PreconditionFailedError)) return errorMessage(err);
-        const current = r && err.currentFor(r);
+        const current = sent && err.currentFor(sent);
         return CONFLICT_IN_FORM + (current ? adopt(current) : '');
     };
     async function save() {
@@ -154,18 +160,26 @@ function useSubmit<T extends WithPhotos, RI, F extends object, I extends RI & { 
     const editor = rec && (
         <PhotoEditor
             photos={photos}
-            onMakeMain={(p) =>
-                photoEdit((r) =>
-                    resource.reorderPhotos(r, [p.id, ...photos.filter((x) => x.id !== p.id).map((x) => x.id)]),
+            onMakeMain={(photo) =>
+                photoEdit((latest) =>
+                    resource.reorderPhotos(latest, [
+                        photo.id,
+                        ...photos.filter((other) => other.id !== photo.id).map((other) => other.id),
+                    ]),
                 )
             }
-            onDelete={(p) => photoEdit((r) => resource.deletePhoto(r, p.id))}
+            onDelete={(photo) => photoEdit((latest) => resource.deletePhoto(latest, photo.id))}
         />
     );
     const fileInput = (
         <label>
             {record ? 'Add photos' : 'Photos'}
-            <input type="file" accept="image/*" multiple onChange={(e) => setFiles([...(e.target.files ?? [])])} />
+            <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(event) => setFiles([...(event.target.files ?? [])])}
+            />
         </label>
     );
     const buttons = (onCancel: () => void) => (
@@ -206,16 +220,16 @@ const partFields = (part?: Part): PartFields => ({
     containerId: part?.container?.id || '',
     notes: part?.notes || '',
 });
-const partInput = (f: PartFields): PartInput => ({
-    label: f.label,
-    partNumber: f.partNumber,
-    status: f.status,
-    fits: f.fits,
-    tags: parseTags(f.tags),
-    valueLow: num(f.valueLow),
-    valueHigh: num(f.valueHigh),
-    containerId: f.containerId || null,
-    notes: f.notes,
+const partInput = (fields: PartFields): PartInput => ({
+    label: fields.label,
+    partNumber: fields.partNumber,
+    status: fields.status,
+    fits: fields.fits,
+    tags: parseTags(fields.tags),
+    valueLow: num(fields.valueLow),
+    valueHigh: num(fields.valueHigh),
+    containerId: fields.containerId || null,
+    notes: fields.notes,
 });
 const PART_LABELS: Record<keyof PartFields, string> = {
     label: 'Name',
@@ -240,12 +254,12 @@ interface PartFormProps {
 export function PartForm({ part, containers, tagOptions, onSaved, onCancel }: PartFormProps) {
     const edit = useEditFields(partFields(part), partInput, PART_LABELS);
     const { f, setF } = edit;
-    const set = (k: TextKeys<PartFields>) => (e: FieldEvent) => setF({ ...f, [k]: e.target.value });
+    const set = (key: TextKeys<PartFields>) => (event: FieldEvent) => setF({ ...f, [key]: event.target.value });
     const { save, fileInput, buttons, editor } = useSubmit(api.parts, part, onSaved, edit, partFields);
     const tagList = [...new Set([...SUGGESTED_TAGS, ...(tagOptions || [])])];
 
-    const submit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const submit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         save();
     };
 
@@ -272,13 +286,13 @@ export function PartForm({ part, containers, tagOptions, onSaved, onCancel }: Pa
                     Status
                     <select
                         value={f.status}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            if (isStatus(v)) setF({ ...f, status: v });
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            if (isStatus(value)) setF({ ...f, status: value });
                         }}
                     >
-                        {STATUSES.map((s) => (
-                            <option key={s}>{s}</option>
+                        {STATUSES.map((status) => (
+                            <option key={status}>{status}</option>
                         ))}
                     </select>
                 </label>
@@ -292,8 +306,8 @@ export function PartForm({ part, containers, tagOptions, onSaved, onCancel }: Pa
                         placeholder="e.g. RSX, S2000"
                     />
                     <datalist id="fits-list">
-                        {FITS.map((c) => (
-                            <option key={c} value={c} />
+                        {FITS.map((car) => (
+                            <option key={car} value={car} />
                         ))}
                     </datalist>
                 </label>
@@ -308,8 +322,8 @@ export function PartForm({ part, containers, tagOptions, onSaved, onCancel }: Pa
                     placeholder="Comma-separated, e.g. Body & trim, Spare, For sale"
                 />
                 <datalist id="tags-list">
-                    {tagList.map((t) => (
-                        <option key={t} value={t} />
+                    {tagList.map((tag) => (
+                        <option key={tag} value={tag} />
                     ))}
                 </datalist>
             </label>
@@ -341,20 +355,20 @@ export function PartForm({ part, containers, tagOptions, onSaved, onCancel }: Pa
                 Container
                 <select value={f.containerId} onChange={set('containerId')}>
                     <option value="">No container</option>
-                    {topContainers(containers || []).map((b) => {
-                        const subs = subContainers(containers, b.id);
+                    {topContainers(containers || []).map((box) => {
+                        const subs = subContainers(containers, box.id);
                         return subs.length ? (
-                            <optgroup key={b.id} label={b.name}>
-                                <option value={b.id}>{b.name} (not in a sub-container)</option>
-                                {subs.map((x) => (
-                                    <option key={x.id} value={x.id}>
-                                        {x.name}
+                            <optgroup key={box.id} label={box.name}>
+                                <option value={box.id}>{box.name} (not in a sub-container)</option>
+                                {subs.map((sub) => (
+                                    <option key={sub.id} value={sub.id}>
+                                        {sub.name}
                                     </option>
                                 ))}
                             </optgroup>
                         ) : (
-                            <option key={b.id} value={b.id}>
-                                {b.name}
+                            <option key={box.id} value={box.id}>
+                                {box.name}
                             </option>
                         );
                     })}
@@ -387,7 +401,10 @@ const containerFields = (container?: Container): ContainerFields => ({
     parentId: container?.parentId || '',
     icon: container?.icon || 'box',
 });
-const containerInput = (f: ContainerFields): Required<ContainerInput> => ({ ...f, parentId: f.parentId || null });
+const containerInput = (fields: ContainerFields): Required<ContainerInput> => ({
+    ...fields,
+    parentId: fields.parentId || null,
+});
 const CONTAINER_LABELS: Record<keyof ContainerFields, string> = {
     name: 'Name',
     location: 'Location',
@@ -407,13 +424,13 @@ export function ContainerForm({ container, containers = [], onSaved, onCancel }:
     const edit = useEditFields(containerFields(container), containerInput, CONTAINER_LABELS);
     const { f, setF } = edit;
     const hasSubs = container !== undefined && subContainers(containers, container.id).length > 0;
-    const parents = topContainers(containers).filter((b) => b.id !== container?.id);
-    const set = (k: TextKeys<ContainerFields>) => (e: FieldEvent) => setF({ ...f, [k]: e.target.value });
+    const parents = topContainers(containers).filter((box) => box.id !== container?.id);
+    const set = (key: TextKeys<ContainerFields>) => (event: FieldEvent) => setF({ ...f, [key]: event.target.value });
     const { save, fileInput, buttons, editor } = useSubmit(api.containers, container, onSaved, edit, containerFields);
     return (
         <form
-            onSubmit={(e) => {
-                e.preventDefault();
+            onSubmit={(event) => {
+                event.preventDefault();
                 // A container with sub-containers can't move (its Inside select is disabled), so its
                 // parentId never counts as changed and isn't sent.
                 save();
@@ -445,9 +462,9 @@ export function ContainerForm({ container, containers = [], onSaved, onCancel }:
                     Inside
                     <select value={f.parentId} onChange={set('parentId')} disabled={hasSubs}>
                         <option value="">Nothing (top-level container)</option>
-                        {parents.map((b) => (
-                            <option key={b.id} value={b.id}>
-                                {b.name}
+                        {parents.map((box) => (
+                            <option key={box.id} value={box.id}>
+                                {box.name}
                             </option>
                         ))}
                     </select>
@@ -456,13 +473,13 @@ export function ContainerForm({ container, containers = [], onSaved, onCancel }:
                     Icon
                     <select
                         value={f.icon}
-                        onChange={(e) => {
-                            const v = e.target.value;
-                            if (isBoxIcon(v)) setF({ ...f, icon: v });
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            if (isBoxIcon(value)) setF({ ...f, icon: value });
                         }}
                     >
-                        {Object.entries(BOX_ICONS).map(([k, [name]]) => (
-                            <option key={k} value={k}>
+                        {Object.entries(BOX_ICONS).map(([key, [name]]) => (
+                            <option key={key} value={key}>
                                 {name}
                             </option>
                         ))}
@@ -494,7 +511,7 @@ const tossedFields = (item?: Tossed): TossedFields => ({
     reason: item?.reason || '',
     tossedOn: item?.tossedOn || new Date().toLocaleDateString('en-CA'),
 });
-const tossedInput = (f: TossedFields): TossedInput => ({ ...f, tossedOn: f.tossedOn || null });
+const tossedInput = (fields: TossedFields): TossedInput => ({ ...fields, tossedOn: fields.tossedOn || null });
 const TOSSED_LABELS: Record<keyof TossedFields, string> = {
     label: 'Name',
     partNumber: 'Part number',
@@ -511,12 +528,12 @@ interface TossedFormProps {
 export function TossedForm({ item, onSaved, onCancel }: TossedFormProps) {
     const edit = useEditFields(tossedFields(item), tossedInput, TOSSED_LABELS);
     const { f, setF } = edit;
-    const set = (k: TextKeys<TossedFields>) => (e: FieldEvent) => setF({ ...f, [k]: e.target.value });
+    const set = (key: TextKeys<TossedFields>) => (event: FieldEvent) => setF({ ...f, [key]: event.target.value });
     const { save, fileInput, buttons, editor } = useSubmit(api.tossed, item, onSaved, edit, tossedFields);
     return (
         <form
-            onSubmit={(e) => {
-                e.preventDefault();
+            onSubmit={(event) => {
+                event.preventDefault();
                 save();
             }}
         >
@@ -556,8 +573,8 @@ export function TossPartForm({ part, onDone, onCancel }: TossPartFormProps) {
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [rec, setRec] = useState<Part>(part);
-    const submit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const submit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setBusy(true);
         try {
             onDone(await api.parts.toss(rec, { reason }));
@@ -583,7 +600,7 @@ export function TossPartForm({ part, onDone, onCancel }: TossPartFormProps) {
                 <textarea
                     rows={3}
                     value={reason}
-                    onChange={(e) => setReason(e.target.value)}
+                    onChange={(event) => setReason(event.target.value)}
                     placeholder="e.g. Wrong model (SR3 Civic)"
                     autoFocus
                 />

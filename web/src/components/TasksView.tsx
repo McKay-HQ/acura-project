@@ -26,16 +26,16 @@ const taskFields = (task?: Task): TaskFields => ({
     title: task?.title || '',
     phase: String(task?.phase || 1),
     notes: task?.notes || '',
-    partIds: (task?.parts || []).map((p) => p.id),
+    partIds: (task?.parts || []).map((part) => part.id),
     steps: toDraft(task?.steps),
 });
 // Cast: the phase <select> only offers the PHASES keys 1..4. Part ids are sorted so order doesn't count as a change.
-const taskInput = (f: TaskFields): Omit<TaskInput, 'done'> => ({
-    title: f.title,
-    phase: Number(f.phase) as Phase,
-    notes: f.notes,
-    partIds: [...f.partIds].sort(),
-    steps: fromDraft(f.steps),
+const taskInput = (fields: TaskFields): Omit<TaskInput, 'done'> => ({
+    title: fields.title,
+    phase: Number(fields.phase) as Phase,
+    notes: fields.notes,
+    partIds: [...fields.partIds].sort(),
+    steps: fromDraft(fields.steps),
 });
 const TASK_LABELS: Record<keyof TaskFields, string> = {
     title: 'Task',
@@ -49,25 +49,26 @@ export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
     const edit = useEditFields(taskFields(task), taskInput, TASK_LABELS);
     const { f, setF } = edit;
     const picked = new Set(f.partIds);
-    const [q, setQ] = useState<string>('');
+    const [query, setQuery] = useState<string>('');
     // The task as of this form's last write; its version goes with the save (not refreshed from the list).
     const [rec, setRec] = useState<Task | undefined>(task);
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
     const [focusStep, setFocusStep] = useState<number>();
     const set =
-        (k: Exclude<keyof TaskFields, 'partIds' | 'steps'>) =>
-        (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-            setF({ ...f, [k]: e.target.value });
+        (key: Exclude<keyof TaskFields, 'partIds' | 'steps'>) =>
+        (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+            setF({ ...f, [key]: event.target.value });
     const toggle = (id: string) =>
-        setF({ ...f, partIds: picked.has(id) ? f.partIds.filter((x) => x !== id) : [...f.partIds, id] });
+        setF({ ...f, partIds: picked.has(id) ? f.partIds.filter((partId) => partId !== id) : [...f.partIds, id] });
     const sorted = [...parts].sort(
-        (a, b) => Number(picked.has(b.id)) - Number(picked.has(a.id)) || a.label.localeCompare(b.label),
+        (left, right) =>
+            Number(picked.has(right.id)) - Number(picked.has(left.id)) || left.label.localeCompare(right.label),
     );
-    const needle = q.trim().toLowerCase();
+    const needle = query.trim().toLowerCase();
 
-    async function submit(e: FormEvent<HTMLFormElement>) {
-        e.preventDefault();
+    async function submit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
         setBusy(true);
         setError('');
         try {
@@ -112,9 +113,9 @@ export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
             <label>
                 Phase
                 <select value={f.phase} onChange={set('phase')}>
-                    {Object.entries(PHASES).map(([n, name]) => (
-                        <option key={n} value={n}>
-                            Phase {n}: {name}
+                    {Object.entries(PHASES).map(([phase, name]) => (
+                        <option key={phase} value={phase}>
+                            Phase {phase}: {name}
                         </option>
                     ))}
                 </select>
@@ -135,17 +136,17 @@ export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
                     type="search"
                     placeholder="Search parts"
                     aria-label="Search parts"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
                 />
                 <div className="plist">
-                    {sorted.map((p) => (
+                    {sorted.map((part) => (
                         <label
-                            key={p.id}
-                            className={`pp${needle && !`${p.label} ${p.partNumber}`.toLowerCase().includes(needle) ? ' hid' : ''}`}
+                            key={part.id}
+                            className={`pp${needle && !`${part.label} ${part.partNumber}`.toLowerCase().includes(needle) ? ' hid' : ''}`}
                         >
-                            <input type="checkbox" checked={picked.has(p.id)} onChange={() => toggle(p.id)} />
-                            {p.label}
+                            <input type="checkbox" checked={picked.has(part.id)} onChange={() => toggle(part.id)} />
+                            {part.label}
                         </label>
                     ))}
                 </div>
@@ -167,8 +168,8 @@ interface TasksViewProps extends TaskActionHandlers {
 }
 
 export function TasksView({ tasks, canEdit, onAdd, onToggle, onEdit, onDelete }: TasksViewProps) {
-    const open = (t: Task) => (e: MouseEvent<HTMLElement>) => {
-        if (!isWithin(e.target, 'a,button,input')) window.location.hash = href.task(t);
+    const open = (task: Task) => (event: MouseEvent<HTMLElement>) => {
+        if (!isWithin(event.target, 'a,button,input')) window.location.hash = href.task(task);
     };
     return (
         <section className="view" style={{ display: 'grid', gap: 20 }}>
@@ -180,52 +181,55 @@ export function TasksView({ tasks, canEdit, onAdd, onToggle, onEdit, onDelete }:
                 <div className="empty">No tasks yet.</div>
             ) : (
                 <div className="tasks">
-                    {PHASE_NUMBERS.map((n) => {
+                    {PHASE_NUMBERS.map((phase) => {
                         const list = tasks
-                            .filter((t) => t.phase === n)
+                            .filter((task) => task.phase === phase)
                             .sort(
-                                (a, b) =>
-                                    Number(a.done) - Number(b.done) ||
-                                    String(a.createdAt).localeCompare(String(b.createdAt)),
+                                (left, right) =>
+                                    Number(left.done) - Number(right.done) ||
+                                    String(left.createdAt).localeCompare(String(right.createdAt)),
                             );
-                        const openN = list.filter((t) => !t.done).length;
+                        const openN = list.filter((task) => !task.done).length;
                         return (
-                            <section className="phase" key={n}>
+                            <section className="phase" key={phase}>
                                 <h3 className="phead">
-                                    <span className={`pill ${phaseClass(n)}`}>Phase {n}</span>
-                                    {PHASES[n]} <span className="gn">{openN} open</span>
+                                    <span className={`pill ${phaseClass(phase)}`}>Phase {phase}</span>
+                                    {PHASES[phase]} <span className="gn">{openN} open</span>
                                 </h3>
                                 {!list.length ? (
                                     <div className="empty sm">No tasks in this phase.</div>
                                 ) : (
-                                    list.map((t) => (
+                                    list.map((task) => (
                                         <div
-                                            className={`task trow${t.done ? ' done' : ''}`}
-                                            key={t.id}
-                                            onClick={open(t)}
+                                            className={`task trow${task.done ? ' done' : ''}`}
+                                            key={task.id}
+                                            onClick={open(task)}
                                         >
                                             <input
                                                 type="checkbox"
-                                                checked={t.done}
-                                                disabled={!canEdit || t.steps.length > 0}
-                                                title={t.steps.length ? 'Done when all steps are checked' : undefined}
-                                                onChange={(e) => onToggle(t, e.target.checked)}
-                                                aria-label={`Done: ${t.title}`}
+                                                checked={task.done}
+                                                disabled={!canEdit || task.steps.length > 0}
+                                                title={
+                                                    task.steps.length ? 'Done when all steps are checked' : undefined
+                                                }
+                                                onChange={(event) => onToggle(task, event.target.checked)}
+                                                aria-label={`Done: ${task.title}`}
                                             />
-                                            <a className="tlink" href={href.task(t)}>
-                                                {t.title}
-                                                {t.steps.length > 0 && (
+                                            <a className="tlink" href={href.task(task)}>
+                                                {task.title}
+                                                {task.steps.length > 0 && (
                                                     <span className="sprog">
                                                         {' '}
-                                                        {t.steps.filter((s) => s.done).length} of {t.steps.length} steps
+                                                        {task.steps.filter((step) => step.done).length} of{' '}
+                                                        {task.steps.length} steps
                                                     </span>
                                                 )}
                                             </a>
                                             {canEdit && (
                                                 <RowActions
                                                     className="tools"
-                                                    onEdit={() => onEdit(t)}
-                                                    onDelete={() => onDelete(t)}
+                                                    onEdit={() => onEdit(task)}
+                                                    onDelete={() => onDelete(task)}
                                                     deleteLabel="Delete task"
                                                     confirmText="Delete?"
                                                 />

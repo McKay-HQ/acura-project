@@ -23,18 +23,19 @@ import type { FilterKey, Part, PartActionHandlers } from '../types';
 export type Layout = 'cards' | 'table';
 type SetFilters = (filters: Set<FilterKey>) => void;
 
-export function matches(p: Part, filters: Set<FilterKey>): boolean {
+export function matches(part: Part, filters: Set<FilterKey>): boolean {
     const pick = (pre: 'st:' | 'tag:' | 'fits:'): string[] =>
-        [...filters].filter((f) => f.startsWith(pre)).map((f) => f.slice(pre.length));
+        [...filters].filter((key) => key.startsWith(pre)).map((key) => key.slice(pre.length));
     const st = pick('st:');
     const tg = pick('tag:');
     const fi = pick('fits:');
-    if (st.length && !st.includes(p.status)) return false;
-    if (fi.length && !fi.includes(p.fits)) return false;
-    if (tg.length && !tg.some((t) => (t === OTHER_CARS ? isOtherCar(p.fits) : allTags(p).includes(t)))) return false;
+    if (st.length && !st.includes(part.status)) return false;
+    if (fi.length && !fi.includes(part.fits)) return false;
+    if (tg.length && !tg.some((tag) => (tag === OTHER_CARS ? isOtherCar(part.fits) : allTags(part).includes(tag))))
+        return false;
     return true;
 }
-export const filterLabel = (k: FilterKey): string => k.replace(/^(st|tag):/, '').replace(/^fits:/, 'Fits ');
+export const filterLabel = (key: FilterKey): string => key.replace(/^(st|tag):/, '').replace(/^fits:/, 'Fits ');
 
 interface FilterMenuProps {
     parts: Part[];
@@ -42,16 +43,27 @@ interface FilterMenuProps {
     setFilters: SetFilters;
 }
 
+/** How many parts have each value that `fn` lists for a part. */
+function countBy(parts: Part[], fn: (part: Part) => string[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    parts.forEach((part) =>
+        fn(part).forEach((tag) => {
+            counts[tag] = (counts[tag] || 0) + 1;
+        }),
+    );
+    return counts;
+}
+
 function FilterMenu({ parts, filters, setFilters }: FilterMenuProps) {
     const ref = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState<boolean>(false);
     useEffect(() => {
         if (!open) return undefined;
-        const onDoc = (e: globalThis.MouseEvent) => {
-            if (!(e.target instanceof Node && ref.current?.contains(e.target))) setOpen(false);
+        const onDoc = (event: globalThis.MouseEvent) => {
+            if (!(event.target instanceof Node && ref.current?.contains(event.target))) setOpen(false);
         };
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') setOpen(false);
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setOpen(false);
         };
         document.addEventListener('mousedown', onDoc);
         document.addEventListener('keydown', onKey);
@@ -61,24 +73,20 @@ function FilterMenu({ parts, filters, setFilters }: FilterMenuProps) {
         };
     }, [open]);
 
-    const count = (fn: (p: Part) => string[]): Record<string, number> => {
-        const c: Record<string, number> = {};
-        parts.forEach((p) =>
-            fn(p).forEach((t) => {
-                c[t] = (c[t] || 0) + 1;
-            }),
-        );
-        return c;
-    };
-    const tagCounts = useMemo(() => count(allTags), [parts]);
-    const fitsCounts = useMemo(() => count((p) => (p.fits ? [p.fits] : [])), [parts]);
+    const tagCounts = useMemo(() => countBy(parts, allTags), [parts]);
+    const fitsCounts = useMemo(() => countBy(parts, (part) => (part.fits ? [part.fits] : [])), [parts]);
     const tags = Object.keys(tagCounts).sort(
-        (a, b) => (PRIORITY_TAGS.indexOf(a) + 1 || 99) - (PRIORITY_TAGS.indexOf(b) + 1 || 99) || a.localeCompare(b),
+        (left, right) =>
+            (PRIORITY_TAGS.indexOf(left) + 1 || 99) - (PRIORITY_TAGS.indexOf(right) + 1 || 99) ||
+            left.localeCompare(right),
     );
-    const fits = Object.keys(fitsCounts).sort((a, b) => (a === 'RSX' ? -1 : b === 'RSX' ? 1 : a.localeCompare(b)));
-    const toggle = (k: FilterKey) => {
+    const fits = Object.keys(fitsCounts).sort((left, right) =>
+        left === 'RSX' ? -1 : right === 'RSX' ? 1 : left.localeCompare(right),
+    );
+    const toggle = (key: FilterKey) => {
         const next = new Set(filters);
-        next.has(k) ? next.delete(k) : next.add(k);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
         setFilters(next);
     };
     const Opt = ({ k, label, n }: { k: FilterKey; label: string; n: number }) => (
@@ -106,21 +114,26 @@ function FilterMenu({ parts, filters, setFilters }: FilterMenuProps) {
             {open && (
                 <div className="fpanel">
                     <h4>Status</h4>
-                    {STATUSES.map((s) => (
-                        <Opt key={s} k={`st:${s}`} label={s} n={parts.filter((p) => p.status === s).length} />
+                    {STATUSES.map((status) => (
+                        <Opt
+                            key={status}
+                            k={`st:${status}`}
+                            label={status}
+                            n={parts.filter((part) => part.status === status).length}
+                        />
                     ))}
                     <h4>Tags</h4>
                     <Opt
                         k={`tag:${OTHER_CARS}`}
                         label={OTHER_CARS}
-                        n={parts.filter((p) => isOtherCar(p.fits)).length}
+                        n={parts.filter((part) => isOtherCar(part.fits)).length}
                     />
-                    {tags.map((t) => (
-                        <Opt key={t} k={`tag:${t}`} label={t} n={tagCounts[t]} />
+                    {tags.map((tag) => (
+                        <Opt key={tag} k={`tag:${tag}`} label={tag} n={tagCounts[tag]} />
                     ))}
                     <h4>Fits</h4>
-                    {fits.map((f) => (
-                        <Opt key={f} k={`fits:${f}`} label={f} n={fitsCounts[f]} />
+                    {fits.map((fit) => (
+                        <Opt key={fit} k={`fits:${fit}`} label={fit} n={fitsCounts[fit]} />
                     ))}
                     {filters.size > 0 && (
                         <button
@@ -185,12 +198,12 @@ interface PartsViewProps extends PartActionHandlers {
 }
 
 export default function PartsView({ parts, layout, canEdit, filters, setFilters, onAdd, ...acts }: PartsViewProps) {
-    const list = parts.filter((p) => matches(p, filters));
-    const open = (p: Part) => {
-        window.location.hash = href.part(p);
+    const list = parts.filter((part) => matches(part, filters));
+    const open = (part: Part) => {
+        window.location.hash = href.part(part);
     };
-    const onRowClick = (p: Part) => (e: MouseEvent<HTMLElement>) => {
-        if (!isWithin(e.target, 'a,button,input')) open(p);
+    const onRowClick = (part: Part) => (event: MouseEvent<HTMLElement>) => {
+        if (!isWithin(event.target, 'a,button,input')) open(part);
     };
 
     let body;
@@ -214,33 +227,33 @@ export default function PartsView({ parts, layout, canEdit, filters, setFilters,
                         </tr>
                     </thead>
                     <tbody>
-                        {list.map((p) => (
-                            <tr key={p.id} className="prow" onClick={onRowClick(p)}>
+                        {list.map((part) => (
+                            <tr key={part.id} className="prow" onClick={onRowClick(part)}>
                                 <td className="phc">
-                                    <Thumb photos={p.photos} label={p.label} />
-                                    <BoxLink container={p.container} />
+                                    <Thumb photos={part.photos} label={part.label} />
+                                    <BoxLink container={part.container} />
                                 </td>
                                 <td className="lbl">
                                     <div>
-                                        <a className="plink" href={href.part(p)}>
-                                            {p.label}
+                                        <a className="plink" href={href.part(part)}>
+                                            {part.label}
                                         </a>
                                     </div>
-                                    {p.partNumber && <div className="pn">{p.partNumber}</div>}
-                                    {p.fits || p.tags?.length || p.phaseTags?.length ? (
+                                    {part.partNumber && <div className="pn">{part.partNumber}</div>}
+                                    {part.fits || part.tags?.length || part.phaseTags?.length ? (
                                         <div className="fitsline">
-                                            <FitsPill fits={p.fits} />
-                                            <TagPills part={p} />
+                                            <FitsPill fits={part.fits} />
+                                            <TagPills part={part} />
                                         </div>
                                     ) : null}
                                 </td>
                                 <td>
-                                    <StatusBadge part={p} iconOnly />
+                                    <StatusBadge part={part} iconOnly />
                                 </td>
-                                <td className="num">{valueRange(p.valueLow, p.valueHigh)}</td>
+                                <td className="num">{valueRange(part.valueLow, part.valueHigh)}</td>
                                 {canEdit && (
                                     <td>
-                                        <PartActions part={p} inTable {...acts} />
+                                        <PartActions part={part} inTable {...acts} />
                                     </td>
                                 )}
                             </tr>
@@ -262,30 +275,30 @@ export default function PartsView({ parts, layout, canEdit, filters, setFilters,
     } else {
         body = (
             <div className="grid">
-                {list.map((p) => (
-                    <article className="card pcard" key={p.id} onClick={onRowClick(p)}>
-                        <Gallery photos={p.photos} label={p.label} />
+                {list.map((part) => (
+                    <article className="card pcard" key={part.id} onClick={onRowClick(part)}>
+                        <Gallery photos={part.photos} label={part.label} />
                         <div className="tag">
                             <h2>
-                                <a className="plink" href={href.part(p)}>
-                                    {p.label}
+                                <a className="plink" href={href.part(part)}>
+                                    {part.label}
                                 </a>
                             </h2>
-                            {p.partNumber && <div className="pn">{p.partNumber}</div>}
-                            {p.container && (
+                            {part.partNumber && <div className="pn">{part.partNumber}</div>}
+                            {part.container && (
                                 <div className="boxln">
-                                    <BoxLink container={p.container} />
+                                    <BoxLink container={part.container} />
                                 </div>
                             )}
                         </div>
                         <div className="body">
                             <div className="meta">
-                                <StatusBadge part={p} />
-                                <FitsPill fits={p.fits} />
-                                <TagPills part={p} />
+                                <StatusBadge part={part} />
+                                <FitsPill fits={part.fits} />
+                                <TagPills part={part} />
                             </div>
                         </div>
-                        {canEdit && <PartActions part={p} {...acts} />}
+                        {canEdit && <PartActions part={part} {...acts} />}
                     </article>
                 ))}
             </div>
@@ -297,19 +310,19 @@ export default function PartsView({ parts, layout, canEdit, filters, setFilters,
             <div className="bar">
                 <FilterMenu parts={parts} filters={filters} setFilters={setFilters} />
                 <div className="factive">
-                    {[...filters].map((k) => (
+                    {[...filters].map((key) => (
                         <button
-                            key={k}
+                            key={key}
                             className="chip"
                             aria-pressed="true"
                             title="Remove filter"
                             onClick={() => {
-                                const n = new Set(filters);
-                                n.delete(k);
-                                setFilters(n);
+                                const next = new Set(filters);
+                                next.delete(key);
+                                setFilters(next);
                             }}
                         >
-                            {filterLabel(k)} ×
+                            {filterLabel(key)} ×
                         </button>
                     ))}
                 </div>

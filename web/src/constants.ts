@@ -1,7 +1,7 @@
 import type { Container, Part, PartStatus, Phase } from './types';
 
 export const STATUSES: PartStatus[] = ['Verified', 'Unverified', 'Unknown'];
-export const isStatus = (s: string): s is PartStatus => STATUSES.some((x) => x === s);
+export const isStatus = (value: string): value is PartStatus => STATUSES.some((status) => status === value);
 export const PHASES: Record<Phase, string> = {
     1: 'Before Driving',
     2: 'Priority',
@@ -38,52 +38,55 @@ type Valued = Pick<Part, 'valueLow' | 'valueHigh'>;
 
 const STATUS_CLASS: Record<PartStatus, string> = { Verified: 's-ok', Unverified: 's-unv', Unknown: 's-unk' };
 
-export const isOtherCar = (f: string | null | undefined): boolean => !!f && f !== 'RSX';
-export const isForSale = (p: Pick<Part, 'tags'>): boolean => (p.tags || []).includes(FOR_SALE);
-export const statusClass = (s: PartStatus): string => STATUS_CLASS[s] || 's-unv';
-export const phaseClass = (n: number): string => ['', 'p-safety', 'p-soon', 'p-later', 'p-perf'][n] || 'p-later';
+export const isOtherCar = (fits: string | null | undefined): boolean => !!fits && fits !== 'RSX';
+export const isForSale = (part: Pick<Part, 'tags'>): boolean => (part.tags || []).includes(FOR_SALE);
+export const statusClass = (status: PartStatus): string => STATUS_CLASS[status] || 's-unv';
+export const phaseClass = (phase: number): string =>
+    ['', 'p-safety', 'p-soon', 'p-later', 'p-perf'][phase] || 'p-later';
 /** Tags a part gets from the open tasks that use it, e.g. "Phase 1". */
-export const phaseTags = (p: Pick<Part, 'phaseTags'>): string[] => p.phaseTags || [];
-export const allTags = (p: Pick<Part, 'phaseTags' | 'tags'>): string[] => [...phaseTags(p), ...(p.tags || [])];
+export const phaseTags = (part: Pick<Part, 'phaseTags'>): string[] => part.phaseTags || [];
+export const allTags = (part: Pick<Part, 'phaseTags' | 'tags'>): string[] => [...phaseTags(part), ...(part.tags || [])];
 
-export const money = (n: number): string => `$${Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+export const money = (amount: number): string =>
+    `$${Number(amount).toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
 export function valueRange(lo: number | null | undefined, hi: number | null | undefined): string {
     if (lo == null && hi == null) return 'Value TBD';
     if (lo != null && hi != null && Number(lo) !== Number(hi)) return `${money(lo)}–${money(hi)}`;
     return money(lo ?? hi ?? 0); // one of them is set here; `?? 0` only satisfies the type checker
 }
 export const sumLow = (list: Valued[]): number =>
-    list.reduce((t, p) => t + (Number(p.valueLow ?? p.valueHigh) || 0), 0);
+    list.reduce((total, part) => total + (Number(part.valueLow ?? part.valueHigh) || 0), 0);
 export const sumHigh = (list: Valued[]): number =>
-    list.reduce((t, p) => t + (Number(p.valueHigh ?? p.valueLow) || 0), 0);
+    list.reduce((total, part) => total + (Number(part.valueHigh ?? part.valueLow) || 0), 0);
 
-export const parseTags = (s: string): string[] => [
+export const parseTags = (text: string): string[] => [
     ...new Set(
-        String(s || '')
+        String(text || '')
             .split(',')
-            .map((x) => x.trim())
+            .map((tag) => tag.trim())
             .filter(Boolean),
     ),
 ];
 
-export function fmtDate(d: string | null | undefined): string {
-    if (!d) return '';
-    const t = new Date(String(d).length === 10 ? `${d}T12:00:00` : d);
-    return Number.isNaN(t.getTime())
-        ? d
-        : t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+export function fmtDate(date: string | null | undefined): string {
+    if (!date) return '';
+    const parsed = new Date(String(date).length === 10 ? `${date}T12:00:00` : date);
+    return Number.isNaN(parsed.getTime())
+        ? date
+        : parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-const byOrder = (a: Container, b: Container): number => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name);
+const byOrder = (left: Container, right: Container): number =>
+    left.sortOrder - right.sortOrder || left.name.localeCompare(right.name);
 
 /** Containers: a part's container may be a sub-container; `top` is the container it sits inside. */
 export const topContainers = (boxes: Container[]): Container[] =>
-    boxes.filter((b) => !b.parentId || !boxes.some((x) => x.id === b.parentId)).sort(byOrder);
+    boxes.filter((box) => !box.parentId || !boxes.some((other) => other.id === box.parentId)).sort(byOrder);
 export const subContainers = (boxes: Container[], id: string): Container[] =>
-    boxes.filter((b) => b.parentId === id).sort(byOrder);
+    boxes.filter((box) => box.parentId === id).sort(byOrder);
 export const partsInTree = (parts: Part[], boxes: Container[], id: string): Part[] => {
-    const ids = new Set([id, ...subContainers(boxes, id).map((b) => b.id)]);
-    return parts.filter((p) => p.container && ids.has(p.container.id));
+    const ids = new Set([id, ...subContainers(boxes, id).map((box) => box.id)]);
+    return parts.filter((part) => part.container && ids.has(part.container.id));
 };
 
 /** Anything with an id and, optionally, a human-readable key. */
@@ -94,12 +97,12 @@ interface Ref {
 
 /** In-app links. Records with a human-readable key use it in the URL. */
 export const href = {
-    part: (p: Ref): string => `#part/${encodeURIComponent(p.key || p.id)}`,
-    box: (b: Ref): string => `#container/${encodeURIComponent(b.key || b.id)}`,
-    task: (t: Pick<Ref, 'id'>): string => `#task/${encodeURIComponent(t.id)}`,
+    part: (part: Ref): string => `#part/${encodeURIComponent(part.key || part.id)}`,
+    box: (box: Ref): string => `#container/${encodeURIComponent(box.key || box.id)}`,
+    task: (task: Pick<Ref, 'id'>): string => `#task/${encodeURIComponent(task.id)}`,
 };
 export const findRef = <T extends Ref>(list: T[], ref: string | undefined): T | undefined =>
-    list.find((x) => x.id === ref || x.key === ref);
+    list.find((item) => item.id === ref || item.key === ref);
 
 /** True when an event target is inside an element matching the selector (e.g. a link or button in a card). */
 export const isWithin = (target: EventTarget | null, selector: string): boolean =>

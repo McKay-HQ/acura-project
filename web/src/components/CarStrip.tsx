@@ -14,12 +14,12 @@ const GAP = 10;
 // "n / total" count over the photo; from 720px it's a grid of four thumbnails per row (CSS only).
 export default function CarStrip({ title, photos, onOpen }: CarStripProps) {
     const row = useRef<HTMLDivElement>(null);
-    const [i, setI] = useState<number>(0);
-    const n = photos.length;
+    const [current, setCurrent] = useState<number>(0);
+    const count = photos.length;
     useEffect(() => {
         const el = row.current;
         if (!el) return;
-        const sync = () => setI(Math.round(el.scrollLeft / Math.max(el.clientWidth + GAP, 1)));
+        const sync = () => setCurrent(Math.round(el.scrollLeft / Math.max(el.clientWidth + GAP, 1)));
         el.addEventListener('scroll', sync, { passive: true });
         window.addEventListener('resize', sync);
         return () => {
@@ -36,28 +36,36 @@ export default function CarStrip({ title, photos, onOpen }: CarStripProps) {
     return (
         <div className="carwrap">
             <div className="cargrid" ref={row}>
-                {photos.map((p, j) => (
-                    <figure className="cfig" key={p.src}>
+                {photos.map((photo, index) => (
+                    <figure className="cfig" key={photo.src}>
                         <button
                             className="cthumb"
-                            aria-label={`Open ${title} photo ${j + 1} of ${n}: ${p.caption}`}
-                            onClick={() => onOpen(j)}
+                            aria-label={`Open ${title} photo ${index + 1} of ${count}: ${photo.caption}`}
+                            onClick={() => onOpen(index)}
                         >
-                            <img src={p.thumb} alt="" loading="lazy" draggable="false" />
+                            <img src={photo.thumb} alt="" loading="lazy" draggable="false" />
                         </button>
-                        <figcaption>{p.caption}</figcaption>
+                        <figcaption>{photo.caption}</figcaption>
                     </figure>
                 ))}
             </div>
-            {n > 1 && (
+            {count > 1 && (
                 <div className="cnav">
-                    <button disabled={i <= 0} aria-label={`Previous ${title} photo`} onClick={() => go(i - 1)}>
+                    <button
+                        disabled={current <= 0}
+                        aria-label={`Previous ${title} photo`}
+                        onClick={() => go(current - 1)}
+                    >
                         <Icon.prev />
                     </button>
                     <span className="ccount" aria-live="polite">
-                        {i + 1} / {n}
+                        {current + 1} / {count}
                     </span>
-                    <button disabled={i >= n - 1} aria-label={`Next ${title} photo`} onClick={() => go(i + 1)}>
+                    <button
+                        disabled={current >= count - 1}
+                        aria-label={`Next ${title} photo`}
+                        onClick={() => go(current + 1)}
+                    >
                         <Icon.next />
                     </button>
                 </div>

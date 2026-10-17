@@ -20,11 +20,11 @@ interface StepPhoto {
 
 /** A step's photo ref like "engine:03" -> that section's photos and the index into them. */
 function resolve(ref: string): StepPhoto | null {
-    const [key, n] = ref.split(':');
-    const section = CAR_SECTIONS.find((s) => s.key === key);
-    const i = Number(n) - 1;
-    if (!section || !(i >= 0 && i < section.count)) return null;
-    return { ref, section, i, all: carPhotos(section) };
+    const [key, num] = ref.split(':');
+    const section = CAR_SECTIONS.find((candidate) => candidate.key === key);
+    const index = Number(num) - 1;
+    if (!section || !(index >= 0 && index < section.count)) return null;
+    return { ref, section, i: index, all: carPhotos(section) };
 }
 
 // A task's instructions as a checklist. Steps point at their photos with footnote numbers; the
@@ -34,60 +34,64 @@ export default function TaskSteps({ task, canEdit, onStep }: TaskStepsProps) {
     const [open, setOpen] = useState<StepPhoto | null>(null);
     const figs = useRef<Record<number, HTMLElement | null>>({});
     const photos: StepPhoto[] = [];
-    for (const s of task.steps)
-        for (const ref of s.photos || []) {
-            const p = resolve(ref);
-            if (p && !photos.some((x) => x.ref === ref)) photos.push(p);
+    for (const step of task.steps)
+        for (const ref of step.photos || []) {
+            const photo = resolve(ref);
+            if (photo && !photos.some((existing) => existing.ref === ref)) photos.push(photo);
         }
-    const num = (ref: string) => photos.findIndex((x) => x.ref === ref) + 1;
-    const jump = (n: number) => (e: MouseEvent) => {
-        e.preventDefault();
-        const f = figs.current[n];
-        if (!f) return;
+    const num = (ref: string) => photos.findIndex((existing) => existing.ref === ref) + 1;
+    const jump = (footnote: number) => (event: MouseEvent) => {
+        event.preventDefault();
+        const fig = figs.current[footnote];
+        if (!fig) return;
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        f.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
-        f.classList.remove('flash');
-        void f.offsetWidth;
-        f.classList.add('flash');
+        fig.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
+        fig.classList.remove('flash');
+        void fig.offsetWidth;
+        fig.classList.add('flash');
     };
 
     return (
         <>
             <ol className="steps">
-                {task.steps.map((s, j) => {
-                    const fns = [...new Set((s.photos || []).map(num).filter((n) => n > 0))];
+                {task.steps.map((step, stepIndex) => {
+                    const fns = [...new Set((step.photos || []).map(num).filter((footnote) => footnote > 0))];
                     return (
-                        <li key={j} className={s.done ? 'sdone' : undefined}>
+                        <li key={stepIndex} className={step.done ? 'sdone' : undefined}>
                             <label className="scheck">
                                 <input
                                     type="checkbox"
-                                    checked={s.done}
+                                    checked={step.done}
                                     disabled={!canEdit}
-                                    onChange={(e) => onStep(task, j, e.target.checked)}
+                                    onChange={(event) => onStep(task, stepIndex, event.target.checked)}
                                 />
-                                <span className="snum">{j + 1}</span>
+                                <span className="snum">{stepIndex + 1}</span>
                                 <span className="stext">
-                                    {s.text}
-                                    {fns.map((n) => (
-                                        <sup className="sfn" key={n}>
-                                            <a href={`#photo-${n}`} onClick={jump(n)} aria-label={`See photo ${n}`}>
-                                                {n}
+                                    {step.text}
+                                    {fns.map((footnote) => (
+                                        <sup className="sfn" key={footnote}>
+                                            <a
+                                                href={`#photo-${footnote}`}
+                                                onClick={jump(footnote)}
+                                                aria-label={`See photo ${footnote}`}
+                                            >
+                                                {footnote}
                                             </a>
                                         </sup>
                                     ))}
                                 </span>
                             </label>
-                            {s.links?.length ? (
+                            {step.links?.length ? (
                                 <div className="sextra">
-                                    {s.links.map((l) => (
+                                    {step.links.map((link) => (
                                         <a
-                                            key={l.href + l.label}
+                                            key={link.href + link.label}
                                             className="slink"
-                                            href={l.href}
-                                            {...(isExternal(l.href) ? { target: '_blank', rel: 'noopener' } : {})}
+                                            href={link.href}
+                                            {...(isExternal(link.href) ? { target: '_blank', rel: 'noopener' } : {})}
                                         >
-                                            {l.label}
-                                            {isExternal(l.href) && ' ↗'}
+                                            {link.label}
+                                            {isExternal(link.href) && ' ↗'}
                                         </a>
                                     ))}
                                 </div>
@@ -100,25 +104,25 @@ export default function TaskSteps({ task, canEdit, onStep }: TaskStepsProps) {
                 <div className="tphotos">
                     <h3>Photos</h3>
                     <div className="tpgrid">
-                        {photos.map((p, k) => {
-                            const photo = p.all[p.i];
+                        {photos.map((stepPhoto, photoIndex) => {
+                            const photo = stepPhoto.all[stepPhoto.i];
                             return (
                                 <figure
                                     className="tpfig"
-                                    key={p.ref}
+                                    key={stepPhoto.ref}
                                     ref={(el) => {
-                                        figs.current[k + 1] = el;
+                                        figs.current[photoIndex + 1] = el;
                                     }}
                                 >
                                     <button
                                         className="sphoto"
-                                        aria-label={`Open photo ${k + 1}: ${photo.caption}`}
-                                        onClick={() => setOpen(p)}
+                                        aria-label={`Open photo ${photoIndex + 1}: ${photo.caption}`}
+                                        onClick={() => setOpen(stepPhoto)}
                                     >
                                         <img src={photo.thumb} alt="" loading="lazy" draggable="false" />
                                     </button>
                                     <figcaption>
-                                        <b>{k + 1}</b> {photo.caption}
+                                        <b>{photoIndex + 1}</b> {photo.caption}
                                     </figcaption>
                                 </figure>
                             );
@@ -128,8 +132,8 @@ export default function TaskSteps({ task, canEdit, onStep }: TaskStepsProps) {
             )}
             {open && (
                 <PhotoViewer
-                    photos={open.all.map((x) => x.src)}
-                    captions={open.all.map((x) => x.caption)}
+                    photos={open.all.map((photo) => photo.src)}
+                    captions={open.all.map((photo) => photo.caption)}
                     index={open.i}
                     label={open.section.title}
                     onClose={() => setOpen(null)}

@@ -9,12 +9,12 @@ export function currentTheme(): Theme {
     return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
 
-function applyTheme(t: Theme) {
-    document.documentElement.dataset.theme = t;
+function applyTheme(theme: Theme) {
+    document.documentElement.dataset.theme = theme;
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-    if (meta) meta.content = t === 'dark' ? '#14181d' : '#eef0f2';
+    if (meta) meta.content = theme === 'dark' ? '#14181d' : '#eef0f2';
     try {
-        localStorage.setItem(KEY, t);
+        localStorage.setItem(KEY, theme);
     } catch {
         // Storage can be blocked (private windows); the toggle still works for this visit.
     }
@@ -31,9 +31,9 @@ export default function ThemeToggle() {
             title={dark ? 'Light mode' : 'Dark mode'}
             aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
             onClick={() => {
-                const t: Theme = dark ? 'light' : 'dark';
-                applyTheme(t);
-                setTheme(t);
+                const next: Theme = dark ? 'light' : 'dark';
+                applyTheme(next);
+                setTheme(next);
             }}
         >
             {dark ? <Icon.sun /> : <Icon.moon />}

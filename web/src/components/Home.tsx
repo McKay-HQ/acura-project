@@ -31,42 +31,42 @@ interface SegmentGroup {
     segs: Segment[];
 }
 
-const midVal = (p: Pick<Part, 'valueLow' | 'valueHigh'>): number => {
-    const lo = Number(p.valueLow ?? p.valueHigh) || 0;
-    const hi = Number(p.valueHigh ?? p.valueLow) || 0;
+const midVal = (part: Pick<Part, 'valueLow' | 'valueHigh'>): number => {
+    const lo = Number(part.valueLow ?? part.valueHigh) || 0;
+    const hi = Number(part.valueHigh ?? part.valueLow) || 0;
     return (lo + hi) / 2;
 };
 
 /** Chart slices: each sub-container, plus parts directly in a parent (its sub-containers subtracted). */
 function haulSegments(parts: Part[], boxes: Container[]): Segment[] {
     const segs: Segment[] = [];
-    topContainers(boxes).forEach((t, i) => {
-        const slot = Math.min(i, 6) + 1;
+    topContainers(boxes).forEach((top, index) => {
+        const slot = Math.min(index, 6) + 1;
         const add = (label: string, ps: Part[]) => {
             if (ps.length)
                 segs.push({
                     label,
-                    group: t.name,
+                    group: top.name,
                     slot,
                     n: ps.length,
                     lo: sumLow(ps),
                     hi: sumHigh(ps),
-                    mid: ps.reduce((a, p) => a + midVal(p), 0),
+                    mid: ps.reduce((sum, part) => sum + midVal(part), 0),
                 });
         };
-        const subs = subContainers(boxes, t.id);
-        subs.forEach((x) =>
+        const subs = subContainers(boxes, top.id);
+        subs.forEach((sub) =>
             add(
-                x.name,
-                parts.filter((p) => p.container?.id === x.id),
+                sub.name,
+                parts.filter((part) => part.container?.id === sub.id),
             ),
         );
         add(
-            subs.length ? `${t.name} (not in a sub-container)` : t.name,
-            parts.filter((p) => p.container?.id === t.id),
+            subs.length ? `${top.name} (not in a sub-container)` : top.name,
+            parts.filter((part) => part.container?.id === top.id),
         );
     });
-    const loose = parts.filter((p) => !p.container);
+    const loose = parts.filter((part) => !part.container);
     if (loose.length)
         segs.push({
             label: 'No container',
@@ -75,7 +75,7 @@ function haulSegments(parts: Part[], boxes: Container[]): Segment[] {
             n: loose.length,
             lo: sumLow(loose),
             hi: sumHigh(loose),
-            mid: loose.reduce((a, p) => a + midVal(p), 0),
+            mid: loose.reduce((sum, part) => sum + midVal(part), 0),
         });
     return segs;
 }
@@ -91,64 +91,67 @@ interface DonutProps {
 
 function Donut({ segs, k, title, center, sub }: DonutProps) {
     const [tip, setTip] = useState<Tip | null>(null);
-    const total = segs.reduce((a, s) => a + s[k], 0) || 1;
-    const R = 90;
-    const r = 56;
-    const C = 100;
+    const total = segs.reduce((sum, seg) => sum + seg[k], 0) || 1;
+    const outerR = 90;
+    const innerR = 56;
+    const origin = 100;
     let ang = -Math.PI / 2;
-    const pt = (rad: number, a: number): [number, number] => [C + rad * Math.cos(a), C + rad * Math.sin(a)];
+    const pt = (rad: number, angle: number): [number, number] => [
+        origin + rad * Math.cos(angle),
+        origin + rad * Math.sin(angle),
+    ];
     const paths = segs
-        .filter((s) => s[k] > 0)
-        .map((s): Slice => {
+        .filter((seg) => seg[k] > 0)
+        .map((seg): Slice => {
             const a0 = ang;
-            const a1 = ang + (2 * Math.PI * s[k]) / total;
+            const a1 = ang + (2 * Math.PI * seg[k]) / total;
             ang = a1;
             const big = a1 - a0 > Math.PI ? 1 : 0;
-            let d: string;
+            let pathData: string;
             if (a1 - a0 >= 2 * Math.PI - 1e-6)
-                d = `M${C} ${C - R}A${R} ${R} 0 1 1 ${C - 0.01} ${C - R}L${C - 0.01} ${C - r}A${r} ${r} 0 1 0 ${C} ${C - r}Z`;
+                pathData = `M${origin} ${origin - outerR}A${outerR} ${outerR} 0 1 1 ${origin - 0.01} ${origin - outerR}L${origin - 0.01} ${origin - innerR}A${innerR} ${innerR} 0 1 0 ${origin} ${origin - innerR}Z`;
             else {
-                const [x0, y0] = pt(R, a0);
-                const [x1, y1] = pt(R, a1);
-                const [x2, y2] = pt(r, a1);
-                const [x3, y3] = pt(r, a0);
-                d = `M${x0} ${y0}A${R} ${R} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${r} ${r} 0 ${big} 0 ${x3} ${y3}Z`;
+                const [x0, y0] = pt(outerR, a0);
+                const [x1, y1] = pt(outerR, a1);
+                const [x2, y2] = pt(innerR, a1);
+                const [x3, y3] = pt(innerR, a0);
+                pathData = `M${x0} ${y0}A${outerR} ${outerR} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${innerR} ${innerR} 0 ${big} 0 ${x3} ${y3}Z`;
             }
-            const pct = Math.round((100 * s[k]) / total);
+            const pct = Math.round((100 * seg[k]) / total);
             const detail =
                 k === 'n'
-                    ? `${s.n} ${s.n === 1 ? 'part' : 'parts'} · ${pct}%`
-                    : `${valueRange(s.lo, s.hi)} · ${pct}% of value`;
-            return { d, s, detail };
+                    ? `${seg.n} ${seg.n === 1 ? 'part' : 'parts'} · ${pct}%`
+                    : `${valueRange(seg.lo, seg.hi)} · ${pct}% of value`;
+            return { d: pathData, s: seg, detail };
         });
-    const show = (e: PointerEvent<SVGPathElement> | FocusEvent<SVGPathElement>, p: Slice) => {
-        const el = e.currentTarget.closest('.piebox');
+    const show = (event: PointerEvent<SVGPathElement> | FocusEvent<SVGPathElement>, slice: Slice) => {
+        const el = event.currentTarget.closest('.piebox');
         if (!el) return;
         const box = el.getBoundingClientRect();
         // Focus events have no pointer position, so the tooltip centres near the top.
-        const cx = 'clientX' in e ? e.clientX : undefined;
-        const cy = 'clientY' in e ? e.clientY : undefined;
-        const x = (cx ?? box.left + box.width / 2) - box.left;
-        const y = (cy ?? box.top + 20) - box.top;
-        setTip({ ...p, x: Math.max(70, Math.min(box.width - 70, x)), y: y - 12 });
+        const cx = 'clientX' in event ? event.clientX : undefined;
+        const cy = 'clientY' in event ? event.clientY : undefined;
+        const tipX = (cx ?? box.left + box.width / 2) - box.left;
+        const tipY = (cy ?? box.top + 20) - box.top;
+        setTip({ ...slice, x: Math.max(70, Math.min(box.width - 70, tipX)), y: tipY - 12 });
     };
     return (
         <figure className="pie">
             <figcaption>{title}</figcaption>
             <div className="piebox">
                 <svg viewBox="0 0 200 200" role="img" aria-label={title}>
-                    {paths.map((p) => (
+                    {paths.map((slice) => (
                         <path
-                            key={p.s.label}
-                            d={p.d}
-                            className={`seg s${p.s.slot}`}
+                            key={slice.s.label}
+                            d={slice.d}
+                            className={`seg s${slice.s.slot}`}
                             tabIndex={0}
-                            onPointerMove={(e) => show(e, p)}
+                            onPointerMove={(event) => show(event, slice)}
                             onPointerLeave={() => setTip(null)}
-                            onFocus={(e) => show(e, p)}
+                            onFocus={(event) => show(event, slice)}
                             onBlur={() => setTip(null)}
                         >
-                            <title>{`${p.s.label}: ${p.detail}`}</title>
+                            <title>{`${slice.s.label}: ${slice.detail}`}</title>
                         </path>
                     ))}
                     <text x="100" y="96" className="pc1">
@@ -175,10 +178,10 @@ function HaulCharts({ parts, boxes }: { parts: Part[]; boxes: Container[] }) {
     const lo = sumLow(parts);
     const hi = sumHigh(parts);
     const groups: SegmentGroup[] = [];
-    segs.forEach((s) => {
-        let g = groups.find((x) => x.name === s.group);
-        if (!g) groups.push((g = { name: s.group, slot: s.slot, segs: [] }));
-        g.segs.push(s);
+    segs.forEach((seg) => {
+        let group = groups.find((item) => item.name === seg.group);
+        if (!group) groups.push((group = { name: seg.group, slot: seg.slot, segs: [] }));
+        group.segs.push(seg);
     });
     return (
         <div className="haulcharts">
@@ -202,29 +205,31 @@ function HaulCharts({ parts, boxes }: { parts: Part[]; boxes: Container[] }) {
                         </tr>
                     </thead>
                     <tbody>
-                        {groups.map((g) => {
-                            const n = g.segs.reduce((a, s) => a + s.n, 0);
-                            const kids = g.segs.length > 1 || g.segs[0].label !== g.name;
+                        {groups.map((group) => {
+                            const count = group.segs.reduce((sum, seg) => sum + seg.n, 0);
+                            const kids = group.segs.length > 1 || group.segs[0].label !== group.name;
                             return [
-                                <tr className="lg" key={g.name}>
+                                <tr className="lg" key={group.name}>
                                     <td>
-                                        <span className={`sw s${g.slot}`} />
-                                        {g.name}
+                                        <span className={`sw s${group.slot}`} />
+                                        {group.name}
                                     </td>
-                                    <td className="num">{n}</td>
+                                    <td className="num">{count}</td>
                                     <td className="num">
                                         {valueRange(
-                                            g.segs.reduce((a, s) => a + s.lo, 0),
-                                            g.segs.reduce((a, s) => a + s.hi, 0),
+                                            group.segs.reduce((sum, seg) => sum + seg.lo, 0),
+                                            group.segs.reduce((sum, seg) => sum + seg.hi, 0),
                                         )}
                                     </td>
                                 </tr>,
                                 ...(kids
-                                    ? g.segs.map((s) => (
-                                          <tr className="ls" key={`${g.name}/${s.label}`}>
-                                              <td>{s.label.replace(`${g.name} (not in a sub-container)`, 'Loose')}</td>
-                                              <td className="num">{s.n}</td>
-                                              <td className="num">{valueRange(s.lo, s.hi)}</td>
+                                    ? group.segs.map((seg) => (
+                                          <tr className="ls" key={`${group.name}/${seg.label}`}>
+                                              <td>
+                                                  {seg.label.replace(`${group.name} (not in a sub-container)`, 'Loose')}
+                                              </td>
+                                              <td className="num">{seg.n}</td>
+                                              <td className="num">{valueRange(seg.lo, seg.hi)}</td>
                                           </tr>
                                       ))
                                     : []),
@@ -251,7 +256,7 @@ interface HomeProps {
 }
 
 export default function Home({ parts, containers, tasks }: HomeProps) {
-    const next = tasks.filter((t) => !t.done && t.phase === 1);
+    const next = tasks.filter((task) => !task.done && task.phase === 1);
     return (
         <section id="homeView" style={{ display: 'grid', gap: 16 }}>
             <figure className="hero" style={{ margin: 0 }}>
@@ -291,10 +296,10 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
                     <h3>Before it drives</h3>
                     <ul className="nextlist" id="homeNext">
                         {next.length ? (
-                            next.map((t) => (
-                                <li key={t.id}>
-                                    <a className="plink" href={href.task(t)}>
-                                        {t.title}
+                            next.map((task) => (
+                                <li key={task.id}>
+                                    <a className="plink" href={href.task(task)}>
+                                        {task.title}
                                     </a>
                                 </li>
                             ))

@@ -14,8 +14,8 @@ function ConditionList({ title, items, first }: { title: string; items: string[]
         <>
             <h4 className={first ? 'condh first' : 'condh'}>{title}</h4>
             <ul className="condlist">
-                {items.map((x) => (
-                    <li key={x}>{x}</li>
+                {items.map((item) => (
+                    <li key={item}>{item}</li>
                 ))}
             </ul>
         </>
@@ -26,7 +26,7 @@ function ConditionList({ title, items, first }: { title: string; items: string[]
 // row to swipe; from 720px it's a grid of four thumbnails per row. Any photo opens the viewer.
 export default function CarView({ tasks }: CarViewProps) {
     const [open, setOpen] = useState<{ photos: CarPhoto[]; index: number; label: string } | null>(null);
-    const follow = CONDITION_TASKS.map((k) => findRef(tasks, k)).filter((t): t is Task => !!t);
+    const follow = CONDITION_TASKS.map((key) => findRef(tasks, key)).filter((task): task is Task => !!task);
 
     return (
         <section id="carView" style={{ display: 'grid', gap: 16 }}>
@@ -45,11 +45,11 @@ export default function CarView({ tasks }: CarViewProps) {
                 {follow.length > 0 && (
                     <p className="fine" style={{ marginBottom: 0 }}>
                         Follow-up on the Tasks tab:{' '}
-                        {follow.map((t, i) => (
-                            <span key={t.id}>
-                                {i > 0 && ', '}
-                                <a className="plink" href={href.task(t)}>
-                                    {t.title}
+                        {follow.map((task, index) => (
+                            <span key={task.id}>
+                                {index > 0 && ', '}
+                                <a className="plink" href={href.task(task)}>
+                                    {task.title}
                                 </a>
                             </span>
                         ))}
@@ -57,23 +57,23 @@ export default function CarView({ tasks }: CarViewProps) {
                     </p>
                 )}
             </div>
-            {CAR_SECTIONS.map((s) => {
-                const photos = carPhotos(s);
+            {CAR_SECTIONS.map((section) => {
+                const photos = carPhotos(section);
                 return (
-                    <div className="panel" key={s.key}>
-                        <h3>{s.title}</h3>
+                    <div className="panel" key={section.key}>
+                        <h3>{section.title}</h3>
                         <CarStrip
-                            title={s.title}
+                            title={section.title}
                             photos={photos}
-                            onOpen={(i) => setOpen({ photos, index: i, label: s.title })}
+                            onOpen={(index) => setOpen({ photos, index, label: section.title })}
                         />
                     </div>
                 );
             })}
             {open && (
                 <PhotoViewer
-                    photos={open.photos.map((p) => p.src)}
-                    captions={open.photos.map((p) => p.caption)}
+                    photos={open.photos.map((photo) => photo.src)}
+                    captions={open.photos.map((photo) => photo.caption)}
                     index={open.index}
                     label={open.label}
                     onClose={() => setOpen(null)}
