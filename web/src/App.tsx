@@ -295,6 +295,11 @@ export default function App() {
     const replaceContainer = replaceIn(setContainers);
     const replaceTossed = replaceIn(setTossed);
     const replaceTask = replaceIn(setTasks);
+    // Step saves: the latest tasks (for versions), the checks not yet saved, and each task's save queue.
+    const tasksRef = useRef<Task[]>(tasks);
+    tasksRef.current = tasks;
+    const pendingSteps = useRef<Record<string, Record<number, boolean>>>({});
+    const stepSaves = useRef<Record<string, Promise<unknown>>>({});
 
     const run = async (fn: () => Promise<unknown>, okMsg?: string) => {
         try {
@@ -361,6 +366,30 @@ export default function App() {
         onToggle: (t, done) => {
             setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, done } : x)));
             run(() => api.tasks.update(t, { done }).then(replaceTask));
+        },
+        onStep: (t, index, done) => {
+            // Show the tick right away; saves for one task go out one at a time, each from the latest
+            // version, so quick clicks don't trip over each other's If-Match.
+            pendingSteps.current[t.id] = { ...pendingSteps.current[t.id], [index]: done };
+            const apply = (x: Task): Task => {
+                const want = pendingSteps.current[x.id] || {};
+                const steps = x.steps.map((s, i) => (i in want ? { ...s, done: want[i] } : s));
+                return { ...x, steps, done: steps.every((s) => s.done) };
+            };
+            setTasks((ts) => ts.map((x) => (x.id === t.id ? apply(x) : x)));
+            const prev = stepSaves.current[t.id] || Promise.resolve();
+            stepSaves.current[t.id] = prev.then(() =>
+                run(async () => {
+                    const latest = tasksRef.current.find((x) => x.id === t.id);
+                    if (!latest) return;
+                    const want = pendingSteps.current[t.id] || {};
+                    const steps = latest.steps.map((s, i) => (i in want ? { ...s, done: want[i] } : s));
+                    const saved = await api.tasks.update(latest, { steps });
+                    delete pendingSteps.current[t.id];
+                    tasksRef.current = tasksRef.current.map((x) => (x.id === saved.id ? saved : x));
+                    replaceTask(saved);
+                }),
+            );
         },
         onEdit: (task) => setModal({ type: 'task', record: task }),
         onDelete: (t) =>

@@ -6,7 +6,7 @@ import { badRequest } from '../lib/errors.js';
 import { isUuid } from '../lib/validate.js';
 import type { IfMatch } from '../lib/preconditions.js';
 import { resolveId, friendlyDbError, lockRef, softDelete, versionOf, uniqueKey } from './common.js';
-import type { Task, TaskInput, TaskRow } from '../types.js';
+import type { Task, TaskInput, TaskRow, TaskStep } from '../types.js';
 
 const SELECT = `
   SELECT t.*,
@@ -21,6 +21,7 @@ const toApi = (r: TaskRow): Task => ({
     title: r.title,
     phase: r.phase,
     notes: r.notes,
+    steps: r.steps ?? [],
     done: r.done,
     doneAt: r.done_at,
     parts: r.parts,
@@ -61,15 +62,20 @@ async function setParts(c: PoolClient, taskId: string, refs: string[]): Promise<
     }
 }
 
+/** A task with steps is done exactly when all of its steps are; without steps, done is set directly. */
+const doneFromSteps = (steps: TaskStep[]): boolean => steps.every((s) => s.done);
+
 export async function createTask(d: TaskInput): Promise<Task> {
     try {
         return await tx(async (c) => {
             const key = d.key ?? (await uniqueKey(c, 'tasks', d.title ?? '', 'task'));
+            const steps = d.steps ?? [];
+            const isDone = steps.length ? doneFromSteps(steps) : (d.done ?? null);
             const { rows } = await c.query<{ id: string }>(
-                `INSERT INTO tasks (key, title, phase, notes, done, done_at)
-       VALUES ($1, $2, COALESCE($3, 1), COALESCE($4, ''), COALESCE($5, false), CASE WHEN $5 THEN now() END)
+                `INSERT INTO tasks (key, title, phase, notes, steps, done, done_at)
+       VALUES ($1, $2, COALESCE($3, 1), COALESCE($4, ''), $6::jsonb, COALESCE($5, false), CASE WHEN $5 THEN now() END)
        RETURNING id`,
-                [key, d.title, d.phase ?? null, d.notes ?? null, d.done ?? null],
+                [key, d.title, d.phase ?? null, d.notes ?? null, isDone, JSON.stringify(steps)],
             );
             if (d.partIds) await setParts(c, rows[0].id, d.partIds);
             return getTask(rows[0].id, c);
@@ -83,12 +89,23 @@ export async function updateTask(ref: string, d: TaskInput, im: IfMatch): Promis
     try {
         return await tx(async (c) => {
             const id = await lockRef(c, 'tasks', ref, im, getTask);
+            // With steps, done follows them: sent steps decide it, and done alone can't be changed.
+            let isDone = d.done;
+            if (d.steps?.length) isDone = doneFromSteps(d.steps);
+            else if (d.steps === undefined && d.done !== undefined) {
+                const { rows } = await c.query<{ steps: TaskStep[] }>('SELECT steps FROM tasks WHERE id = $1', [id]);
+                const current = rows[0]?.steps ?? [];
+                if (current.length && d.done !== doneFromSteps(current)) {
+                    throw badRequest("This task has steps; it's done when all of its steps are checked");
+                }
+            }
             await c.query(
                 `UPDATE tasks SET
          key     = CASE WHEN $6 THEN $7 ELSE key END,
          title   = COALESCE($2, title),
          phase   = COALESCE($3, phase),
          notes   = COALESCE($4, notes),
+         steps   = COALESCE($8::jsonb, steps),
          done    = COALESCE($5, done),
          done_at = CASE WHEN $5 IS NULL THEN done_at WHEN $5 THEN COALESCE(done_at, now()) ELSE NULL END,
          updated_at = now()
@@ -98,9 +115,10 @@ export async function updateTask(ref: string, d: TaskInput, im: IfMatch): Promis
                     d.title ?? null,
                     d.phase ?? null,
                     d.notes ?? null,
-                    d.done ?? null,
+                    isDone ?? null,
                     d.key !== undefined,
                     d.key ?? null,
+                    d.steps ? JSON.stringify(d.steps) : null,
                 ],
             );
             if (d.partIds) await setParts(c, id, d.partIds);

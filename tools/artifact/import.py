@@ -23,6 +23,22 @@ import sys
 COLLECTIONS = ["containers", "parts", "tossed", "tasks", "notes"]
 
 
+def norm_steps(steps):
+    """Task steps as {text, done} plus links/photos when there are any (same shape as bin/sync.d/sync.py)."""
+    out = []
+    for s in steps or []:
+        if isinstance(s, str):
+            s = {"text": s}
+        step = {"text": (s.get("text") or "").strip(), "done": bool(s.get("done"))}
+        links = [{"label": l.get("label", ""), "href": l.get("href", "")} for l in s.get("links") or []]
+        if links:
+            step["links"] = links
+        if s.get("photos"):
+            step["photos"] = list(s["photos"])
+        out.append(step)
+    return out
+
+
 def load_dump(dump):
     return {col: {os.path.basename(f)[:-5]: json.load(open(f, encoding="utf-8"))
                   for f in glob.glob(f"{dump}/{col}/*.json")} for col in COLLECTIONS}
@@ -62,7 +78,7 @@ def to_doc(col, r, assets):
              "tossedAt": r.get("tossedOn")}
     elif col == "tasks":
         d = {"title": r["title"], "phase": r["phase"], "notes": r.get("notes") or "", "done": bool(r.get("done")),
-             "parts": r.get("parts") or []}
+             "parts": r.get("parts") or [], "steps": norm_steps(r.get("steps"))}
     else:
         d = {"title": r["title"], "items": r.get("items") or []}
     if ids is not None:
@@ -86,6 +102,7 @@ def comparable(col, doc):
             d["fits"] = doc["fits"]
     if col == "tasks":
         d["done"] = bool(d["done"])
+        d["steps"] = norm_steps(d["steps"])
     if col in ("containers", "parts", "tossed"):
         d["photos"] = doc.get("photos") or []
         d["photoNames"] = {a: n for a, n in (doc.get("photoNames") or {}).items() if a in d["photos"]}

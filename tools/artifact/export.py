@@ -13,6 +13,22 @@ import os
 import sys
 
 
+def norm_steps(steps):
+    """Task steps as {text, done} plus links/photos when there are any (same shape as bin/sync.d/sync.py)."""
+    out = []
+    for s in steps or []:
+        if isinstance(s, str):
+            s = {"text": s}
+        step = {"text": (s.get("text") or "").strip(), "done": bool(s.get("done"))}
+        links = [{"label": l.get("label", ""), "href": l.get("href", "")} for l in s.get("links") or []]
+        if links:
+            step["links"] = links
+        if s.get("photos"):
+            step["photos"] = list(s["photos"])
+        out.append(step)
+    return out
+
+
 def main(dump, old_path):
     old = json.load(open(old_path, encoding="utf-8"))
 
@@ -51,7 +67,8 @@ def main(dump, old_path):
     ]
     tk = docs("tasks")
     out["tasks"] = [
-        {"key": k, "title": d["title"], "phase": d["phase"], "notes": d.get("notes", ""), "done": bool(d.get("done")),
+        {"key": k, "title": d["title"], "phase": d["phase"], "notes": d.get("notes", ""),
+         "steps": norm_steps(d.get("steps")), "done": bool(d.get("done")),
          "parts": d.get("parts", []), "createdAt": d.get("addedAt")}
         for k in ordered("tasks", tk) for d in [tk[k]]
     ]

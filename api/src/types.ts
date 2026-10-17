@@ -215,12 +215,27 @@ export interface TaskPartRef {
     status: PartStatus;
 }
 
+/** A link from a task step: a page in the app (#part/..., #task/...) or an https URL. */
+export interface StepLink {
+    label: string;
+    href: string;
+}
+
+/** One step of a task's instructions. photos refer to The Car tab's photos, e.g. "engine:03". */
+export interface TaskStep {
+    text: string;
+    done: boolean;
+    links?: StepLink[];
+    photos?: string[];
+}
+
 export interface TaskRow extends SyncRow {
     id: string;
     key: string | null;
     title: string;
     phase: Phase;
     notes: string;
+    steps: TaskStep[];
     done: boolean;
     done_at: Date | null;
     created_at: Date;
@@ -234,6 +249,7 @@ export interface Task extends Versioned {
     title: string;
     phase: Phase;
     notes: string;
+    steps: TaskStep[];
     done: boolean;
     doneAt: Date | null;
     parts: TaskPartRef[];
@@ -330,6 +346,7 @@ export interface TaskInput {
     title?: string;
     phase?: Phase;
     notes?: string;
+    steps?: TaskStep[];
     done?: boolean;
     partIds?: string[];
 }
@@ -384,6 +401,7 @@ export interface SeedTask {
     title: string;
     phase?: number;
     notes?: string;
+    steps?: TaskStep[];
     done?: boolean;
     parts?: string[];
     createdAt?: string;

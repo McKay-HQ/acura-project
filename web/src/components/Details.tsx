@@ -17,6 +17,7 @@ import {
 } from '../constants';
 import type { Container, ContainerActionHandlers, Part, PartActionHandlers, Task, TaskActionHandlers } from '../types';
 import type { ReactNode } from 'react';
+import TaskSteps from './TaskSteps';
 
 function PartRows({ parts }: { parts: Part[] }) {
     if (!parts.length) return <div className="empty sm">Nothing here yet.</div>;
@@ -232,7 +233,7 @@ interface TaskDetailProps extends TaskActionHandlers {
     canEdit: boolean;
 }
 
-export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onEdit, onDelete }: TaskDetailProps) {
+export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onStep, onEdit, onDelete }: TaskDetailProps) {
     const back = <BackLink to="#tasks" label="All tasks" />;
     if (!task) return <Missing back={back} what="task" label="task" loaded={loaded} />;
     const linked = (task.parts || []).map((x) => parts.find((p) => p.id === x.id)).filter((p): p is Part => Boolean(p));
@@ -254,15 +255,28 @@ export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onEdit, onD
                         <input
                             type="checkbox"
                             checked={task.done}
-                            disabled={!canEdit}
+                            disabled={!canEdit || task.steps.length > 0}
                             onChange={(e) => onToggle(task, e.target.checked)}
                         />{' '}
                         Done
+                        {task.steps.length > 0 && (
+                            <span className="sprog">
+                                {' '}
+                                {task.steps.filter((s) => s.done).length} of {task.steps.length} steps · checks itself
+                                when every step is done
+                            </span>
+                        )}
                     </label>
                     {task.notes && (
                         <div>
                             <h3>Description</h3>
                             <p className="notes">{task.notes}</p>
+                        </div>
+                    )}
+                    {task.steps.length > 0 && (
+                        <div>
+                            <h3>Steps</h3>
+                            <TaskSteps task={task} canEdit={canEdit} onStep={onStep} />
                         </div>
                     )}
                     {canEdit && (

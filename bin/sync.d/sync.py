@@ -34,7 +34,7 @@ FIELDS = {
     "containers": ["name", "location", "notes", "icon", "order", "parent", "photos"],
     "parts": ["label", "partNumber", "fits", "status", "tags", "valueLow", "valueHigh", "notes", "container", "photos"],
     "tossed": ["label", "partNumber", "reason", "tossedOn", "photos"],
-    "tasks": ["title", "phase", "notes", "done", "parts"],
+    "tasks": ["title", "phase", "notes", "steps", "done", "parts"],
     "notes": ["title", "items"],
 }
 HAS_PHOTOS = {"containers", "parts", "tossed"}
@@ -108,6 +108,27 @@ def q(ref):
 
 # ---------------------------------------------------------------- normalizing
 
+# Values for fields added after a record was last synced: its stored base gets these, so a new
+# field reads as "unchanged" on the side that doesn't have it yet.
+NEW_FIELD_DEFAULTS = {"steps": []}
+
+
+def norm_steps(steps):
+    """Task steps in one canonical shape: {text, done} plus links/photos only when there are any."""
+    out = []
+    for s in steps or []:
+        if isinstance(s, str):
+            s = {"text": s}
+        step = {"text": (s.get("text") or "").strip(), "done": bool(s.get("done"))}
+        links = [{"label": l.get("label", ""), "href": l.get("href", "")} for l in s.get("links") or []]
+        if links:
+            step["links"] = links
+        if s.get("photos"):
+            step["photos"] = list(s["photos"])
+        out.append(step)
+    return out
+
+
 def from_catalog(kind, r):
     """The comparable fields of a catalog record."""
     v = {f: r.get(f) for f in FIELDS[kind]}
@@ -124,6 +145,7 @@ def from_catalog(kind, r):
     if kind == "tasks":
         v["done"] = bool(v["done"])
         v["parts"] = v["parts"] or []
+        v["steps"] = norm_steps(v["steps"])
     if kind == "notes":
         v["items"] = v["items"] or []
     if kind in HAS_PHOTOS:
@@ -145,7 +167,8 @@ def from_app(kind, r, key_of_container):
         v = {"label": r["label"], "partNumber": r.get("partNumber") or "", "reason": r.get("reason") or "",
              "tossedOn": r.get("tossedOn")}
     elif kind == "tasks":
-        v = {"title": r["title"], "phase": r["phase"], "notes": r.get("notes") or "", "done": bool(r.get("done")),
+        v = {"title": r["title"], "phase": r["phase"], "notes": r.get("notes") or "",
+             "steps": norm_steps(r.get("steps")), "done": bool(r.get("done")),
              "parts": [p.get("key") for p in r.get("parts", [])]}
     else:
         v = {"title": r["title"], "items": r.get("items") or []}
@@ -170,6 +193,11 @@ class Run:
         if os.path.exists(STATE_FILE):
             with open(STATE_FILE, encoding="utf-8") as f:
                 self.state = json.load(f)
+        for kind, recs in self.state.items():
+            for s in recs.values():
+                for f in FIELDS.get(kind, []):
+                    if isinstance(s.get("base"), dict) and f in NEW_FIELD_DEFAULTS:
+                        s["base"].setdefault(f, NEW_FIELD_DEFAULTS[f])
         self.pushed = self.pulled = 0
         self.conflicts = []
         self.notes = []

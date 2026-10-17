@@ -608,7 +608,6 @@ textarea {
     margin: 4px 0 0;
     color: var(--muted);
     font-size: 0.9rem;
-    max-width: 68ch;
 }
 .task.done h3 {
     text-decoration: line-through;
@@ -1281,7 +1280,6 @@ table.tbl {
 }
 .detail .notes {
     white-space: pre-wrap;
-    max-width: 68ch;
 }
 .detail .actions,
 .detail .confirm {
@@ -2318,5 +2316,95 @@ a.ibtn {
     .vnav[disabled] {
         opacity: 0.3;
         cursor: default;
+    }
+}
+
+/* Task steps: a numbered checklist with links and Car tab photos */
+.steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+}
+.steps li {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+}
+.steps li:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+}
+.scheck {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: 10px;
+    align-items: start;
+    cursor: pointer;
+    font-weight: 400;
+}
+.scheck input {
+    width: 20px;
+    height: 20px;
+    margin: 1px 0 0;
+    accent-color: var(--ok);
+}
+.snum {
+    font: 700 1.05rem/1.4 var(--display);
+    color: var(--muted);
+    min-width: 1.2em;
+    text-align: right;
+}
+.sdone .stext {
+    color: var(--muted);
+    text-decoration: line-through;
+}
+.sextra {
+    margin: 8px 0 0 calc(30px + 1.2em + 10px);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+}
+.slink {
+    font-size: 0.85rem;
+    padding: 3px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--accent);
+    text-decoration: none;
+    background: var(--surface);
+}
+.slink:hover {
+    border-color: currentColor;
+}
+.sphotos {
+    display: flex;
+    gap: 6px;
+    flex-basis: 100%;
+}
+.sphoto {
+    width: 96px;
+    aspect-ratio: 4/3;
+    border: 0;
+    padding: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--line);
+    cursor: zoom-in;
+}
+.sphoto img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.sprog {
+    font: 500 0.8rem var(--body);
+    color: var(--muted);
+}
+@media (max-width: 520px) {
+    .sextra {
+        margin-left: 30px;
     }
 }

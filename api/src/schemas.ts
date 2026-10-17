@@ -397,6 +397,44 @@
  *           $ref: '#/components/schemas/PartStatus'
  */
 
+// ---- TaskStep ----
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     TaskStep:
+ *       type: object
+ *       required: [text, done]
+ *       properties:
+ *         text:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 2000
+ *         done:
+ *           type: boolean
+ *         links:
+ *           type: array
+ *           maxItems: 10
+ *           description: Pages in the app (`#part/injen-intake`, `#task/...`, `#container/...`) or https URLs.
+ *           items:
+ *             type: object
+ *             required: [label, href]
+ *             properties:
+ *               label:
+ *                 type: string
+ *                 maxLength: 120
+ *               href:
+ *                 type: string
+ *                 example: '#part/owners-manual-2002-rsx'
+ *         photos:
+ *           type: array
+ *           maxItems: 6
+ *           description: Photos from The Car tab, as `<exterior|engine|interior>:<number>`.
+ *           items:
+ *             type: string
+ *             example: 'engine:03'
+ */
+
 // ---- Task ----
 /**
  * @openapi
@@ -404,7 +442,7 @@
  *   schemas:
  *     Task:
  *       type: object
- *       required: [id, key, title, phase, notes, done, doneAt, parts, version, createdAt, updatedAt, deletedAt]
+ *       required: [id, key, title, phase, notes, steps, done, doneAt, parts, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -419,6 +457,11 @@
  *           $ref: '#/components/schemas/Phase'
  *         notes:
  *           type: string
+ *         steps:
+ *           type: array
+ *           description: Step-by-step instructions, in order. When there are any, `done` is true exactly when every step is.
+ *           items:
+ *             $ref: '#/components/schemas/TaskStep'
  *         done:
  *           type: boolean
  *         doneAt:
@@ -709,6 +752,15 @@
  *           type: string
  *           nullable: true
  *           maxLength: 5000
+ *         steps:
+ *           type: array
+ *           maxItems: 50
+ *           nullable: true
+ *           description: >-
+ *             Replaces the task's steps (`null` or `[]` removes them). When the task has steps, `done` is worked out
+ *             from them; sending `done` alone for such a task is a 400.
+ *           items:
+ *             $ref: '#/components/schemas/TaskStep'
  *         done:
  *           type: boolean
  *           description: >-

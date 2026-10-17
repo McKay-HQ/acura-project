@@ -38,6 +38,8 @@ ElectricSQL, PowerSync, Replicache and CRDT libraries (Automerge, Yjs) assume bo
 | same | changed | pull into the catalog |
 | changed | changed | merge field by field when different fields changed; a field changed on both sides to different values is a **conflict**: reported, nothing changed for that record (or settled with `-c` / `-a`) |
 
+Task steps (`steps`: text, done, links, photos) compare as one field, and a task with steps is done exactly when all its steps are; the API enforces that.
+
 Creates and deletes follow the same table, with "missing" as the change. Photos compare as an ordered list of `source` names. Pulled photos are downloaded into `api/seed/photos/`.
 
 A record with no base yet (first run) is treated as in sync if both sides match, otherwise as a catalog change.

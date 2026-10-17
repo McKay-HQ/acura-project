@@ -27,7 +27,7 @@ const taskFields = (task?: Task): TaskFields => ({
     partIds: (task?.parts || []).map((p) => p.id),
 });
 // Cast: the phase <select> only offers the PHASES keys 1..4. Part ids are sorted so order doesn't count as a change.
-const taskInput = (f: TaskFields): Omit<TaskInput, 'done'> => ({
+const taskInput = (f: TaskFields): Omit<TaskInput, 'done' | 'steps'> => ({
     title: f.title,
     phase: Number(f.phase) as Phase,
     notes: f.notes,
@@ -195,12 +195,19 @@ export function TasksView({ tasks, canEdit, onAdd, onToggle, onEdit, onDelete }:
                                             <input
                                                 type="checkbox"
                                                 checked={t.done}
-                                                disabled={!canEdit}
+                                                disabled={!canEdit || t.steps.length > 0}
+                                                title={t.steps.length ? 'Done when all steps are checked' : undefined}
                                                 onChange={(e) => onToggle(t, e.target.checked)}
                                                 aria-label={`Done: ${t.title}`}
                                             />
                                             <a className="tlink" href={href.task(t)}>
                                                 {t.title}
+                                                {t.steps.length > 0 && (
+                                                    <span className="sprog">
+                                                        {' '}
+                                                        {t.steps.filter((s) => s.done).length} of {t.steps.length} steps
+                                                    </span>
+                                                )}
                                             </a>
                                             {canEdit && (
                                                 <RowActions

@@ -9,6 +9,7 @@ import type {
     PartStatus,
     Phase,
     TaskInput,
+    TaskStep,
     TossedInput,
     ValidateOptions,
 } from '../types.js';
@@ -74,6 +75,7 @@ const NAMES: Record<string, string> = {
     sortOrder: 'Order',
     items: 'Items',
     done: 'Done',
+    steps: 'Steps',
 };
 const nm = (k: string): string => NAMES[k] || k;
 
@@ -276,6 +278,53 @@ export function validateTossed(input: unknown = {}, { create = false }: Validate
     return done(out, errors);
 }
 
+const PHOTO_REF = /^(exterior|engine|interior):\d{1,2}$/;
+const HREF = /^(https:\/\/\S+|#[a-z]+(\/[A-Za-z0-9._%-]+)?)$/;
+
+/** Task steps: [{text, done, links?, photos?}]. null or [] clears them. */
+function steps(body: Body, errors: string[]): TaskStep[] | undefined {
+    if (!('steps' in body)) return undefined;
+    const v = body.steps;
+    if (v === null) return [];
+    if (!Array.isArray(v)) {
+        errors.push('Steps must be a list');
+        return undefined;
+    }
+    if (v.length > 50) errors.push('Steps can have at most 50 items');
+    const out: TaskStep[] = [];
+    v.forEach((raw, i) => {
+        const n = `Step ${i + 1}`;
+        const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+        const text = typeof s.text === 'string' ? s.text.trim() : '';
+        if (!text) errors.push(`${n} needs text`);
+        else if (text.length > 2000) errors.push(`${n} is too long (2000 characters max)`);
+        if (s.done !== undefined && typeof s.done !== 'boolean') errors.push(`${n}: done must be true or false`);
+        const step: TaskStep = { text, done: s.done === true };
+        if (s.links !== undefined && s.links !== null) {
+            if (!Array.isArray(s.links) || s.links.length > 10) errors.push(`${n}: links must be a list of up to 10`);
+            else {
+                step.links = s.links.map((l) => {
+                    const o = (l && typeof l === 'object' ? l : {}) as Record<string, unknown>;
+                    const label = typeof o.label === 'string' ? o.label.trim() : '';
+                    const href = typeof o.href === 'string' ? o.href.trim() : '';
+                    if (!label || label.length > 120) errors.push(`${n}: each link needs a label (120 characters max)`);
+                    if (!HREF.test(href) || href.length > 2000)
+                        errors.push(`${n}: links must be https:// URLs or app pages like #part/key`);
+                    return { label, href };
+                });
+                if (!step.links.length) delete step.links;
+            }
+        }
+        if (s.photos !== undefined && s.photos !== null) {
+            if (!Array.isArray(s.photos) || s.photos.length > 6 || s.photos.some((p) => !PHOTO_REF.test(String(p))))
+                errors.push(`${n}: photos must be up to 6 car photo refs like "engine:03"`);
+            else if (s.photos.length) step.photos = s.photos.map(String);
+        }
+        out.push(step);
+    });
+    return out;
+}
+
 export function validateTask(input: unknown = {}, { create = false }: ValidateOptions = {}): TaskInput {
     const body = asBody(input);
     const errors: string[] = [];
@@ -285,6 +334,7 @@ export function validateTask(input: unknown = {}, { create = false }: ValidateOp
         // intIn checks the 1-4 range; anything else is reported and done() throws.
         phase: intIn(body, 'phase', errors, 1, 4) as Phase | undefined,
         notes: text(body, 'notes', errors, { max: 5000 }),
+        steps: steps(body, errors),
         done: bool(body, 'done', errors),
         partIds: stringList(body, 'partIds', errors, { maxItems: 200, maxLen: 80 }),
     });

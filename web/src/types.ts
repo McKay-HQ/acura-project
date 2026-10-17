@@ -110,6 +110,20 @@ export interface TaskPartRef {
     status: PartStatus;
 }
 
+/** A link from a task step: a page in the app (#part/..., #task/...) or an https URL. */
+export interface StepLink {
+    label: string;
+    href: string;
+}
+
+/** One step of a task's instructions. photos refer to The Car tab's photos, e.g. "engine:03". */
+export interface TaskStep {
+    text: string;
+    done: boolean;
+    links?: StepLink[];
+    photos?: string[];
+}
+
 export interface Task {
     id: string;
     key: string | null;
@@ -118,6 +132,8 @@ export interface Task {
     title: string;
     phase: Phase;
     notes: string;
+    /** Instructions; when there are any, done is true exactly when every step is. */
+    steps: TaskStep[];
     done: boolean;
     doneAt: string | null;
     parts: TaskPartRef[];
@@ -198,6 +214,7 @@ export type TaskInput = {
     phase: Phase;
     notes: string;
     partIds: string[];
+    steps: TaskStep[];
     done: boolean;
 };
 
@@ -231,6 +248,8 @@ export interface ContainerActionHandlers {
 
 export interface TaskActionHandlers {
     onToggle: (task: Task, done: boolean) => void;
+    /** Check or uncheck one step; the task's done follows its steps. */
+    onStep: (task: Task, index: number, done: boolean) => void;
     onEdit: (task: Task) => void;
     onDelete: (task: Task) => void;
 }

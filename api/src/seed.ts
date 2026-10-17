@@ -108,9 +108,17 @@ export async function seedIfEmpty(): Promise<void> {
             }
             for (const t of seed.tasks || []) {
                 const r = await c.query<{ id: string }>(
-                    `INSERT INTO tasks (key, title, phase, notes, done, done_at, created_at)
-           VALUES ($1,$2,$3,$4,$5,CASE WHEN $5 THEN now() END,COALESCE($6::timestamptz, now())) RETURNING id`,
-                    [t.key || null, t.title, t.phase || 3, t.notes || '', Boolean(t.done), ts(t.createdAt)],
+                    `INSERT INTO tasks (key, title, phase, notes, steps, done, done_at, created_at)
+           VALUES ($1,$2,$3,$4,$7::jsonb,$5,CASE WHEN $5 THEN now() END,COALESCE($6::timestamptz, now())) RETURNING id`,
+                    [
+                        t.key || null,
+                        t.title,
+                        t.phase || 3,
+                        t.notes || '',
+                        t.steps?.length ? t.steps.every((s) => s.done) : Boolean(t.done),
+                        ts(t.createdAt),
+                        JSON.stringify(t.steps || []),
+                    ],
                 );
                 for (const [i, key] of (t.parts || []).entries()) {
                     if (partIds[key]) {
