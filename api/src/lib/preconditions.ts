@@ -18,10 +18,10 @@ export function ifMatch(req: Request): IfMatch {
     }
     const versions: number[] = [];
     for (const entry of raw.split(',')) {
-        const t = entry.trim();
-        if (t === '*') return '*';
-        const m = /^(?:W\/)?"(\d+)"$/.exec(t) ?? /^(\d+)$/.exec(t);
-        if (m) versions.push(Number(m[1]));
+        const tag = entry.trim();
+        if (tag === '*') return '*';
+        const match = /^(?:W\/)?"(\d+)"$/.exec(tag) ?? /^(\d+)$/.exec(tag);
+        if (match) versions.push(Number(match[1]));
     }
     return versions;
 }
@@ -46,6 +46,6 @@ export function sendRecord(res: Response, status: number, record: Versioned): vo
 
 /** `?includeDeleted=1` (or `true`) on list endpoints. */
 export const includeDeleted = (req: Request): boolean => {
-    const v = req.query.includeDeleted;
-    return v === '1' || v === 'true';
+    const value = req.query.includeDeleted;
+    return value === '1' || value === 'true';
 };

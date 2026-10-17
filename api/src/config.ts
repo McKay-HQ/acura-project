@@ -28,8 +28,8 @@ export interface AppConfig {
 }
 
 const env = process.env;
-const bool = (v: string | undefined, dflt: boolean): boolean =>
-    v == null || v === '' ? dflt : !['false', '0', 'no', 'off'].includes(String(v).toLowerCase());
+const bool = (value: string | undefined, dflt: boolean): boolean =>
+    value == null || value === '' ? dflt : !['false', '0', 'no', 'off'].includes(String(value).toLowerCase());
 
 /**
  * Database connection, from either:
@@ -62,9 +62,11 @@ function databaseConfig(): DbConfig {
     let connectionString = url;
     if (url && ssl !== undefined) {
         try {
-            const u = new URL(url);
-            ['sslmode', 'ssl', 'sslrootcert', 'sslcert', 'sslkey'].forEach((k) => u.searchParams.delete(k));
-            connectionString = u.toString();
+            const parsed = new URL(url);
+            ['sslmode', 'ssl', 'sslrootcert', 'sslcert', 'sslkey'].forEach((param) =>
+                parsed.searchParams.delete(param),
+            );
+            connectionString = parsed.toString();
         } catch {
             /* leave non-URL connection strings untouched */
         }
@@ -95,11 +97,11 @@ export const config: AppConfig = {
 
 /** Safe description of where we connect, for startup logs (no password). */
 export function describeDb(): string {
-    const c = config.db;
+    const dbConfig = config.db;
     try {
-        if (c.connectionString) {
-            const u = new URL(c.connectionString);
-            return `${u.hostname}:${u.port || 5432}${u.pathname}`;
+        if (dbConfig.connectionString) {
+            const parsed = new URL(dbConfig.connectionString);
+            return `${parsed.hostname}:${parsed.port || 5432}${parsed.pathname}`;
         }
     } catch {
         /* fall through */

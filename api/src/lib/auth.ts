@@ -11,16 +11,16 @@ const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const PUBLIC_PATHS = new Set(['/health', '/config', '/auth/check']);
 
 export function presentedKey(req: Request): string {
-    const h = req.get('authorization') || '';
-    if (h.toLowerCase().startsWith('bearer ')) return h.slice(7).trim();
+    const header = req.get('authorization') || '';
+    if (header.toLowerCase().startsWith('bearer ')) return header.slice(7).trim();
     return (req.get('x-api-key') || '').trim();
 }
 
 export function keyMatches(given: string): boolean {
     if (!config.apiKey || !given) return false;
-    const a = crypto.createHash('sha256').update(given).digest();
-    const b = crypto.createHash('sha256').update(config.apiKey).digest();
-    return crypto.timingSafeEqual(a, b);
+    const givenHash = crypto.createHash('sha256').update(given).digest();
+    const expectedHash = crypto.createHash('sha256').update(config.apiKey).digest();
+    return crypto.timingSafeEqual(givenHash, expectedHash);
 }
 
 export function requireKey(req: Request, _res: Response, next: NextFunction): void {

@@ -35,13 +35,13 @@ export const photosJson = (table: PhotoTable, alias: string): string => `(
   FROM photos p WHERE p.${OWNER[table]} = ${alias}.id) AS photos`;
 
 export const mapPhotos = (rows: PhotoJson[] = []): Photo[] =>
-    rows.map((p) => ({
-        id: p.id,
-        url: photoUrl(p.filename),
-        thumbUrl: photoUrl(p.thumb),
-        width: p.width,
-        height: p.height,
-        source: p.source ?? null,
+    rows.map((photo) => ({
+        id: photo.id,
+        url: photoUrl(photo.filename),
+        thumbUrl: photoUrl(photo.thumb),
+        width: photo.width,
+        height: photo.height,
+        source: photo.source ?? null,
     }));
 
 /** Resolve a UUID or human-readable key to the UUID of a live (not deleted) record, or 404. */
@@ -63,30 +63,30 @@ export type Getter<T> = (ref: string, client?: PoolClient) => Promise<T>;
  * version: 404 if it is gone, 412 with the current record if the version doesn't match.
  */
 export async function lockVersion(
-    c: PoolClient,
+    client: PoolClient,
     table: KeyedTable,
     id: string,
     im: IfMatch,
     current: Getter<Versioned>,
 ): Promise<void> {
-    const { rows } = await c.query<{ version: number }>(
+    const { rows } = await client.query<{ version: number }>(
         `SELECT version FROM ${table} WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
         [id],
     );
     if (!rows.length) throw notFound(`${LABEL[table] || 'Record'} not found`);
-    if (!versionMatches(im, rows[0].version)) throw preconditionFailed(await current(id, c));
+    if (!versionMatches(im, rows[0].version)) throw preconditionFailed(await current(id, client));
 }
 
 /** Resolve a ref and lock the record against If-Match, inside the caller's transaction. Returns the UUID. */
 export async function lockRef(
-    c: PoolClient,
+    client: PoolClient,
     table: KeyedTable,
     ref: string,
     im: IfMatch,
     current: Getter<Versioned>,
 ): Promise<string> {
-    const id = await resolveId(table, ref, c);
-    await lockVersion(c, table, id, im, current);
+    const id = await resolveId(table, ref, client);
+    await lockVersion(client, table, id, im, current);
     return id;
 }
 
@@ -94,13 +94,13 @@ export async function lockRef(
  * Mark a record deleted (a tombstone: hidden from normal reads, its key stays taken). Call it before removing the
  * record's photos or links, so the whole delete is one version bump.
  */
-export async function softDelete(c: PoolClient, table: KeyedTable, id: string): Promise<void> {
-    await c.query(`UPDATE ${table} SET deleted_at = now(), updated_at = now() WHERE id = $1`, [id]);
+export async function softDelete(client: PoolClient, table: KeyedTable, id: string): Promise<void> {
+    await client.query(`UPDATE ${table} SET deleted_at = now(), updated_at = now() WHERE id = $1`, [id]);
 }
 
 /** A record's current version (deleted or not), e.g. at the end of a write. */
-export async function versionOf(c: PoolClient, table: KeyedTable, id: string): Promise<number> {
-    const { rows } = await c.query<{ version: number }>(`SELECT version FROM ${table} WHERE id = $1`, [id]);
+export async function versionOf(client: PoolClient, table: KeyedTable, id: string): Promise<number> {
+    const { rows } = await client.query<{ version: number }>(`SELECT version FROM ${table} WHERE id = $1`, [id]);
     return rows[0].version;
 }
 
@@ -110,14 +110,19 @@ const KEY_MAX = 60;
  * A key for a new record, made from its name: slugified, at most 60 characters, with -2, -3... added when the
  * key is taken (deleted records keep theirs). `fallback` is used when the name has no usable characters.
  */
-export async function uniqueKey(c: PoolClient, table: KeyedTable, name: string, fallback: string): Promise<string> {
-    const trim = (s: string, max: number): string => s.slice(0, max).replace(/-+$/, '');
+export async function uniqueKey(
+    client: PoolClient,
+    table: KeyedTable,
+    name: string,
+    fallback: string,
+): Promise<string> {
+    const trim = (str: string, max: number): string => str.slice(0, max).replace(/-+$/, '');
     let base = trim(slugify(name), KEY_MAX) || fallback;
     if (isUuid(base)) base = trim(`${fallback}-${base}`, KEY_MAX);
-    for (let n = 1; ; n++) {
-        const suffix = n === 1 ? '' : `-${n}`;
+    for (let attempt = 1; ; attempt++) {
+        const suffix = attempt === 1 ? '' : `-${attempt}`;
         const key = `${trim(base, KEY_MAX - suffix.length)}${suffix}`;
-        const { rowCount } = await c.query(`SELECT 1 FROM ${table} WHERE key = $1`, [key]);
+        const { rowCount } = await client.query(`SELECT 1 FROM ${table} WHERE key = $1`, [key]);
         if (!rowCount) return key;
     }
 }
@@ -128,9 +133,9 @@ export function friendlyDbError(err: unknown): unknown {
     const code = typeof err === 'object' && err !== null && 'code' in err ? err.code : undefined;
     const constraint = typeof err === 'object' && err !== null && 'constraint' in err ? err.constraint : undefined;
     if (code === '23505' && /_key_key/.test(typeof constraint === 'string' ? constraint : '')) {
-        const e = badRequest('That key is already used by another record');
-        e.status = 409;
-        return e;
+        const conflict = badRequest('That key is already used by another record');
+        conflict.status = 409;
+        return conflict;
     }
     if (code === '23514' && constraint === 'value_range') {
         return badRequest('Low value cannot be more than the high value');
@@ -147,9 +152,9 @@ export function assignments<T extends object>(
     const sets: string[] = [];
     const vals: unknown[] = [];
     // Object.entries widens the keys to string; they are exactly the keys of T.
-    for (const [k, col] of Object.entries(cols) as [keyof T, string][]) {
-        if (data[k] !== undefined) {
-            vals.push(data[k]);
+    for (const [field, col] of Object.entries(cols) as [keyof T, string][]) {
+        if (data[field] !== undefined) {
+            vals.push(data[field]);
             sets.push(`${col} = $${startAt + vals.length - 1}`);
         }
     }
@@ -177,28 +182,28 @@ export async function addPhotos(
     if (!files?.length) throw badRequest('Choose at least one photo');
     const col = OWNER[table];
     const written: PhotoFileRow[] = [];
-    const work = async (c: PoolClient): Promise<void> => {
-        const { rows } = await c.query<{ n: number }>(
+    const work = async (txClient: PoolClient): Promise<void> => {
+        const { rows } = await txClient.query<{ n: number }>(
             `SELECT COALESCE(max(sort_order) + 1, 0) AS n FROM photos WHERE ${col} = $1`,
             [id],
         );
         let order = rows[0].n;
-        for (const f of files) {
-            const p = await processPhoto(f.buffer);
-            written.push({ filename: p.filename, thumb_filename: p.thumbFilename });
+        for (const file of files) {
+            const photo = await processPhoto(file.buffer);
+            written.push({ filename: photo.filename, thumb_filename: photo.thumbFilename });
             const photoId = crypto.randomUUID();
-            await c.query(
+            await txClient.query(
                 `INSERT INTO photos (id, ${col}, filename, thumb_filename, width, height, sort_order, source)
                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
                 [
                     photoId,
                     id,
-                    p.filename,
-                    p.thumbFilename,
-                    p.width,
-                    p.height,
+                    photo.filename,
+                    photo.thumbFilename,
+                    photo.width,
+                    photo.height,
                     order++,
-                    photoSource(f.originalname, photoId),
+                    photoSource(file.originalname, photoId),
                 ],
             );
         }
@@ -221,10 +226,10 @@ export async function addRecordPhotos<T>(
     get: Getter<T & Versioned>,
 ): Promise<T> {
     if (!files?.length) throw badRequest('Choose at least one photo');
-    return tx(async (c) => {
-        const id = await lockRef(c, table, ref, im, get);
-        await addPhotos(table, id, files, c);
-        return get(id, c);
+    return tx(async (client) => {
+        const id = await lockRef(client, table, ref, im, get);
+        await addPhotos(table, id, files, client);
+        return get(id, client);
     });
 }
 
@@ -239,16 +244,16 @@ export async function reorderPhotos<T>(
     const col = OWNER[table];
     if (!Array.isArray(ids)) throw badRequest('ids must be a list of photo ids');
     const list: unknown[] = ids;
-    return tx(async (c) => {
-        const id = await lockRef(c, table, ref, im, get);
-        const { rows } = await c.query<{ id: string }>(`SELECT id FROM photos WHERE ${col} = $1`, [id]);
-        const have = new Set<unknown>(rows.map((r) => r.id));
-        if (list.length !== have.size || !list.every((x) => have.has(x))) {
+    return tx(async (client) => {
+        const id = await lockRef(client, table, ref, im, get);
+        const { rows } = await client.query<{ id: string }>(`SELECT id FROM photos WHERE ${col} = $1`, [id]);
+        const have = new Set<unknown>(rows.map((row) => row.id));
+        if (list.length !== have.size || !list.every((listed) => have.has(listed))) {
             throw badRequest('ids must list every photo of this record exactly once');
         }
-        for (const [i, pid] of list.entries())
-            await c.query('UPDATE photos SET sort_order = $1 WHERE id = $2', [i, pid]);
-        return get(id, c);
+        for (const [index, pid] of list.entries())
+            await client.query('UPDATE photos SET sort_order = $1 WHERE id = $2', [index, pid]);
+        return get(id, client);
     });
 }
 
@@ -271,29 +276,30 @@ export async function deletePhoto(
         photoId,
     ]);
     if (!rows.length) throw notFound('Photo not found');
-    const r = rows[0];
+    const owner = rows[0];
     // The one_owner constraint guarantees exactly one owner column is set, so tossed_id is non-null here.
-    const [table, ownerId]: [PhotoTable, string] = r.part_id
-        ? ['parts', r.part_id]
-        : r.container_id
-          ? ['containers', r.container_id]
-          : ['tossed', r.tossed_id as string];
+    const [table, ownerId]: [PhotoTable, string] = owner.part_id
+        ? ['parts', owner.part_id]
+        : owner.container_id
+          ? ['containers', owner.container_id]
+          : ['tossed', owner.tossed_id as string];
     const get = getters[table];
-    const { files, record } = await tx(async (c) => {
-        await lockVersion(c, table, ownerId, im, get);
-        const del = await c.query<PhotoFileRow>('DELETE FROM photos WHERE id = $1 RETURNING filename, thumb_filename', [
-            photoId,
-        ]);
+    const { files, record } = await tx(async (client) => {
+        await lockVersion(client, table, ownerId, im, get);
+        const del = await client.query<PhotoFileRow>(
+            'DELETE FROM photos WHERE id = $1 RETURNING filename, thumb_filename',
+            [photoId],
+        );
         if (!del.rowCount) throw notFound('Photo not found');
-        return { files: del.rows, record: await get(ownerId, c) };
+        return { files: del.rows, record: await get(ownerId, client) };
     });
     await removePhotoFiles(files);
     return record;
 }
 
 /** Delete a record's photo rows (inside its delete transaction); returns their files to remove after commit. */
-export async function deleteRecordPhotos(c: PoolClient, table: PhotoTable, id: string): Promise<PhotoFileRow[]> {
-    const { rows } = await c.query<PhotoFileRow>(
+export async function deleteRecordPhotos(client: PoolClient, table: PhotoTable, id: string): Promise<PhotoFileRow[]> {
+    const { rows } = await client.query<PhotoFileRow>(
         `DELETE FROM photos WHERE ${OWNER[table]} = $1 RETURNING filename, thumb_filename`,
         [id],
     );

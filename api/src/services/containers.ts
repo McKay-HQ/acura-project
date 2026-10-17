@@ -37,22 +37,22 @@ const SELECT = `
        ORDER BY p.label), '[]') FROM parts p WHERE p.container_id = x.id AND p.deleted_at IS NULL) AS parts
   FROM containers x`;
 
-const toApi = (r: ContainerRow): Container => ({
-    id: r.id,
-    key: r.key,
-    name: r.name,
-    location: r.location,
-    notes: r.notes,
-    parentId: r.parent_id,
-    icon: r.icon,
-    sortOrder: r.sort_order,
-    photos: mapPhotos(r.photos),
-    parts: r.parts, // parts directly in this container (not its sub-containers)
-    partCount: r.parts.length,
-    version: r.version,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    deletedAt: r.deleted_at,
+const toApi = (row: ContainerRow): Container => ({
+    id: row.id,
+    key: row.key,
+    name: row.name,
+    location: row.location,
+    notes: row.notes,
+    parentId: row.parent_id,
+    icon: row.icon,
+    sortOrder: row.sort_order,
+    photos: mapPhotos(row.photos),
+    parts: row.parts, // parts directly in this container (not its sub-containers)
+    partCount: row.parts.length,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
 });
 
 /** All containers, top-level and sub, in display order; deleted ones (tombstones) only with includeDeleted. */
@@ -90,18 +90,18 @@ async function checkParent(data: ContainerInput, selfId: string | null, client?:
 
 export async function createContainer(data: ContainerInput, files?: Express.Multer.File[]): Promise<Container> {
     try {
-        return await tx(async (c) => {
-            await checkParent(data, null, c);
-            if (data.key == null) data.key = await uniqueKey(c, 'containers', data.name ?? '', 'container');
+        return await tx(async (client) => {
+            await checkParent(data, null, client);
+            if (data.key == null) data.key = await uniqueKey(client, 'containers', data.name ?? '', 'container');
             // Object.keys widens the keys to string; they are exactly the keys of ContainerInput.
-            const cols = (Object.keys(COLS) as (keyof ContainerInput)[]).filter((k) => data[k] !== undefined);
-            const { rows } = await c.query<{ id: string }>(
-                `INSERT INTO containers (${cols.map((k) => COLS[k]).join(', ')})
-         VALUES (${cols.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING id`,
-                cols.map((k) => data[k]),
+            const cols = (Object.keys(COLS) as (keyof ContainerInput)[]).filter((field) => data[field] !== undefined);
+            const { rows } = await client.query<{ id: string }>(
+                `INSERT INTO containers (${cols.map((field) => COLS[field]).join(', ')})
+         VALUES (${cols.map((_field, index) => `$${index + 1}`).join(', ')}) RETURNING id`,
+                cols.map((field) => data[field]),
             );
-            if (files?.length) await addPhotos('containers', rows[0].id, files, c);
-            return getContainer(rows[0].id, c);
+            if (files?.length) await addPhotos('containers', rows[0].id, files, client);
+            return getContainer(rows[0].id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
@@ -110,16 +110,16 @@ export async function createContainer(data: ContainerInput, files?: Express.Mult
 
 export async function updateContainer(ref: string, data: ContainerInput, im: IfMatch): Promise<Container> {
     try {
-        return await tx(async (c) => {
-            const id = await lockRef(c, 'containers', ref, im, getContainer);
-            await checkParent(data, id, c);
+        return await tx(async (client) => {
+            const id = await lockRef(client, 'containers', ref, im, getContainer);
+            await checkParent(data, id, client);
             const { sets, vals } = assignments(data, COLS, 2);
             if (sets.length)
-                await c.query(`UPDATE containers SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [
+                await client.query(`UPDATE containers SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [
                     id,
                     ...vals,
                 ]);
-            return getContainer(id, c);
+            return getContainer(id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
@@ -133,24 +133,25 @@ export async function updateContainer(ref: string, data: ContainerInput, im: IfM
  * The parts and sub-containers that change get new versions too.
  */
 export async function deleteContainer(ref: string, im: IfMatch): Promise<number> {
-    const { version, files } = await tx(async (c) => {
-        const id = await lockRef(c, 'containers', ref, im, getContainer);
-        const { rows } = await c.query<{ parent_id: string | null }>('SELECT parent_id FROM containers WHERE id = $1', [
-            id,
-        ]);
+    const { version, files } = await tx(async (client) => {
+        const id = await lockRef(client, 'containers', ref, im, getContainer);
+        const { rows } = await client.query<{ parent_id: string | null }>(
+            'SELECT parent_id FROM containers WHERE id = $1',
+            [id],
+        );
         const parent = rows[0].parent_id;
-        await softDelete(c, 'containers', id);
-        await c.query(
+        await softDelete(client, 'containers', id);
+        await client.query(
             'UPDATE parts SET container_id = $1, updated_at = now() WHERE container_id = $2 AND deleted_at IS NULL',
             [parent, id],
         );
         if (!parent)
-            await c.query(
+            await client.query(
                 'UPDATE containers SET parent_id = NULL, updated_at = now() WHERE parent_id = $1 AND deleted_at IS NULL',
                 [id],
             );
-        const files = await deleteRecordPhotos(c, 'containers', id);
-        return { version: await versionOf(c, 'containers', id), files };
+        const files = await deleteRecordPhotos(client, 'containers', id);
+        return { version: await versionOf(client, 'containers', id), files };
     });
     await removePhotoFiles(files);
     return version;

@@ -25,7 +25,8 @@
  *     Ref:
  *       type: string
  *       description: A record's UUID or its human-readable key.
- *       pattern: '^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[a-z0-9][a-z0-9._-]{0,79})$'
+ *       pattern: "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|\
+ *         [a-z0-9][a-z0-9._-]{0,79})$"
  *       example: injen-intake
  *     Key:
  *       type: string
@@ -33,8 +34,8 @@
  *       description: >-
  *         Human-readable id, unique per record type (deleted records keep theirs): lowercase letters, numbers, dots,
  *         dashes or underscores, starting with a letter or number, up to 80 characters (input is trimmed and
- *         lowercased; it cannot look like a UUID). On create, when omitted, `null` or `''`, one is generated from
- *         the name (slugified, up to 60 characters, with -2, -3... added if taken). On update, `null` or `''` removes it.
+ *         lowercased; it cannot look like a UUID). On create, when omitted, `null` or `''`, one is generated from the
+ *         name (slugified, up to 60 characters, with -2, -3... added if taken). On update, `null` or `''` removes it.
  *       example: injen-intake
  */
 
@@ -143,7 +144,8 @@
  * components:
  *   schemas:
  *     PartContainer:
- *       description: The container a part is in. `top` is its top-level container (the same container when it is top-level).
+ *       description: >-
+ *         The container a part is in. `top` is its top-level container (the same container when it is top-level).
  *       allOf:
  *         - $ref: '#/components/schemas/ContainerRef'
  *         - type: object
@@ -160,7 +162,9 @@
  *   schemas:
  *     Part:
  *       type: object
- *       required: [id, key, label, partNumber, fits, status, tags, valueLow, valueHigh, notes, container, tasks, phaseTags, photos, version, createdAt, updatedAt, deletedAt]
+ *       required:
+ *         [id, key, label, partNumber, fits, status, tags, valueLow, valueHigh, notes, container, tasks, phaseTags,
+ *         photos, version, createdAt, updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -275,7 +279,9 @@
  *   schemas:
  *     Container:
  *       type: object
- *       required: [id, key, name, location, notes, parentId, icon, sortOrder, photos, parts, partCount, version, createdAt, updatedAt, deletedAt]
+ *       required:
+ *         [id, key, name, location, notes, parentId, icon, sortOrder, photos, parts, partCount, version, createdAt,
+ *         updatedAt, deletedAt]
  *       properties:
  *         id:
  *           type: string
@@ -459,7 +465,8 @@
  *           type: string
  *         steps:
  *           type: array
- *           description: Step-by-step instructions, in order. When there are any, `done` is true exactly when every step is.
+ *           description: >-
+ *             Step-by-step instructions, in order. When there are any, `done` is true exactly when every step is.
  *           items:
  *             $ref: '#/components/schemas/TaskStep'
  *         done:
@@ -537,8 +544,8 @@
  *     Summary:
  *       type: object
  *       description: >-
- *         Totals for the page header. Value sums use the low (or high, when only that is set) estimate for `low`,
- *         and the reverse for `high`. "For sale" counts parts tagged `For sale`; `containers` counts top-level containers.
+ *         Totals for the page header. Value sums use the low (or high, when only that is set) estimate for `low`, and
+ *         the reverse for `high`. "For sale" counts parts tagged `For sale`; `containers` counts top-level containers.
  *       required: [parts, value, forSale, containers, tossed, tasks]
  *       properties:
  *         parts:
@@ -628,7 +635,8 @@
  *           nullable: true
  *           minimum: 0
  *           maximum: 99999999
- *           description: Rounded to cents. Numeric strings are accepted; `null` or `''` clears it. Must not exceed valueHigh.
+ *           description: >-
+ *             Rounded to cents. Numeric strings are accepted; `null` or `''` clears it. Must not exceed valueHigh.
  *         valueHigh:
  *           type: number
  *           nullable: true
@@ -655,7 +663,8 @@
  *   schemas:
  *     ContainerInput:
  *       type: object
- *       description: Fields to set; omitted fields are left unchanged (on create, icon defaults to `box` and sortOrder to 0).
+ *       description: >-
+ *         Fields to set; omitted fields are left unchanged (on create, icon defaults to `box` and sortOrder to 0).
  *       properties:
  *         key:
  *           $ref: '#/components/schemas/Key'
@@ -714,7 +723,8 @@
  *           type: string
  *           format: date
  *           nullable: true
- *           description: A date like `2026-10-06`. On create it defaults to today when omitted; `null` or `''` leaves it empty.
+ *           description: >-
+ *             A date like `2026-10-06`. On create it defaults to today when omitted; `null` or `''` leaves it empty.
  *     PartTossInput:
  *       type: object
  *       properties:
@@ -737,7 +747,8 @@
  *   schemas:
  *     TaskInput:
  *       type: object
- *       description: Fields to set; omitted fields are left unchanged (on create, phase defaults to 1 and done to false).
+ *       description: >-
+ *         Fields to set; omitted fields are left unchanged (on create, phase defaults to 1 and done to false).
  *       properties:
  *         key:
  *           $ref: '#/components/schemas/Key'

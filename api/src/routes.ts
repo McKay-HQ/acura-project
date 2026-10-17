@@ -88,7 +88,8 @@ api.get('/health', async (_req, res) => {
  *   get:
  *     tags: [System]
  *     summary: App configuration
- *     description: Tells the web app whether it needs to ask for the access key, and the allowed values for pickers. Always open.
+ *     description: >-
+ *       Tells the web app whether it needs to ask for the access key, and the allowed values for pickers. Always open.
  *     security: []
  *     responses:
  *       200:
@@ -199,7 +200,8 @@ api.get('/summary', async (_req, res) => {
  *   get:
  *     tags: [System]
  *     summary: Tags in use
- *     description: Distinct part tags, plus "Phase N" tags from open tasks, with how many parts have each; most used first.
+ *     description: >-
+ *       Distinct part tags, plus "Phase N" tags from open tasks, with how many parts have each; most used first.
  *     responses:
  *       200:
  *         description: Tags with counts.
@@ -290,7 +292,8 @@ function photoResource<T extends Versioned, I>(
  *         in: query
  *         description: >-
  *           Only parts with any of these tags (repeat or separate with commas). Special values: `Phase 1`..`Phase 4`
- *           match parts used by an open task in that phase; `Other cars` matches parts whose `fits` is set and is not `RSX`.
+ *           match parts used by an open task in that phase; `Other cars` matches parts whose `fits` is set and is not
+ *           `RSX`.
  *         style: form
  *         explode: true
  *         schema:
@@ -337,7 +340,8 @@ function photoResource<T extends Versioned, I>(
  *     tags: [Parts]
  *     summary: Create a part
  *     description: >-
- *       Send JSON, or multipart/form-data with the same fields as text plus image files in `photos`. Only `label` is required. A part with photos is created only if every photo can be processed.
+ *       Send JSON, or multipart/form-data with the same fields as text plus image files in `photos`. Only `label` is
+ *       required. A part with photos is created only if every photo can be processed.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       required: true
@@ -347,7 +351,9 @@ function photoResource<T extends Versioned, I>(
  *             allOf:
  *               - $ref: '#/components/schemas/PartInput'
  *               - required: [label]
- *           example: { label: Injen cold air intake, key: injen-intake, status: Verified, tags: [Intake, For sale], valueLow: 150, valueHigh: 220, containerId: box-engine }
+ *           example:
+ *             { label: Injen cold air intake, key: injen-intake, status: Verified, tags: [Intake, For sale],
+ *               valueLow: 150, valueHigh: 220, containerId: box-engine }
  *         multipart/form-data:
  *           schema:
  *             allOf:
@@ -532,7 +538,7 @@ function photoResource<T extends Versioned, I>(
  */
 photoResource('parts', {
     noun: 'part id',
-    list: (q, all) => parts.listParts(q, all),
+    list: (filters, all) => parts.listParts(filters, all),
     get: parts.getPart,
     create: parts.createPart,
     update: parts.updatePart,
@@ -585,8 +591,8 @@ photoResource('parts', {
  */
 api.post('/parts/:ref/toss', async (req, res) => {
     const im = ifMatch(req);
-    const v = validateTossed({ reason: req.body?.reason ?? '', tossedOn: req.body?.tossedOn ?? null });
-    const id = await parts.tossPart(assertRef(req.params.ref, 'part id'), v, im);
+    const input = validateTossed({ reason: req.body?.reason ?? '', tossedOn: req.body?.tossedOn ?? null });
+    const id = await parts.tossPart(assertRef(req.params.ref, 'part id'), input, im);
     sendRecord(res, 201, await tossed.getTossed(id));
 });
 
@@ -618,7 +624,8 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     tags: [Containers]
  *     summary: Create a container
  *     description: >-
- *       Send JSON, or multipart/form-data with the same fields as text plus image files in `photos`. Only `name` is required.
+ *       Send JSON, or multipart/form-data with the same fields as text plus image files in `photos`. Only `name` is
+ *       required.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       required: true
@@ -849,7 +856,8 @@ photoResource('containers', {
  *     tags: [Tossed]
  *     summary: Create a tossed record
  *     description: >-
- *       Send JSON, or multipart/form-data with the same fields as text plus image files in `photos`. Only `label` is required; tossedOn defaults to today. New records go to the end of the list.
+ *       Send JSON, or multipart/form-data with the same fields as text plus image files in `photos`. Only `label` is
+ *       required; tossedOn defaults to today. New records go to the end of the list.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
  *       required: true

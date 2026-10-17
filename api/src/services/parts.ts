@@ -45,38 +45,48 @@ const SELECT = `
   LEFT JOIN containers c ON c.id = x.container_id
   LEFT JOIN containers pc ON pc.id = c.parent_id`;
 
-function toApi(r: PartRow): Part {
+function toApi(row: PartRow): Part {
     return {
-        id: r.id,
-        key: r.key,
-        label: r.label,
-        partNumber: r.part_number,
-        fits: r.fits,
-        status: r.status,
-        tags: r.tags,
-        valueLow: r.value_low,
-        valueHigh: r.value_high,
-        notes: r.notes,
+        id: row.id,
+        key: row.key,
+        label: row.label,
+        partNumber: row.part_number,
+        fits: row.fits,
+        status: row.status,
+        tags: row.tags,
+        valueLow: row.value_low,
+        valueHigh: row.value_high,
+        notes: row.notes,
         // The container the part is in. For a sub-container, `top` is the parent it sits inside.
-        container: r.container_id
+        container: row.container_id
             ? {
-                  id: r.container_id,
-                  key: r.container_key,
-                  name: r.container_name,
-                  icon: r.container_icon,
-                  top: r.container_parent_id
-                      ? { id: r.container_parent_id, key: r.parent_key, name: r.parent_name, icon: r.parent_icon }
-                      : { id: r.container_id, key: r.container_key, name: r.container_name, icon: r.container_icon },
+                  id: row.container_id,
+                  key: row.container_key,
+                  name: row.container_name,
+                  icon: row.container_icon,
+                  top: row.container_parent_id
+                      ? {
+                            id: row.container_parent_id,
+                            key: row.parent_key,
+                            name: row.parent_name,
+                            icon: row.parent_icon,
+                        }
+                      : {
+                            id: row.container_id,
+                            key: row.container_key,
+                            name: row.container_name,
+                            icon: row.container_icon,
+                        },
               }
             : null,
-        tasks: r.tasks,
+        tasks: row.tasks,
         // Phase tags come from the open tasks that use this part, e.g. "Phase 1".
-        phaseTags: [...new Set(r.tasks.filter((t) => !t.done).map((t) => `Phase ${t.phase}`))].sort(),
-        photos: mapPhotos(r.photos),
-        version: r.version,
-        createdAt: r.created_at,
-        updatedAt: r.updated_at,
-        deletedAt: r.deleted_at,
+        phaseTags: [...new Set(row.tasks.filter((task) => !task.done).map((task) => `Phase ${task.phase}`))].sort(),
+        photos: mapPhotos(row.photos),
+        version: row.version,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        deletedAt: row.deleted_at,
     };
 }
 
@@ -96,17 +106,17 @@ export async function listParts(
 ): Promise<Part[]> {
     const where: string[] = includeDeleted ? [] : ['x.deleted_at IS NULL'];
     const params: unknown[] = [];
-    const list = (v: unknown): string[] =>
-        v == null
+    const list = (value: unknown): string[] =>
+        value == null
             ? []
-            : (Array.isArray(v) ? (v as unknown[]) : [v])
-                  .flatMap((s) => String(s).split(','))
-                  .map((s) => s.trim())
+            : (Array.isArray(value) ? (value as unknown[]) : [value])
+                  .flatMap((item) => String(item).split(','))
+                  .map((item) => item.trim())
                   .filter(Boolean);
 
     const st = list(status);
     if (st.length) {
-        if (st.some((s) => !STATUSES.includes(s as PartStatus)))
+        if (st.some((entry) => !STATUSES.includes(entry as PartStatus)))
             throw badRequest(`status must be one of: ${STATUSES.join(', ')}`);
         params.push(st);
         where.push(`x.status = ANY($${params.length})`);
@@ -115,10 +125,10 @@ export async function listParts(
     if (tags.length) {
         const ors: string[] = [];
         const phases = tags
-            .map((t) => /^Phase ([1-4])$/.exec(t)?.[1])
+            .map((tagName) => /^Phase ([1-4])$/.exec(tagName)?.[1])
             .filter(Boolean)
             .map(Number);
-        const plain = tags.filter((t) => t !== 'Other cars' && !/^Phase [1-4]$/.test(t));
+        const plain = tags.filter((tagName) => tagName !== 'Other cars' && !/^Phase [1-4]$/.test(tagName));
         if (phases.length) {
             params.push(phases);
             ors.push(`EXISTS (SELECT 1 FROM task_parts tp JOIN tasks t ON t.id = tp.task_id
@@ -141,17 +151,17 @@ export async function listParts(
         else {
             // A query-string value; passed through unchanged, exactly as before the TypeScript conversion.
             params.push(await resolveId('containers', container as string));
-            const n = params.length;
+            const paramNo = params.length;
             where.push(
-                `(x.container_id = $${n} OR x.container_id IN (SELECT id FROM containers WHERE parent_id = $${n} AND deleted_at IS NULL))`,
+                `(x.container_id = $${paramNo} OR x.container_id IN (SELECT id FROM containers WHERE parent_id = $${paramNo} AND deleted_at IS NULL))`,
             );
         }
     }
     if (q && String(q).trim()) {
         params.push(`%${String(q).trim()}%`);
-        const n = params.length;
+        const paramNo = params.length;
         where.push(
-            `(x.label ILIKE $${n} OR x.part_number ILIKE $${n} OR x.notes ILIKE $${n} OR array_to_string(x.tags, ' ') ILIKE $${n})`,
+            `(x.label ILIKE $${paramNo} OR x.part_number ILIKE $${paramNo} OR x.notes ILIKE $${paramNo} OR array_to_string(x.tags, ' ') ILIKE $${paramNo})`,
         );
     }
     const { rows } = await query<PartRow>(
@@ -175,24 +185,24 @@ async function withContainerId(data: PartInput, client?: PoolClient): Promise<Pa
 
 export async function createPart(data: PartInput, files?: Express.Multer.File[]): Promise<Part> {
     try {
-        return await tx(async (c) => {
-            await withContainerId(data, c);
-            if (data.key == null) data.key = await uniqueKey(c, 'parts', data.label ?? '', 'part');
+        return await tx(async (client) => {
+            await withContainerId(data, client);
+            if (data.key == null) data.key = await uniqueKey(client, 'parts', data.label ?? '', 'part');
             const cols: string[] = [];
             const vals: unknown[] = [];
             // Object.entries widens the keys to string; they are exactly the keys of PartInput.
-            for (const [k, col] of Object.entries(COLS) as [keyof PartInput, string][]) {
-                if (data[k] !== undefined) {
+            for (const [field, col] of Object.entries(COLS) as [keyof PartInput, string][]) {
+                if (data[field] !== undefined) {
                     cols.push(col);
-                    vals.push(data[k]);
+                    vals.push(data[field]);
                 }
             }
-            const { rows } = await c.query<{ id: string }>(
-                `INSERT INTO parts (${cols.join(', ')}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING id`,
+            const { rows } = await client.query<{ id: string }>(
+                `INSERT INTO parts (${cols.join(', ')}) VALUES (${cols.map((_col, index) => `$${index + 1}`).join(', ')}) RETURNING id`,
                 vals,
             );
-            if (files?.length) await addPhotos('parts', rows[0].id, files, c);
-            return getPart(rows[0].id, c);
+            if (files?.length) await addPhotos('parts', rows[0].id, files, client);
+            return getPart(rows[0].id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
@@ -201,13 +211,16 @@ export async function createPart(data: PartInput, files?: Express.Multer.File[])
 
 export async function updatePart(ref: string, data: PartInput, im: IfMatch): Promise<Part> {
     try {
-        return await tx(async (c) => {
-            const id = await lockRef(c, 'parts', ref, im, getPart);
-            await withContainerId(data, c);
+        return await tx(async (client) => {
+            const id = await lockRef(client, 'parts', ref, im, getPart);
+            await withContainerId(data, client);
             const { sets, vals } = assignments(data, COLS, 2);
             if (sets.length)
-                await c.query(`UPDATE parts SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [id, ...vals]);
-            return getPart(id, c);
+                await client.query(`UPDATE parts SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [
+                    id,
+                    ...vals,
+                ]);
+            return getPart(id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
@@ -215,16 +228,17 @@ export async function updatePart(ref: string, data: PartInput, im: IfMatch): Pro
 }
 
 /** Remove a part from every task that lists it (each such task's version is bumped). */
-const unlinkFromTasks = (c: PoolClient, id: string) => c.query('DELETE FROM task_parts WHERE part_id = $1', [id]);
+const unlinkFromTasks = (client: PoolClient, id: string) =>
+    client.query('DELETE FROM task_parts WHERE part_id = $1', [id]);
 
 /** Soft-delete a part: it becomes a tombstone; its photos and task links are removed. Returns the new version. */
 export async function deletePart(ref: string, im: IfMatch): Promise<number> {
-    const { version, files } = await tx(async (c) => {
-        const id = await lockRef(c, 'parts', ref, im, getPart);
-        await softDelete(c, 'parts', id);
-        const files = await deleteRecordPhotos(c, 'parts', id);
-        await unlinkFromTasks(c, id);
-        return { version: await versionOf(c, 'parts', id), files };
+    const { version, files } = await tx(async (client) => {
+        const id = await lockRef(client, 'parts', ref, im, getPart);
+        await softDelete(client, 'parts', id);
+        const files = await deleteRecordPhotos(client, 'parts', id);
+        await unlinkFromTasks(client, id);
+        return { version: await versionOf(client, 'parts', id), files };
     });
     await removePhotoFiles(files);
     return version;
@@ -239,24 +253,27 @@ export async function tossPart(
     { reason = '', tossedOn = null }: TossedInput = {},
     im: IfMatch,
 ): Promise<string> {
-    return tx(async (c) => {
-        const id = await lockRef(c, 'parts', ref, im, getPart);
-        const { rows } = await c.query<Pick<PartRow, 'key' | 'label' | 'part_number'>>(
+    return tx(async (client) => {
+        const id = await lockRef(client, 'parts', ref, im, getPart);
+        const { rows } = await client.query<Pick<PartRow, 'key' | 'label' | 'part_number'>>(
             'SELECT key, label, part_number FROM parts WHERE id = $1',
             [id],
         );
-        const p = rows[0];
-        const key = await uniqueKey(c, 'tossed', p.key ?? p.label, 'tossed');
-        const { rows: t } = await c.query<{ id: string }>(
+        const part = rows[0];
+        const key = await uniqueKey(client, 'tossed', part.key ?? part.label, 'tossed');
+        const { rows: tossedRows } = await client.query<{ id: string }>(
             `INSERT INTO tossed (key, label, part_number, reason, tossed_on, sort_order)
        VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), (SELECT COALESCE(max(sort_order) + 1, 0) FROM tossed))
        RETURNING id`,
-            [key, p.label, p.part_number, reason, tossedOn],
+            [key, part.label, part.part_number, reason, tossedOn],
         );
-        await softDelete(c, 'parts', id);
-        await c.query('UPDATE photos SET part_id = NULL, tossed_id = $1 WHERE part_id = $2', [t[0].id, id]);
-        await unlinkFromTasks(c, id);
-        return t[0].id;
+        await softDelete(client, 'parts', id);
+        await client.query('UPDATE photos SET part_id = NULL, tossed_id = $1 WHERE part_id = $2', [
+            tossedRows[0].id,
+            id,
+        ]);
+        await unlinkFromTasks(client, id);
+        return tossedRows[0].id;
     });
 }
 

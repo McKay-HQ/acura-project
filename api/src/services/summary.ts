@@ -23,13 +23,18 @@ export async function getSummary(): Promise<Summary> {
       (SELECT count(*)::int FROM tossed WHERE ${live}) AS tossed,
       (SELECT count(*)::int FROM tasks WHERE ${live} AND NOT done) AS tasks_open,
       (SELECT count(*)::int FROM tasks WHERE ${live}) AS tasks_total`);
-    const r = rows[0];
+    const totals = rows[0];
     return {
-        parts: { total: r.parts, verified: r.verified, unverified: r.unverified, unknown: r.unknown },
-        value: { low: Number(r.value_low), high: Number(r.value_high) },
-        forSale: { count: r.for_sale, low: Number(r.sale_low), high: Number(r.sale_high) },
-        containers: r.containers,
-        tossed: r.tossed,
-        tasks: { open: r.tasks_open, total: r.tasks_total },
+        parts: {
+            total: totals.parts,
+            verified: totals.verified,
+            unverified: totals.unverified,
+            unknown: totals.unknown,
+        },
+        value: { low: Number(totals.value_low), high: Number(totals.value_high) },
+        forSale: { count: totals.for_sale, low: Number(totals.sale_low), high: Number(totals.sale_high) },
+        containers: totals.containers,
+        tossed: totals.tossed,
+        tasks: { open: totals.tasks_open, total: totals.tasks_total },
     };
 }
