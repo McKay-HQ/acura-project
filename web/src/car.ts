@@ -61,7 +61,7 @@ const CAPTIONS: Record<CarSection['key'], string[]> = {
         'Passenger seat: torn cushion',
         'Passenger side of the dash, with unplugged connectors hanging',
         'Unplugged connectors in the passenger footwell',
-        'Center stack from the driver side: rusty dash support bracket',
+        'Center stack from the passenger side: rusty dash support bracket',
         'Glovebox out: rusty dash support beam and the heater box',
         'Under the steering column: yellow airbag connectors and the pedals',
         'Under-dash fuse box and rusty steering column bracket',
