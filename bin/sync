@@ -39,7 +39,7 @@ share_catalog() {
     stamp=$(date '+%Y-%m-%d %H:%M')
     branch="sync/catalog-$(date '+%Y%m%d-%H%M%S')"
     base=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)
-    title="chore(sync): catalog from the app ($stamp)"
+    title="Catalog from the app ($stamp)"
     echo "Sharing the updated catalog on $branch..."
     git -C "$ROOT" switch -q -c "$branch"
     git -C "$ROOT" add api/seed
