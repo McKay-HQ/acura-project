@@ -1,14 +1,15 @@
 # GitHub Actions
 
-Five workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs Build, Sync and Release and starts by itself on every push to `main`; **Check** runs on every pull request.
+Six workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs Build, Sync and Release and starts by itself on every push to `main`; **Static Checks** and **Build Checks** run on every pull request.
 
-| Workflow                    | What it does                                                                                                                                                        |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Build** (`build.yml`)     | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`)                                                   |
-| **Sync** (`sync.yml`)       | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app goes into `main` through a pull request that merges itself                        |
-| **Release** (`release.yml`) | Tags a commit with the next [semantic version](https://semver.org) and publishes a GitHub release with notes generated from the commits since the previous version  |
-| **Deploy** (`deploy.yml`)   | Build → roll out the new images and wait for the app to answer → Sync → Release                                                                                     |
-| **Check** (`check.yml`)     | Typechecks `api/` and `web/`, runs ESLint and Prettier, checks the `@openapi` docs, and builds the web app. Its job is named `check`, so the ruleset can require it |
+| Workflow                                | What it does                                                                                                                                                       |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Build** (`build.yml`)                 | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`)                                                  |
+| **Sync** (`sync.yml`)                   | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app goes into `main` through a pull request that merges itself                       |
+| **Release** (`release.yml`)             | Tags a commit with the next [semantic version](https://semver.org) and publishes a GitHub release with notes generated from the commits since the previous version |
+| **Deploy** (`deploy.yml`)               | Build → roll out the new images and wait for the app to answer → Sync → Release                                                                                    |
+| **Static Checks** (`static-checks.yml`) | Typechecks `api/` and `web/` and runs ESLint and Prettier. Job `static-checks`, which the ruleset can require                                                      |
+| **Build Checks** (`build-checks.yml`)   | Builds the API, checks its `@openapi` docs against the build, and builds the web app. Job `build-checks`, which the ruleset can require                            |
 
 ## What a push to main does
 

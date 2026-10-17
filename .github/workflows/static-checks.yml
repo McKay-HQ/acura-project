@@ -1,6 +1,6 @@
-# Quality checks for every pull request: types, lint, formatting, the OpenAPI docs, and the web build.
-# The job is named "check" so the ruleset can require it before a PR merges into main.
-name: Check
+# Checks that read the code without building it: types, ESLint and Prettier. Runs on every pull request.
+# The job is named "static-checks" so the ruleset can require it before a PR merges into main.
+name: Static Checks
 
 on:
   pull_request:
@@ -10,12 +10,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: check-${{ github.ref }}
+  group: static-checks-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: check
+  static-checks:
+    name: static-checks
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
@@ -45,11 +45,3 @@ jobs:
 
       - name: Prettier
         run: npm run format:check
-
-      - name: OpenAPI docs
-        run: |
-          npm run build --prefix api
-          npm run lint:openapi --prefix api
-
-      - name: Web build
-        run: npm run build --prefix web

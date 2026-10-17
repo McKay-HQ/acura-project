@@ -17,4 +17,4 @@ Add a scope when it helps: `feat(web): ...`, `fix(api): ...`, `ci(release): ...`
 
 ## Code style
 
-Prettier (4 spaces, 120 columns) and ESLint, both from the repo root: run `npm run check` before committing, and `npm run lint:fix` / `npm run format` to fix. No single-letter names, one variable per declaration. The Check workflow (`.github/workflows/check.yml`) runs the same on every pull request.
+Prettier (4 spaces, 120 columns) and ESLint, both from the repo root: run `npm run check` before committing, and `npm run lint:fix` / `npm run format` to fix. No single-letter names, one variable per declaration. On every pull request, Static Checks (`static-checks.yml`: types, ESLint, Prettier) and Build Checks (`build-checks.yml`: API build, OpenAPI check, web build) run.

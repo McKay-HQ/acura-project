@@ -1,0 +1,43 @@
+# Checks that build the code: the API (and its @openapi docs against the build) and the web app.
+# Runs on every pull request. The job is named "build-checks" so the ruleset can require it.
+name: Build Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-checks:
+    name: build-checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            api/package-lock.json
+            web/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci --prefix api
+          npm ci --prefix web
+
+      - name: Build the API
+        run: npm run build --prefix api
+
+      - name: OpenAPI docs
+        run: npm run lint:openapi --prefix api
+
+      - name: Build the web app
+        run: npm run build --prefix web
