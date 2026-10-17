@@ -68,7 +68,7 @@ export function PartDetail({ part, loaded, canEdit, ...acts }: PartDetailProps) 
             {back}
             <article className="detail">
                 <div className="dphotos">
-                    <Gallery photos={part.photos} label={part.label} />
+                    <Gallery photos={part.photos} label={part.label} zoom />
                 </div>
                 <div className="dinfo">
                     <div className="tag">
@@ -155,7 +155,7 @@ export function ContainerDetail({ box, boxes, parts, loaded, canEdit, onEdit, on
             {back}
             <article className="detail">
                 <div className="dphotos">
-                    <Gallery photos={box.photos} label={box.name} />
+                    <Gallery photos={box.photos} label={box.name} zoom />
                 </div>
                 <div className="dinfo">
                     <div className="tag">

@@ -374,27 +374,29 @@ textarea:focus-visible {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     border: 0;
-    background: rgba(12, 16, 20, 0.6);
+    background: rgba(0, 0, 0, 0.5);
     color: #fff;
-    font: 700 1.1rem/1 var(--body);
     cursor: pointer;
-    display: none;
+    display: grid;
     place-items: center;
+    padding: 0;
+}
+.navb svg {
+    width: 20px;
+    height: 20px;
+}
+.photos img.zoomable {
+    cursor: zoom-in;
 }
 .navb.prev {
     left: 8px;
 }
 .navb.next {
     right: 8px;
-}
-@media (hover: hover) {
-    .photos:hover .navb {
-        display: grid;
-    }
 }
 .navb[disabled] {
     opacity: 0;

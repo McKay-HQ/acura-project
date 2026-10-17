@@ -1,18 +1,32 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Icon } from './Icons';
+import PhotoViewer from './PhotoViewer';
 import type { Photo } from '../types';
 
 interface GalleryProps {
     photos: Photo[];
     label: string;
+    /** Tapping a photo opens it full screen (used on part and container pages). */
+    zoom?: boolean;
 }
 
 // Swipeable photo strip using native scroll-snap: touch swipe, trackpad, arrow
 // buttons (on hover), dots, and arrow keys all work. Shows a count badge when
 // there is more than one photo.
-export default function Gallery({ photos, label }: GalleryProps) {
+export default function Gallery({ photos, label, zoom }: GalleryProps) {
     const strip = useRef<HTMLDivElement>(null);
     const [index, setIndex] = useState<number>(0);
+    const [viewing, setViewing] = useState<number | null>(null);
+    const viewer =
+        viewing !== null ? (
+            <PhotoViewer
+                photos={photos.map((p) => p.url)}
+                index={viewing}
+                label={label}
+                onClose={() => setViewing(null)}
+            />
+        ) : null;
+    const zoomProps = (j: number) => (zoom ? { onClick: () => setViewing(j), className: 'zoomable' } : {});
     const n = photos.length;
 
     useEffect(() => {
@@ -29,7 +43,8 @@ export default function Gallery({ photos, label }: GalleryProps) {
     if (n === 1) {
         return (
             <div className="photos">
-                <img src={photos[0].url} alt={label} loading="lazy" draggable="false" />
+                <img src={photos[0].url} alt={label} loading="lazy" draggable="false" {...zoomProps(0)} />
+                {viewer}
             </div>
         );
     }
@@ -70,6 +85,7 @@ export default function Gallery({ photos, label }: GalleryProps) {
                         alt={`${label} (photo ${j + 1} of ${n})`}
                         loading="lazy"
                         draggable="false"
+                        {...zoomProps(j)}
                     />
                 ))}
             </div>
@@ -85,7 +101,7 @@ export default function Gallery({ photos, label }: GalleryProps) {
                 disabled={index === 0}
                 onClick={() => goTo(index - 1)}
             >
-                ‹
+                <Icon.prev />
             </button>
             <button
                 className="navb next"
@@ -93,7 +109,7 @@ export default function Gallery({ photos, label }: GalleryProps) {
                 disabled={index === n - 1}
                 onClick={() => goTo(index + 1)}
             >
-                ›
+                <Icon.next />
             </button>
             <div className="dots">
                 {photos.map((p, j) => (
@@ -105,6 +121,7 @@ export default function Gallery({ photos, label }: GalleryProps) {
                     />
                 ))}
             </div>
+            {viewer}
         </div>
     );
 }
