@@ -32,15 +32,51 @@ fi
 APP_URL=${APP_URL:-$(app_url)}
 API_KEY=${API_KEY:-$(app_secret api-key)}
 
+# Commit api/seed on a new sync/ branch, push it, and open a pull request into main that merges by
+# itself: auto-merge when the repo allows it, otherwise merged right away. Without gh, print the link.
+share_catalog() {
+    local stamp branch base title url
+    stamp=$(date '+%Y-%m-%d %H:%M')
+    branch="sync/catalog-$(date '+%Y%m%d-%H%M%S')"
+    base=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD)
+    title="chore(sync): catalog from the app ($stamp)"
+    echo "Sharing the updated catalog on $branch..."
+    git -C "$ROOT" switch -q -c "$branch"
+    git -C "$ROOT" add api/seed
+    git -C "$ROOT" commit -q -m "$title"
+    git -C "$ROOT" push -q -u origin "$branch"
+    # Back to where we were; the catalog reaches this branch with the next git pull once merged.
+    git -C "$ROOT" switch -q "$base"
+    if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
+        echo "Open a pull request for $branch to get it into main (gh isn't set up to do it)."
+        return
+    fi
+    url=$(cd "$ROOT" && gh pr create --base main --head "$branch" --title "$title" --label sync \
+        --body "Changes made in the app, pulled into the catalog by \`bin/sync\`.")
+    echo "Pull request: $url"
+    # A pull request opened by a workflow's own token doesn't start other workflows, so start the
+    # checks by hand; required checks then report on it like on any other pull request.
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+        (cd "$ROOT" && gh workflow run check.yml --ref "$branch" >/dev/null 2>&1) || true
+        (cd "$ROOT" && gh workflow run labels.yml --ref "$branch" >/dev/null 2>&1) || true
+    fi
+    if (cd "$ROOT" && gh pr merge "$url" --auto --squash --delete-branch >/dev/null 2>&1); then
+        echo "It merges by itself once its checks pass."
+    elif (cd "$ROOT" && gh pr merge "$url" --squash --delete-branch); then
+        echo "Merged."
+    else
+        echo "Couldn't merge it yet; merge it on GitHub once its checks pass."
+    fi
+}
+
 STATUS=0
 APP_URL="$APP_URL" API_KEY="$API_KEY" ROOT="$ROOT" DRY_RUN="$DRY_RUN" PREFER="$PREFER" python3 -I "$ROOT/bin/sync.d/sync.py" || STATUS=$?
 [ "$STATUS" = 1 ] && exit 1
 
 # Share what was pulled from the app (catalog, photos, sync state) so the artifact can pick it up.
+# main only takes changes through pull requests, so the catalog goes on a branch with a pull request
+# that merges itself (or as soon as required checks pass).
 if [ "$DRY_RUN" = 0 ] && [ "$COMMIT" = 1 ] && [ -n "$(git -C "$ROOT" status --porcelain -- api/seed)" ]; then
-    echo "Committing the updated catalog..."
-    git -C "$ROOT" add api/seed
-    git -C "$ROOT" commit -q -m "sync: catalog from the app ($(date '+%Y-%m-%d %H:%M'))"
-    git -C "$ROOT" push -q
+    share_catalog
 fi
 exit "$STATUS"

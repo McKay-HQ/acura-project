@@ -56,7 +56,7 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 
 ## Conventions
 
-**Branches.** `main` is what's live: every push to it deploys (see [GitHub Actions](#github-actions)). Small changes can go straight to `main`; for anything bigger, work on a branch named `<type>/<short-description>` with the same types as commit messages, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`, `page/the-car`, and merge it when it's ready.
+**Branches.** `main` is what's live: every merge into it deploys (see [GitHub Actions](#github-actions)). It only takes changes through pull requests (squash or rebase, linear history, no force pushes, no deleting it), so every change goes on a branch named `<type>/<short-description>` with the same types as commit messages, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`, `page/the-car`. The sync's branches are `sync/catalog-<date>-<time>`. With squash merges the pull request's title becomes the commit on `main`, so give the title a type too.
 
 **Commit messages** start with a type, which also decides the release version bump ([docs/ci.md](docs/ci.md#versions)):
 
@@ -67,7 +67,7 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 | `fix:`                                                             | A fix                         | patch        |
 | `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:` | Everything else               | patch        |
 
-Add a scope when it helps: `feat(web): photo captions`, `fix(api): reject empty step text`. Commits the sync makes (`sync: catalog from the app ...`) come from `github-actions[bot]` or `bin/sync`.
+Add a scope when it helps: `feat(web): photo captions`, `fix(api): reject empty step text`. The sync's pull requests are titled `chore(sync): catalog from the app ...` and merge themselves.
 
 **Versions** are semantic, starting at `v1.0.0`, tagged and released by the workflows; local deploys aren't released.
 

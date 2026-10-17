@@ -1,5 +1,6 @@
 # Two-way sync of the catalog (api/seed/) with the live app (bin/sync). Whatever it pulls from the
-# app is committed back to main (commits made with the workflow's token don't start other runs).
+# app goes into main through a pull request on a sync/ branch that merges itself; merges made with
+# the workflow's token don't start a deploy.
 # Runs on its own from the Actions tab (e.g. to pull changes made in the app), on pushes that only
 # touch the catalog, or as part of Deploy. Fails if the sync finds a conflict.
 name: Sync
@@ -9,7 +10,9 @@ on:
   workflow_call:
 
 permissions:
-  contents: write
+  contents: write # push the sync/ branch
+  pull-requests: write # open and merge its pull request
+  actions: write # start the checks on it
   id-token: write
 
 jobs:
@@ -27,4 +30,6 @@ jobs:
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       - name: Sync
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: ./bin/sync -P

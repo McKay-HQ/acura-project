@@ -26,6 +26,8 @@ concurrency:
 
 permissions:
   contents: write
+  pull-requests: write # Sync opens a pull request for what it pulls from the app
+  actions: write # and starts the checks on it
   id-token: write
 
 jobs:
