@@ -6,9 +6,9 @@ Replaces the photos of a part, container or tossed item on the deployed app: upl
 ./bin/replace-photos [-h] <parts|containers|tossed> <key-or-id> <photo>...
 ```
 
-| Option | |
-|---|---|
-| `-h` | Show this page |
+| Option |                |
+| ------ | -------------- |
+| `-h`   | Show this page |
 
 The first photo becomes the main one. If the upload fails (wrong key, bad file, or someone changed the record meanwhile), nothing is deleted. Each write sends the record's version (`If-Match`). For catalog photos, `bin/sync` is usually the better tool.
 
@@ -24,11 +24,11 @@ APP_URL=http://localhost:8080 API_KEY=... ./bin/replace-photos parts injen-intak
 
 ## Environment
 
-| Variable | Default |
-|---|---|
-| `APP_URL` | the Azure app's address (looked up with `az`) |
-| `API_KEY` | the app's `api-key` secret (looked up with `az`) |
-| `RG`, `APP` | `acura-project`, `acura` |
+| Variable    | Default                                          |
+| ----------- | ------------------------------------------------ |
+| `APP_URL`   | the Azure app's address (looked up with `az`)    |
+| `API_KEY`   | the app's `api-key` secret (looked up with `az`) |
+| `RG`, `APP` | `acura-project`, `acura`                         |
 
 ## Needs
 

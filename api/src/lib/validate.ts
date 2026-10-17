@@ -37,13 +37,13 @@ const KEY = /^[a-z0-9][a-z0-9._-]{0,79}$/;
 /** A request body: any JSON object, with every value still unchecked. */
 type Body = Record<string, unknown>;
 
-export const isUuid = (v: unknown): boolean => UUID.test(String(v));
+export const isUuid = (value: unknown): boolean => UUID.test(String(value));
 
 /** Route ids may be a UUID or a record's human-readable key (e.g. "injen-intake"). */
 export function assertRef(ref: unknown, what = 'id'): string {
-    const v = String(ref || '');
-    if (!isUuid(v) && !KEY.test(v)) throw badRequest(`Invalid ${what}`);
-    return v;
+    const value = String(ref || '');
+    if (!isUuid(value) && !KEY.test(value)) throw badRequest(`Invalid ${what}`);
+    return value;
 }
 
 export function assertUuid(id: string, what = 'id'): string {
@@ -77,7 +77,7 @@ const NAMES: Record<string, string> = {
     done: 'Done',
     steps: 'Steps',
 };
-const nm = (k: string): string => NAMES[k] || k;
+const nm = (key: string): string => NAMES[key] || key;
 
 /**
  * Treat the untrusted body as a field map. The `in` checks below need an object; a primitive
@@ -105,41 +105,43 @@ function text(
         if (required) errors.push(`${nm(key)} is required`);
         return undefined;
     }
-    const v = body[key] == null ? '' : String(body[key]).trim();
-    if ((required || nonEmpty) && !v) errors.push(`${nm(key)} cannot be empty`);
-    if (v.length > max) errors.push(`${nm(key)} is too long (max ${max} characters)`);
-    return v;
+    const value = body[key] == null ? '' : String(body[key]).trim();
+    if ((required || nonEmpty) && !value) errors.push(`${nm(key)} cannot be empty`);
+    if (value.length > max) errors.push(`${nm(key)} is too long (max ${max} characters)`);
+    return value;
 }
 
 /** A true/false field. Accepts JSON booleans, and "true"/"false" strings from forms; anything else is an error. */
 function bool(body: Body, key: string, errors: string[]): boolean | undefined {
     if (!(key in body)) return undefined;
-    const v = body[key];
-    if (v === true || v === 'true') return true;
-    if (v === false || v === 'false') return false;
+    const value = body[key];
+    if (value === true || value === 'true') return true;
+    if (value === false || value === 'false') return false;
     errors.push(`${nm(key)} must be true or false`);
     return undefined; // never reaches the caller: done() throws because errors is non-empty
 }
 
-const isOneOf = <T>(allowed: readonly T[], v: unknown): v is T => (allowed as readonly unknown[]).includes(v);
+const isOneOf = <T>(allowed: readonly T[], value: unknown): value is T =>
+    (allowed as readonly unknown[]).includes(value);
 
 function oneOf<T extends string>(body: Body, key: string, allowed: readonly T[], errors: string[]): T | undefined {
     if (!(key in body)) return undefined;
-    const v = body[key];
-    if (!isOneOf(allowed, v)) {
+    const value = body[key];
+    if (!isOneOf(allowed, value)) {
         errors.push(`${nm(key)} must be one of: ${allowed.join(', ')}`);
         return undefined; // never reaches the caller: done() throws because errors is non-empty
     }
-    return v;
+    return value;
 }
 
 function money(body: Body, key: string, errors: string[]): number | null | undefined {
     if (!(key in body)) return undefined;
     const raw = body[key];
     if (raw === null || raw === '') return null;
-    const n = Number(raw);
-    if (!Number.isFinite(n) || n < 0 || n > 99999999) errors.push(`${nm(key)} must be a positive amount`);
-    return Math.round(n * 100) / 100;
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0 || amount > 99999999)
+        errors.push(`${nm(key)} must be a positive amount`);
+    return Math.round(amount * 100) / 100;
 }
 
 /** A list of short strings. Accepts a JSON array or a comma-separated string (from forms). */
@@ -150,79 +152,81 @@ function stringList(
     { maxItems = 30, maxLen = 60, unique = true } = {},
 ): string[] | undefined {
     if (!(key in body)) return undefined;
-    let v: unknown = body[key];
-    if (v == null || v === '') return [];
-    if (typeof v === 'string') {
+    let value: unknown = body[key];
+    if (value == null || value === '') return [];
+    if (typeof value === 'string') {
         try {
-            v = v.trim().startsWith('[') ? JSON.parse(v) : v.split(',');
+            value = value.trim().startsWith('[') ? JSON.parse(value) : value.split(',');
         } catch {
             errors.push(`${nm(key)} must be a list`);
             return undefined;
         }
     }
-    if (!Array.isArray(v)) {
+    if (!Array.isArray(value)) {
         errors.push(`${nm(key)} must be a list`);
         return undefined;
     }
-    const items: unknown[] = v;
-    let out = items.map((x) => String(x ?? '').trim()).filter(Boolean);
+    const items: unknown[] = value;
+    let out = items.map((item) => String(item ?? '').trim()).filter(Boolean);
     if (unique) out = [...new Set(out)];
     if (out.length > maxItems) errors.push(`${nm(key)}: at most ${maxItems} entries`);
-    if (out.some((x) => x.length > maxLen)) errors.push(`${nm(key)}: each entry must be at most ${maxLen} characters`);
+    if (out.some((item) => item.length > maxLen))
+        errors.push(`${nm(key)}: each entry must be at most ${maxLen} characters`);
     return out;
 }
 
 function dateOnly(body: Body, key: string, errors: string[]): string | null | undefined {
     if (!(key in body)) return undefined;
-    const v = body[key];
-    if (v == null || v === '') return null;
+    const value = body[key];
+    if (value == null || value === '') return null;
     // Date.parse converts its argument to a string, so String(v) is what it always parsed.
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(v)) || Number.isNaN(Date.parse(String(v)))) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value)) || Number.isNaN(Date.parse(String(value)))) {
         errors.push(`${nm(key)} must be a date like 2026-10-06`);
     }
-    return String(v);
+    return String(value);
 }
 
 function keyField(body: Body, errors: string[]): string | null | undefined {
     if (!('key' in body)) return undefined;
     if (body.key == null || body.key === '') return null;
-    const v = String(body.key).trim().toLowerCase();
-    if (!KEY.test(v) || isUuid(v)) errors.push('Key must be lowercase letters, numbers, dots, dashes or underscores');
-    return v;
+    const value = String(body.key).trim().toLowerCase();
+    if (!KEY.test(value) || isUuid(value))
+        errors.push('Key must be lowercase letters, numbers, dots, dashes or underscores');
+    return value;
 }
 
 function intIn(body: Body, key: string, errors: string[], min: number, max: number): number | undefined {
     if (!(key in body)) return undefined;
-    const n = Number(body[key]);
-    if (!Number.isInteger(n) || n < min || n > max)
+    const num = Number(body[key]);
+    if (!Number.isInteger(num) || num < min || num > max)
         errors.push(`${nm(key)} must be a whole number from ${min} to ${max}`);
-    return n;
+    return num;
 }
 
 /** A UUID-or-key reference; null/'' clears it. */
 function ref(body: Body, key: string, errors: string[]): string | null | undefined {
     if (!(key in body)) return undefined;
-    const v = body[key];
-    if (v == null || v === '') return null;
-    const s = String(v).trim();
-    if (!isUuid(s) && !KEY.test(s)) errors.push(`${nm(key)} must be an id or key`);
-    return s;
+    const value = body[key];
+    if (value == null || value === '') return null;
+    const trimmed = String(value).trim();
+    if (!isUuid(trimmed) && !KEY.test(trimmed)) errors.push(`${nm(key)} must be an id or key`);
+    return trimmed;
 }
 
 function containerRef(body: Body, errors: string[]): string | null | undefined {
     // Accept containerId (UUID or key); null/'' clears it.
-    const k = 'containerId' in body ? 'containerId' : 'container' in body ? 'container' : null;
-    if (!k) return undefined;
-    const v = body[k];
-    if (v == null || v === '') return null;
-    const s = String(v).trim();
-    if (!isUuid(s) && !KEY.test(s)) errors.push('Container must be a container id or key');
-    return s;
+    const field = 'containerId' in body ? 'containerId' : 'container' in body ? 'container' : null;
+    if (!field) return undefined;
+    const value = body[field];
+    if (value == null || value === '') return null;
+    const trimmed = String(value).trim();
+    if (!isUuid(trimmed) && !KEY.test(trimmed)) errors.push('Container must be a container id or key');
+    return trimmed;
 }
 
 /** Drop the fields that were not provided. Object.fromEntries loses the key types, hence the cast. */
 const compact = <T extends object>(obj: T): T =>
-    Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as T;
+    Object.fromEntries(Object.entries(obj).filter(([, value]) => value !== undefined)) as T;
 
 function done<T>(out: T, errors: string[]): T {
     if (errors.length) throw badRequest('Check these fields:', errors);
@@ -284,41 +288,48 @@ const HREF = /^(https:\/\/\S+|#[a-z]+(\/[A-Za-z0-9._%-]+)?)$/;
 /** Task steps: [{text, done, links?, photos?}]. null or [] clears them. */
 function steps(body: Body, errors: string[]): TaskStep[] | undefined {
     if (!('steps' in body)) return undefined;
-    const v = body.steps;
-    if (v === null) return [];
-    if (!Array.isArray(v)) {
+    const list = body.steps;
+    if (list === null) return [];
+    if (!Array.isArray(list)) {
         errors.push('Steps must be a list');
         return undefined;
     }
-    if (v.length > 50) errors.push('Steps can have at most 50 items');
+    if (list.length > 50) errors.push('Steps can have at most 50 items');
     const out: TaskStep[] = [];
-    v.forEach((raw, i) => {
-        const n = `Step ${i + 1}`;
-        const s = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-        const text = typeof s.text === 'string' ? s.text.trim() : '';
-        if (!text) errors.push(`${n} needs text`);
-        else if (text.length > 2000) errors.push(`${n} is too long (2000 characters max)`);
-        if (s.done !== undefined && typeof s.done !== 'boolean') errors.push(`${n}: done must be true or false`);
-        const step: TaskStep = { text, done: s.done === true };
-        if (s.links !== undefined && s.links !== null) {
-            if (!Array.isArray(s.links) || s.links.length > 10) errors.push(`${n}: links must be a list of up to 10`);
+    list.forEach((raw, index) => {
+        const stepName = `Step ${index + 1}`;
+        const fields = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+        const text = typeof fields.text === 'string' ? fields.text.trim() : '';
+        if (!text) errors.push(`${stepName} needs text`);
+        else if (text.length > 2000) errors.push(`${stepName} is too long (2000 characters max)`);
+        if (fields.done !== undefined && typeof fields.done !== 'boolean')
+            errors.push(`${stepName}: done must be true or false`);
+        const step: TaskStep = { text, done: fields.done === true };
+        if (fields.links !== undefined && fields.links !== null) {
+            if (!Array.isArray(fields.links) || fields.links.length > 10)
+                errors.push(`${stepName}: links must be a list of up to 10`);
             else {
-                step.links = s.links.map((l) => {
-                    const o = (l && typeof l === 'object' ? l : {}) as Record<string, unknown>;
-                    const label = typeof o.label === 'string' ? o.label.trim() : '';
-                    const href = typeof o.href === 'string' ? o.href.trim() : '';
-                    if (!label || label.length > 120) errors.push(`${n}: each link needs a label (120 characters max)`);
+                step.links = fields.links.map((rawLink) => {
+                    const link = (rawLink && typeof rawLink === 'object' ? rawLink : {}) as Record<string, unknown>;
+                    const label = typeof link.label === 'string' ? link.label.trim() : '';
+                    const href = typeof link.href === 'string' ? link.href.trim() : '';
+                    if (!label || label.length > 120)
+                        errors.push(`${stepName}: each link needs a label (120 characters max)`);
                     if (!HREF.test(href) || href.length > 2000)
-                        errors.push(`${n}: links must be https:// URLs or app pages like #part/key`);
+                        errors.push(`${stepName}: links must be https:// URLs or app pages like #part/key`);
                     return { label, href };
                 });
                 if (!step.links.length) delete step.links;
             }
         }
-        if (s.photos !== undefined && s.photos !== null) {
-            if (!Array.isArray(s.photos) || s.photos.length > 6 || s.photos.some((p) => !PHOTO_REF.test(String(p))))
-                errors.push(`${n}: photos must be up to 6 car photo refs like "engine:03"`);
-            else if (s.photos.length) step.photos = s.photos.map(String);
+        if (fields.photos !== undefined && fields.photos !== null) {
+            if (
+                !Array.isArray(fields.photos) ||
+                fields.photos.length > 6 ||
+                fields.photos.some((photo) => !PHOTO_REF.test(String(photo)))
+            )
+                errors.push(`${stepName}: photos must be up to 6 car photo refs like "engine:03"`);
+            else if (fields.photos.length) step.photos = fields.photos.map(String);
         }
         out.push(step);
     });
@@ -338,7 +349,8 @@ export function validateTask(input: unknown = {}, { create = false }: ValidateOp
         done: bool(body, 'done', errors),
         partIds: stringList(body, 'partIds', errors, { maxItems: 200, maxLen: 80 }),
     });
-    if (out.partIds?.some((x) => !isUuid(x) && !KEY.test(x))) errors.push('Parts must be part ids or keys');
+    if (out.partIds?.some((partId) => !isUuid(partId) && !KEY.test(partId)))
+        errors.push('Parts must be part ids or keys');
     return done(out, errors);
 }
 

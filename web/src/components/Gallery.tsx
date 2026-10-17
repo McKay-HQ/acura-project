@@ -20,27 +20,28 @@ export default function Gallery({ photos, label, zoom }: GalleryProps) {
     const viewer =
         viewing !== null ? (
             <PhotoViewer
-                photos={photos.map((p) => p.url)}
+                photos={photos.map((photo) => photo.url)}
                 index={viewing}
                 label={label}
                 onClose={() => setViewing(null)}
             />
         ) : null;
-    const zoomProps = (j: number) => (zoom ? { onClick: () => setViewing(j), className: 'zoomable' } : {});
-    const n = photos.length;
+    const zoomProps = (photoIndex: number) =>
+        zoom ? { onClick: () => setViewing(photoIndex), className: 'zoomable' } : {};
+    const count = photos.length;
 
     useEffect(() => {
-        if (index > n - 1) setIndex(Math.max(0, n - 1));
-    }, [n, index]);
+        if (index > count - 1) setIndex(Math.max(0, count - 1));
+    }, [count, index]);
 
-    if (!n) {
+    if (!count) {
         return (
             <div className="photos">
                 <div className="noimg">No photo</div>
             </div>
         );
     }
-    if (n === 1) {
+    if (count === 1) {
         return (
             <div className="photos">
                 <img src={photos[0].url} alt={label} loading="lazy" draggable="false" {...zoomProps(0)} />
@@ -49,22 +50,25 @@ export default function Gallery({ photos, label, zoom }: GalleryProps) {
         );
     }
 
-    const goTo = (i: number) => {
-        const s = strip.current;
-        if (!s) return;
+    const goTo = (target: number) => {
+        const el = strip.current;
+        if (!el) return;
         const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        s.scrollTo({ left: Math.max(0, Math.min(n - 1, i)) * s.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+        el.scrollTo({
+            left: Math.max(0, Math.min(count - 1, target)) * el.clientWidth,
+            behavior: reduce ? 'auto' : 'smooth',
+        });
     };
     const onScroll = () => {
-        const s = strip.current;
-        if (!s) return;
-        const i = Math.round(s.scrollLeft / Math.max(s.clientWidth, 1));
-        if (i !== index) setIndex(i);
+        const el = strip.current;
+        if (!el) return;
+        const current = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
+        if (current !== index) setIndex(current);
     };
-    const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-            e.preventDefault();
-            goTo(index + (e.key === 'ArrowRight' ? 1 : -1));
+    const onKey = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+            event.preventDefault();
+            goTo(index + (event.key === 'ArrowRight' ? 1 : -1));
         }
     };
 
@@ -78,21 +82,21 @@ export default function Gallery({ photos, label, zoom }: GalleryProps) {
                 tabIndex={0}
                 aria-label={`${label} photos, swipe for more`}
             >
-                {photos.map((p, j) => (
+                {photos.map((photo, photoIndex) => (
                     <img
-                        key={p.id}
-                        src={p.url}
-                        alt={`${label} (photo ${j + 1} of ${n})`}
+                        key={photo.id}
+                        src={photo.url}
+                        alt={`${label} (photo ${photoIndex + 1} of ${count})`}
                         loading="lazy"
                         draggable="false"
-                        {...zoomProps(j)}
+                        {...zoomProps(photoIndex)}
                     />
                 ))}
             </div>
             <span className="count">
                 <Icon.photos />
                 <span>
-                    {index + 1}/{n}
+                    {index + 1}/{count}
                 </span>
             </span>
             <button
@@ -106,18 +110,18 @@ export default function Gallery({ photos, label, zoom }: GalleryProps) {
             <button
                 className="navb next"
                 aria-label="Next photo"
-                disabled={index === n - 1}
+                disabled={index === count - 1}
                 onClick={() => goTo(index + 1)}
             >
                 <Icon.next />
             </button>
             <div className="dots">
-                {photos.map((p, j) => (
+                {photos.map((photo, photoIndex) => (
                     <button
-                        key={p.id}
-                        aria-label={`Show photo ${j + 1}`}
-                        aria-current={j === index}
-                        onClick={() => goTo(j)}
+                        key={photo.id}
+                        aria-label={`Show photo ${photoIndex + 1}`}
+                        aria-current={photoIndex === index}
+                        onClick={() => goTo(photoIndex)}
                     />
                 ))}
             </div>
@@ -127,10 +131,10 @@ export default function Gallery({ photos, label, zoom }: GalleryProps) {
 }
 
 export function Thumb({ photos, label }: GalleryProps) {
-    const p = photos[0];
+    const first = photos[0];
     return (
         <span className="thumb">
-            {p && <img src={p.thumbUrl} alt={label} loading="lazy" />}
+            {first && <img src={first.thumbUrl} alt={label} loading="lazy" />}
             {photos.length > 1 && <span className="n">{photos.length}</span>}
         </span>
     );

@@ -33,39 +33,44 @@ const statusOf = (part: StatusPart): StatusInfo => {
 /** Status (or For sale) badge. Clicking it filters on that status. */
 export function StatusBadge({ part, iconOnly }: { part: StatusPart; iconOnly?: boolean }) {
     const onTag = useTagFilter();
-    const s = statusOf(part);
-    const click = (e: MouseEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onTag(s.key);
+    const status = statusOf(part);
+    const click = (event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onTag(status.key);
     };
     if (iconOnly) {
         return (
             <button
                 type="button"
-                className={`sicon ${s.cls}`}
-                title={`Show only ${s.text}`}
-                aria-label={`${s.text}: show only these`}
+                className={`sicon ${status.cls}`}
+                title={`Show only ${status.text}`}
+                aria-label={`${status.text}: show only these`}
                 onClick={click}
             >
-                {s.icon}
+                {status.icon}
             </button>
         );
     }
     return (
-        <button type="button" className={`pill withicon ${s.cls}`} title={`Show only ${s.text}`} onClick={click}>
-            {s.icon}
-            {s.text}
+        <button
+            type="button"
+            className={`pill withicon ${status.cls}`}
+            title={`Show only ${status.text}`}
+            onClick={click}
+        >
+            {status.icon}
+            {status.text}
         </button>
     );
 }
 
 /** Non-interactive status icon, for use inside links. */
 export function StatusIcon({ part }: { part: StatusPart }) {
-    const s = statusOf(part);
+    const status = statusOf(part);
     return (
-        <span className={`sicon ${s.cls}`} title={s.text} role="img" aria-label={s.text}>
-            {s.icon}
+        <span className={`sicon ${status.cls}`} title={status.text} role="img" aria-label={status.text}>
+            {status.icon}
         </span>
     );
 }
@@ -78,9 +83,9 @@ export function FitsPill({ fits }: { fits: string | null | undefined }) {
             type="button"
             className={`pill fits ${isOtherCar(fits) ? 'other' : 'rsx'}`}
             title={`Show only parts that fit ${fits}`}
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 onTag(`fits:${fits}`);
             }}
         >
@@ -93,22 +98,22 @@ export function FitsPill({ fits }: { fits: string | null | undefined }) {
 export function TagPills({ part }: { part: Pick<Part, 'tags' | 'phaseTags'> }) {
     const onTag = useTagFilter();
     const list: [tag: string, cls: string][] = [
-        ...phaseTags(part).map((t): [string, string] => [t, 'utag phase']),
-        ...(part.tags || []).filter((t) => t !== FOR_SALE).map((t): [string, string] => [t, 'utag']),
+        ...phaseTags(part).map((tag): [string, string] => [tag, 'utag phase']),
+        ...(part.tags || []).filter((tag) => tag !== FOR_SALE).map((tag): [string, string] => [tag, 'utag']),
     ];
-    return list.map(([t, cls]) => (
+    return list.map(([tag, cls]) => (
         <button
             type="button"
-            key={t}
+            key={tag}
             className={`pill ${cls}`}
-            title={`Show only ${t}`}
-            onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onTag(`tag:${t}`);
+            title={`Show only ${tag}`}
+            onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onTag(`tag:${tag}`);
             }}
         >
-            {t}
+            {tag}
         </button>
     ));
 }
@@ -122,7 +127,7 @@ export function BoxLink({ container }: { container: ContainerRef | null }) {
             className="boxlink"
             href={href.box(top)}
             title={top.id !== container.id ? `Container: ${top.name}` : 'Container'}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(event) => event.stopPropagation()}
         >
             <BoxIcon icon={top.icon} />
             {container.name}
@@ -159,13 +164,13 @@ export function RowActions({
 }: RowActionsProps) {
     const [confirming, setConfirming] = useState<boolean>(false);
     const cls = className || (inTable ? 'rowacts' : 'actions');
-    const stop = (fn: () => void) => (e: MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
+    const stop = (fn: () => void) => (event: MouseEvent<HTMLButtonElement>) => {
+        event.stopPropagation();
         fn();
     };
     if (confirming) {
         return (
-            <div className={`${inTable ? 'rowacts ' : ''}confirm`} onClick={(e) => e.stopPropagation()}>
+            <div className={`${inTable ? 'rowacts ' : ''}confirm`} onClick={(event) => event.stopPropagation()}>
                 <span>{confirmText}</span>
                 <button
                     type="button"
@@ -198,16 +203,16 @@ export function RowActions({
                     <Icon.edit />
                 </button>
             )}
-            {extra.map((b) => (
+            {extra.map((action) => (
                 <button
                     type="button"
-                    key={b.label}
-                    className={`ibtn ${b.cls || ''}`}
-                    title={b.label}
-                    aria-label={b.label}
-                    onClick={stop(b.onClick)}
+                    key={action.label}
+                    className={`ibtn ${action.cls || ''}`}
+                    title={action.label}
+                    aria-label={action.label}
+                    onClick={stop(action.onClick)}
                 >
-                    {b.icon}
+                    {action.icon}
                 </button>
             ))}
             {onDelete && (
@@ -280,10 +285,10 @@ export function PhotoEditor({ photos, onMakeMain, onDelete }: PhotoEditorProps) 
         <div className="photo-edit">
             <span className="lbl-sm">Photos</span>
             <div className="photo-edit-list">
-                {photos.map((p, i) => (
-                    <div className={`pe${i === 0 ? ' main' : ''}`} key={p.id}>
-                        <img src={p.thumbUrl} alt={`Photo ${i + 1}`} />
-                        {i === 0 ? (
+                {photos.map((photo, index) => (
+                    <div className={`pe${index === 0 ? ' main' : ''}`} key={photo.id}>
+                        <img src={photo.thumbUrl} alt={`Photo ${index + 1}`} />
+                        {index === 0 ? (
                             <span className="pe-main">Main</span>
                         ) : (
                             <button
@@ -291,7 +296,7 @@ export function PhotoEditor({ photos, onMakeMain, onDelete }: PhotoEditorProps) 
                                 className="pe-btn"
                                 title="Make main photo"
                                 aria-label="Make main photo"
-                                onClick={() => onMakeMain(p)}
+                                onClick={() => onMakeMain(photo)}
                             >
                                 <Icon.star />
                             </button>
@@ -301,7 +306,7 @@ export function PhotoEditor({ photos, onMakeMain, onDelete }: PhotoEditorProps) 
                             className="pe-btn del"
                             title="Delete photo"
                             aria-label="Delete photo"
-                            onClick={() => onDelete(p)}
+                            onClick={() => onDelete(photo)}
                         >
                             <Icon.x />
                         </button>

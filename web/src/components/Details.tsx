@@ -24,15 +24,15 @@ function PartRows({ parts }: { parts: Part[] }) {
     return (
         <div className="blist">
             {[...parts]
-                .sort((a, b) => a.label.localeCompare(b.label))
-                .map((p) => (
-                    <a className="bitem" key={p.id} href={href.part(p)}>
-                        <Thumb photos={p.photos} label={p.label} />
+                .sort((left, right) => left.label.localeCompare(right.label))
+                .map((part) => (
+                    <a className="bitem" key={part.id} href={href.part(part)}>
+                        <Thumb photos={part.photos} label={part.label} />
                         <span className="bi-t">
-                            <b>{p.label}</b>
-                            {p.partNumber && <span className="pn">{p.partNumber}</span>}
+                            <b>{part.label}</b>
+                            {part.partNumber && <span className="pn">{part.partNumber}</span>}
                         </span>
-                        <StatusIcon part={p} />
+                        <StatusIcon part={part} />
                     </a>
                 ))}
         </div>
@@ -62,7 +62,7 @@ interface PartDetailProps extends PartActionHandlers {
 export function PartDetail({ part, loaded, canEdit, ...acts }: PartDetailProps) {
     const back = <BackLink to="#parts" label="All parts" />;
     if (!part) return <Missing back={back} what="part" label="part" loaded={loaded} />;
-    const ownTags = (part.tags || []).filter((t) => t !== 'For sale');
+    const ownTags = (part.tags || []).filter((tag) => tag !== 'For sale');
     return (
         <section className="detailpage">
             {back}
@@ -109,11 +109,11 @@ export function PartDetail({ part, loaded, canEdit, ...acts }: PartDetailProps) 
                             <>
                                 <dt>Tasks</dt>
                                 <dd>
-                                    {part.tasks.map((t, i) => (
-                                        <span key={t.id}>
-                                            {i > 0 && ', '}
-                                            <a className="plink" href={href.task(t)}>
-                                                {t.title}
+                                    {part.tasks.map((task, index) => (
+                                        <span key={task.id}>
+                                            {index > 0 && ', '}
+                                            <a className="plink" href={href.task(task)}>
+                                                {task.title}
                                             </a>
                                         </span>
                                     ))}
@@ -149,7 +149,7 @@ export function ContainerDetail({ box, boxes, parts, loaded, canEdit, onEdit, on
     if (!box) return <Missing back={back} what="container" label="container" loaded={loaded} />;
     const subs = subContainers(boxes, box.id);
     const all = partsInTree(parts, boxes, box.id);
-    const loose = parts.filter((p) => p.container?.id === box.id);
+    const loose = parts.filter((part) => part.container?.id === box.id);
     return (
         <section className="detailpage">
             {back}
@@ -169,7 +169,7 @@ export function ContainerDetail({ box, boxes, parts, loaded, canEdit, onEdit, on
                         {all.length} {all.length === 1 ? 'part' : 'parts'}{' '}
                         <span className="sub2">· {valueRange(sumLow(all), sumHigh(all))}</span>
                     </div>
-                    {subs.length > 0 && <div className="subnames">{subs.map((s) => s.name).join(' · ')}</div>}
+                    {subs.length > 0 && <div className="subnames">{subs.map((sub) => sub.name).join(' · ')}</div>}
                     {box.notes && (
                         <div>
                             <h3>Notes</h3>
@@ -189,19 +189,19 @@ export function ContainerDetail({ box, boxes, parts, loaded, canEdit, onEdit, on
                 <h3>Parts in this container</h3>
                 {subs.length ? (
                     <>
-                        {subs.map((s) => {
-                            const inSub = parts.filter((p) => p.container?.id === s.id);
+                        {subs.map((sub) => {
+                            const inSub = parts.filter((part) => part.container?.id === sub.id);
                             return (
-                                <div className="bgroup" key={s.id}>
+                                <div className="bgroup" key={sub.id}>
                                     <h4>
-                                        {s.name} <span className="gn">{inSub.length}</span>
+                                        {sub.name} <span className="gn">{inSub.length}</span>
                                         {canEdit && (
                                             <RowActions
                                                 className="gtools"
-                                                onEdit={() => onEdit(s)}
-                                                onDelete={() => onDelete(s)}
-                                                deleteLabel={`Remove ${s.name}`}
-                                                confirmText={`Remove “${s.name}”? Its parts move to ${box.name}.`}
+                                                onEdit={() => onEdit(sub)}
+                                                onDelete={() => onDelete(sub)}
+                                                deleteLabel={`Remove ${sub.name}`}
+                                                confirmText={`Remove “${sub.name}”? Its parts move to ${box.name}.`}
                                             />
                                         )}
                                     </h4>
@@ -236,7 +236,9 @@ interface TaskDetailProps extends TaskActionHandlers {
 export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onStep, onEdit, onDelete }: TaskDetailProps) {
     const back = <BackLink to="#tasks" label="All tasks" />;
     if (!task) return <Missing back={back} what="task" label="task" loaded={loaded} />;
-    const linked = (task.parts || []).map((x) => parts.find((p) => p.id === x.id)).filter((p): p is Part => Boolean(p));
+    const linked = (task.parts || [])
+        .map((link) => parts.find((part) => part.id === link.id))
+        .filter((part): part is Part => Boolean(part));
     return (
         <section className="detailpage">
             {back}
@@ -256,13 +258,13 @@ export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onStep, onE
                             type="checkbox"
                             checked={task.done}
                             disabled={!canEdit || task.steps.length > 0}
-                            onChange={(e) => onToggle(task, e.target.checked)}
+                            onChange={(event) => onToggle(task, event.target.checked)}
                         />{' '}
                         Done
                         {task.steps.length > 0 && (
                             <span className="sprog">
                                 {' '}
-                                {task.steps.filter((s) => s.done).length} of {task.steps.length} steps
+                                {task.steps.filter((step) => step.done).length} of {task.steps.length} steps
                             </span>
                         )}
                     </label>

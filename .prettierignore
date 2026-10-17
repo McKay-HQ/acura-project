@@ -1,5 +1,6 @@
-node_modules
-dist
-data
-**/seed/seed.json
-**/package-lock.json
+node_modules/
+dist/
+data/
+api/seed/
+package-lock.json
+web/public/

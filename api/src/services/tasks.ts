@@ -15,20 +15,20 @@ const SELECT = `
      FROM task_parts tp JOIN parts p ON p.id = tp.part_id WHERE tp.task_id = t.id AND p.deleted_at IS NULL) AS parts
   FROM tasks t`;
 
-const toApi = (r: TaskRow): Task => ({
-    id: r.id,
-    key: r.key,
-    title: r.title,
-    phase: r.phase,
-    notes: r.notes,
-    steps: r.steps ?? [],
-    done: r.done,
-    doneAt: r.done_at,
-    parts: r.parts,
-    version: r.version,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    deletedAt: r.deleted_at,
+const toApi = (row: TaskRow): Task => ({
+    id: row.id,
+    key: row.key,
+    title: row.title,
+    phase: row.phase,
+    notes: row.notes,
+    steps: row.steps ?? [],
+    done: row.done,
+    doneAt: row.done_at,
+    parts: row.parts,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
 });
 
 // By phase, open tasks first within a phase, then oldest first. Deleted tasks (tombstones) only with includeDeleted.
@@ -46,60 +46,66 @@ export async function getTask(ref: string, client?: PoolClient): Promise<Task> {
 }
 
 /** Replace a task's part list. Accepts part UUIDs or keys of parts that are not deleted. */
-async function setParts(c: PoolClient, taskId: string, refs: string[]): Promise<void> {
+async function setParts(client: PoolClient, taskId: string, refs: string[]): Promise<void> {
     const ids: string[] = [];
     for (const ref of refs) {
-        const { rows } = await c.query<{ id: string }>(
+        const { rows } = await client.query<{ id: string }>(
             `SELECT id FROM parts WHERE ${isUuid(ref) ? 'id' : 'key'} = $1 AND deleted_at IS NULL`,
             [ref],
         );
         if (!rows.length) throw badRequest(`Part not found: ${ref}`);
         if (!ids.includes(rows[0].id)) ids.push(rows[0].id);
     }
-    await c.query('DELETE FROM task_parts WHERE task_id = $1', [taskId]);
-    for (const [i, pid] of ids.entries()) {
-        await c.query('INSERT INTO task_parts (task_id, part_id, sort_order) VALUES ($1, $2, $3)', [taskId, pid, i]);
+    await client.query('DELETE FROM task_parts WHERE task_id = $1', [taskId]);
+    for (const [index, pid] of ids.entries()) {
+        await client.query('INSERT INTO task_parts (task_id, part_id, sort_order) VALUES ($1, $2, $3)', [
+            taskId,
+            pid,
+            index,
+        ]);
     }
 }
 
 /** A task with steps is done exactly when all of its steps are; without steps, done is set directly. */
-const doneFromSteps = (steps: TaskStep[]): boolean => steps.every((s) => s.done);
+const doneFromSteps = (steps: TaskStep[]): boolean => steps.every((step) => step.done);
 
-export async function createTask(d: TaskInput): Promise<Task> {
+export async function createTask(data: TaskInput): Promise<Task> {
     try {
-        return await tx(async (c) => {
-            const key = d.key ?? (await uniqueKey(c, 'tasks', d.title ?? '', 'task'));
-            const steps = d.steps ?? [];
-            const isDone = steps.length ? doneFromSteps(steps) : (d.done ?? null);
-            const { rows } = await c.query<{ id: string }>(
+        return await tx(async (client) => {
+            const key = data.key ?? (await uniqueKey(client, 'tasks', data.title ?? '', 'task'));
+            const steps = data.steps ?? [];
+            const isDone = steps.length ? doneFromSteps(steps) : (data.done ?? null);
+            const { rows } = await client.query<{ id: string }>(
                 `INSERT INTO tasks (key, title, phase, notes, steps, done, done_at)
        VALUES ($1, $2, COALESCE($3, 1), COALESCE($4, ''), $6::jsonb, COALESCE($5, false), CASE WHEN $5 THEN now() END)
        RETURNING id`,
-                [key, d.title, d.phase ?? null, d.notes ?? null, isDone, JSON.stringify(steps)],
+                [key, data.title, data.phase ?? null, data.notes ?? null, isDone, JSON.stringify(steps)],
             );
-            if (d.partIds) await setParts(c, rows[0].id, d.partIds);
-            return getTask(rows[0].id, c);
+            if (data.partIds) await setParts(client, rows[0].id, data.partIds);
+            return getTask(rows[0].id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
     }
 }
 
-export async function updateTask(ref: string, d: TaskInput, im: IfMatch): Promise<Task> {
+export async function updateTask(ref: string, data: TaskInput, im: IfMatch): Promise<Task> {
     try {
-        return await tx(async (c) => {
-            const id = await lockRef(c, 'tasks', ref, im, getTask);
+        return await tx(async (client) => {
+            const id = await lockRef(client, 'tasks', ref, im, getTask);
             // With steps, done follows them: sent steps decide it, and done alone can't be changed.
-            let isDone = d.done;
-            if (d.steps?.length) isDone = doneFromSteps(d.steps);
-            else if (d.steps === undefined && d.done !== undefined) {
-                const { rows } = await c.query<{ steps: TaskStep[] }>('SELECT steps FROM tasks WHERE id = $1', [id]);
+            let isDone = data.done;
+            if (data.steps?.length) isDone = doneFromSteps(data.steps);
+            else if (data.steps === undefined && data.done !== undefined) {
+                const { rows } = await client.query<{ steps: TaskStep[] }>('SELECT steps FROM tasks WHERE id = $1', [
+                    id,
+                ]);
                 const current = rows[0]?.steps ?? [];
-                if (current.length && d.done !== doneFromSteps(current)) {
+                if (current.length && data.done !== doneFromSteps(current)) {
                     throw badRequest("This task has steps; it's done when all of its steps are checked");
                 }
             }
-            await c.query(
+            await client.query(
                 `UPDATE tasks SET
          key     = CASE WHEN $6 THEN $7 ELSE key END,
          title   = COALESCE($2, title),
@@ -112,17 +118,17 @@ export async function updateTask(ref: string, d: TaskInput, im: IfMatch): Promis
        WHERE id = $1`,
                 [
                     id,
-                    d.title ?? null,
-                    d.phase ?? null,
-                    d.notes ?? null,
+                    data.title ?? null,
+                    data.phase ?? null,
+                    data.notes ?? null,
                     isDone ?? null,
-                    d.key !== undefined,
-                    d.key ?? null,
-                    d.steps ? JSON.stringify(d.steps) : null,
+                    data.key !== undefined,
+                    data.key ?? null,
+                    data.steps ? JSON.stringify(data.steps) : null,
                 ],
             );
-            if (d.partIds) await setParts(c, id, d.partIds);
-            return getTask(id, c);
+            if (data.partIds) await setParts(client, id, data.partIds);
+            return getTask(id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
@@ -131,9 +137,9 @@ export async function updateTask(ref: string, d: TaskInput, im: IfMatch): Promis
 
 /** Soft-delete a task (the parts it used are not affected). Returns the new version. */
 export async function deleteTask(ref: string, im: IfMatch): Promise<number> {
-    return tx(async (c) => {
-        const id = await lockRef(c, 'tasks', ref, im, getTask);
-        await softDelete(c, 'tasks', id);
-        return versionOf(c, 'tasks', id);
+    return tx(async (client) => {
+        const id = await lockRef(client, 'tasks', ref, im, getTask);
+        await softDelete(client, 'tasks', id);
+        return versionOf(client, 'tasks', id);
     });
 }

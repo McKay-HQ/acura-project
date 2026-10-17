@@ -46,10 +46,12 @@ const HTTP = new Set(['get', 'put', 'post', 'delete', 'patch', 'head', 'options'
 function routesOf(stack: ILayer[]): string[] {
     return stack.flatMap((layer) => {
         if (layer.route) {
-            const methods = new Set(layer.route.stack.map((l) => l.method).filter((m) => HTTP.has(m)));
+            const methods = new Set(
+                layer.route.stack.map((handler) => handler.method).filter((method) => HTTP.has(method)),
+            );
             // Express ':param' → OpenAPI '{param}'; '/docs' is documented as '/docs/' (it redirects there).
             const path = layer.route.path.replace(/:(\w+)/g, '{$1}').replace(/^\/docs$/, '/docs/');
-            return [...methods].map((m) => `${m.toUpperCase()} ${path}`);
+            return [...methods].map((method) => `${method.toUpperCase()} ${path}`);
         }
         // A mounted express.Router is a function with its own `stack`.
         const nested: unknown = (layer.handle as { stack?: unknown }).stack;
@@ -62,13 +64,13 @@ const paths = (spec as { paths?: Record<string, Record<string, unknown>> }).path
 const documented = new Set(
     Object.entries(paths).flatMap(([path, item]) =>
         Object.keys(item)
-            .filter((m) => HTTP.has(m))
-            .map((m) => `${m.toUpperCase()} ${path}`),
+            .filter((method) => HTTP.has(method))
+            .map((method) => `${method.toUpperCase()} ${path}`),
     ),
 );
 
-for (const r of registered) if (!documented.has(r)) fail(`route not documented: ${r}`);
-for (const d of documented) if (!registered.has(d)) fail(`documented but not registered: ${d}`);
+for (const route of registered) if (!documented.has(route)) fail(`route not documented: ${route}`);
+for (const operation of documented) if (!registered.has(operation)) fail(`documented but not registered: ${operation}`);
 if (!failed) console.log(`✓ all ${registered.size} routes are documented, and nothing else`);
 
 process.exit(failed ? 1 : 0);

@@ -11,21 +11,21 @@ interface ModalProps {
 export default function Modal({ open, onClose, children, labelledBy }: ModalProps) {
     const ref = useRef<HTMLDialogElement>(null);
     useEffect(() => {
-        const d = ref.current;
-        if (!d) return;
-        if (open && !d.open) d.showModal();
-        if (!open && d.open) d.close();
+        const dialog = ref.current;
+        if (!dialog) return;
+        if (open && !dialog.open) dialog.showModal();
+        if (!open && dialog.open) dialog.close();
     }, [open]);
     return (
         <dialog
             ref={ref}
             aria-labelledby={labelledBy}
-            onCancel={(e) => {
-                e.preventDefault();
+            onCancel={(event) => {
+                event.preventDefault();
                 onClose();
             }}
-            onClick={(e) => {
-                if (e.target === ref.current) onClose();
+            onClick={(event) => {
+                if (event.target === ref.current) onClose();
             }}
         >
             {open && children}

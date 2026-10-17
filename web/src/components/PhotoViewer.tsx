@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from './Icons';
 
 interface PhotoViewerProps {
@@ -18,56 +18,67 @@ const TAP_ZOOM = 2.5;
 export default function PhotoViewer({ photos, index, label, captions, onClose }: PhotoViewerProps) {
     const strip = useRef<HTMLDivElement>(null);
     const closeBtn = useRef<HTMLButtonElement>(null);
-    const [i, setI] = useState<number>(index);
+    const [current, setCurrent] = useState<number>(index);
     const [zoomed, setZoomed] = useState<boolean>(false);
     // Zoom state lives in a ref so gesture handlers don't re-render on every move.
-    const z = useRef({ s: 1, x: 0, y: 0, i: index });
-    const n = photos.length;
+    const zoom = useRef({ s: 1, x: 0, y: 0, i: index });
+    const count = photos.length;
 
-    const img = () => strip.current?.children[z.current.i]?.firstElementChild as HTMLImageElement | undefined;
-    const apply = () => {
-        const { s, x, y } = z.current;
+    // The helpers below only read refs (and a state setter), so they're stable for the viewer's lifetime;
+    // `go` changes only when the number of photos does.
+    const img = useCallback(
+        () => strip.current?.children[zoom.current.i]?.firstElementChild as HTMLImageElement | undefined,
+        [],
+    );
+    const apply = useCallback(() => {
+        const { s, x, y } = zoom.current;
         const im = img();
         if (im) im.style.transform = s > 1 ? `translate(${x}px,${y}px) scale(${s})` : '';
         setZoomed(s > 1);
-    };
-    const clamp = () => {
+    }, [img]);
+    const clamp = useCallback(() => {
         const el = strip.current;
         if (!el) return;
-        const c = z.current;
-        const mx = ((c.s - 1) * el.clientWidth) / 2;
-        const my = ((c.s - 1) * el.clientHeight) / 2;
-        c.x = Math.max(-mx, Math.min(mx, c.x));
-        c.y = Math.max(-my, Math.min(my, c.y));
-    };
-    const reset = () => {
+        const state = zoom.current;
+        const mx = ((state.s - 1) * el.clientWidth) / 2;
+        const my = ((state.s - 1) * el.clientHeight) / 2;
+        state.x = Math.max(-mx, Math.min(mx, state.x));
+        state.y = Math.max(-my, Math.min(my, state.y));
+    }, []);
+    const reset = useCallback(() => {
         const im = img();
         if (im) im.style.transform = '';
-        Object.assign(z.current, { s: 1, x: 0, y: 0 });
+        Object.assign(zoom.current, { s: 1, x: 0, y: 0 });
         setZoomed(false);
-    };
+    }, [img]);
     /** Zoom to scale s, keeping the point (fx, fy) (relative to the photo's center) in place. */
-    const zoomAt = (s: number, fx: number, fy: number, s0 = z.current.s, x0 = z.current.x, y0 = z.current.y) => {
-        const c = z.current;
-        s = Math.max(1, Math.min(MAX_ZOOM, s));
-        c.x = fx - ((fx - x0) * s) / s0;
-        c.y = fy - ((fy - y0) * s) / s0;
-        c.s = s;
-        if (s === 1) c.x = c.y = 0;
-        clamp();
-        apply();
-    };
-    const rel = (cx: number, cy: number): [number, number] => {
-        const r = strip.current!.getBoundingClientRect();
-        return [cx - r.left - r.width / 2, cy - r.top - r.height / 2];
-    };
-    const go = (to: number) => {
-        const el = strip.current;
-        if (!el || to < 0 || to >= n) return;
-        reset();
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        el.scrollTo({ left: to * el.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
-    };
+    const zoomAt = useCallback(
+        (scale: number, fx: number, fy: number, s0 = zoom.current.s, x0 = zoom.current.x, y0 = zoom.current.y) => {
+            const state = zoom.current;
+            scale = Math.max(1, Math.min(MAX_ZOOM, scale));
+            state.x = fx - ((fx - x0) * scale) / s0;
+            state.y = fy - ((fy - y0) * scale) / s0;
+            state.s = scale;
+            if (scale === 1) state.x = state.y = 0;
+            clamp();
+            apply();
+        },
+        [apply, clamp],
+    );
+    const rel = useCallback((cx: number, cy: number): [number, number] => {
+        const rect = strip.current!.getBoundingClientRect();
+        return [cx - rect.left - rect.width / 2, cy - rect.top - rect.height / 2];
+    }, []);
+    const go = useCallback(
+        (to: number) => {
+            const el = strip.current;
+            if (!el || to < 0 || to >= count) return;
+            reset();
+            const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            el.scrollTo({ left: to * el.clientWidth, behavior: reduce ? 'auto' : 'smooth' });
+        },
+        [count, reset],
+    );
 
     // Open on the chosen photo, lock page scrolling, and give focus back on close.
     useLayoutEffect(() => {
@@ -89,109 +100,127 @@ export default function PhotoViewer({ photos, index, label, captions, onClose }:
         if (!el) return;
         const onScroll = () => {
             const to = Math.round(el.scrollLeft / Math.max(el.clientWidth, 1));
-            if (to !== z.current.i && to >= 0 && to < n) {
+            if (to !== zoom.current.i && to >= 0 && to < count) {
                 reset();
-                z.current.i = to;
-                setI(to);
+                zoom.current.i = to;
+                setCurrent(to);
             }
         };
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                e.preventDefault();
+        const onKey = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
                 onClose();
-            } else if (e.key === 'ArrowLeft') go(z.current.i - 1);
-            else if (e.key === 'ArrowRight') go(z.current.i + 1);
+            } else if (event.key === 'ArrowLeft') go(zoom.current.i - 1);
+            else if (event.key === 'ArrowRight') go(zoom.current.i + 1);
         };
         const onResize = () => {
             reset();
-            el.scrollLeft = z.current.i * el.clientWidth;
+            el.scrollLeft = zoom.current.i * el.clientWidth;
         };
 
         // Touch: pinch to zoom, drag to pan while zoomed, double-tap to toggle. At 1x a swipe scrolls natively.
         type Gesture =
             | { kind: 'pinch'; d: number; s: number; x: number; y: number; mx: number; my: number }
             | { kind: 'pan'; cx: number; cy: number; x: number; y: number };
-        let g: Gesture | null = null;
+        let gesture: Gesture | null = null;
         let lastTap = 0;
         let lastTouch = 0;
-        const dist = (a: Touch, b: Touch) => Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
-        const mid = (t: TouchList) => rel((t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2);
-        const panFrom = (t: Touch): Gesture => ({
+        const dist = (first: Touch, second: Touch) =>
+            Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+        const mid = (touches: TouchList) =>
+            rel((touches[0].clientX + touches[1].clientX) / 2, (touches[0].clientY + touches[1].clientY) / 2);
+        const panFrom = (touch: Touch): Gesture => ({
             kind: 'pan',
-            cx: t.clientX,
-            cy: t.clientY,
-            x: z.current.x,
-            y: z.current.y,
+            cx: touch.clientX,
+            cy: touch.clientY,
+            x: zoom.current.x,
+            y: zoom.current.y,
         });
-        const onTouchStart = (e: TouchEvent) => {
-            const t = e.touches;
+        const onTouchStart = (event: TouchEvent) => {
+            const touches = event.touches;
             lastTouch = Date.now();
-            if (t.length === 2) {
-                const [mx, my] = mid(t);
-                g = { kind: 'pinch', d: dist(t[0], t[1]), s: z.current.s, x: z.current.x, y: z.current.y, mx, my };
-            } else if (t.length === 1) {
+            if (touches.length === 2) {
+                const [mx, my] = mid(touches);
+                gesture = {
+                    kind: 'pinch',
+                    d: dist(touches[0], touches[1]),
+                    s: zoom.current.s,
+                    x: zoom.current.x,
+                    y: zoom.current.y,
+                    mx,
+                    my,
+                };
+            } else if (touches.length === 1) {
                 const now = Date.now();
                 if (now - lastTap < 300) {
-                    e.preventDefault();
+                    event.preventDefault();
                     lastTap = 0;
-                    g = null;
-                    const [fx, fy] = rel(t[0].clientX, t[0].clientY);
-                    if (z.current.s > 1) reset();
+                    gesture = null;
+                    const [fx, fy] = rel(touches[0].clientX, touches[0].clientY);
+                    if (zoom.current.s > 1) reset();
                     else zoomAt(TAP_ZOOM, fx, fy);
                     return;
                 }
                 lastTap = now;
-                g = z.current.s > 1 ? panFrom(t[0]) : null;
+                gesture = zoom.current.s > 1 ? panFrom(touches[0]) : null;
             }
         };
-        const onTouchMove = (e: TouchEvent) => {
-            const t = e.touches;
-            if (g?.kind === 'pinch' && t.length === 2) {
-                e.preventDefault();
-                const [mx, my] = mid(t);
-                zoomAt((g.s * dist(t[0], t[1])) / g.d, g.mx, g.my, g.s, g.x + (mx - g.mx), g.y + (my - g.my));
-            } else if (g?.kind === 'pan' && t.length === 1) {
-                e.preventDefault();
-                z.current.x = g.x + t[0].clientX - g.cx;
-                z.current.y = g.y + t[0].clientY - g.cy;
+        const onTouchMove = (event: TouchEvent) => {
+            const touches = event.touches;
+            if (gesture?.kind === 'pinch' && touches.length === 2) {
+                event.preventDefault();
+                const [mx, my] = mid(touches);
+                zoomAt(
+                    (gesture.s * dist(touches[0], touches[1])) / gesture.d,
+                    gesture.mx,
+                    gesture.my,
+                    gesture.s,
+                    gesture.x + (mx - gesture.mx),
+                    gesture.y + (my - gesture.my),
+                );
+            } else if (gesture?.kind === 'pan' && touches.length === 1) {
+                event.preventDefault();
+                zoom.current.x = gesture.x + touches[0].clientX - gesture.cx;
+                zoom.current.y = gesture.y + touches[0].clientY - gesture.cy;
                 clamp();
                 apply();
             }
         };
-        const onTouchEnd = (e: TouchEvent) => {
-            if (e.touches.length === 0) {
-                g = null;
-                if (z.current.s < 1.05) reset();
-            } else if (e.touches.length === 1 && z.current.s > 1) g = panFrom(e.touches[0]);
+        const onTouchEnd = (event: TouchEvent) => {
+            if (event.touches.length === 0) {
+                gesture = null;
+                if (zoom.current.s < 1.05) reset();
+            } else if (event.touches.length === 1 && zoom.current.s > 1) gesture = panFrom(event.touches[0]);
         };
 
         // Mouse: click zooms in at the pointer (or back out), drag pans while zoomed. Mouse events that
         // browsers synthesize right after a touch are ignored.
         let md: { cx: number; cy: number; x: number; y: number; moved: boolean } | null = null;
-        const onMouseDown = (e: MouseEvent) => {
-            if (e.button !== 0 || (e.target as HTMLElement).tagName !== 'IMG' || Date.now() - lastTouch < 800) return;
-            e.preventDefault();
-            md = { cx: e.clientX, cy: e.clientY, x: z.current.x, y: z.current.y, moved: false };
+        const onMouseDown = (event: MouseEvent) => {
+            if (event.button !== 0 || (event.target as HTMLElement).tagName !== 'IMG' || Date.now() - lastTouch < 800)
+                return;
+            event.preventDefault();
+            md = { cx: event.clientX, cy: event.clientY, x: zoom.current.x, y: zoom.current.y, moved: false };
         };
-        const onMouseMove = (e: MouseEvent) => {
-            if (!md || z.current.s === 1) return;
-            const dx = e.clientX - md.cx;
-            const dy = e.clientY - md.cy;
+        const onMouseMove = (event: MouseEvent) => {
+            if (!md || zoom.current.s === 1) return;
+            const dx = event.clientX - md.cx;
+            const dy = event.clientY - md.cy;
             if (Math.abs(dx) + Math.abs(dy) > 4) md.moved = true;
-            z.current.x = md.x + dx;
-            z.current.y = md.y + dy;
+            zoom.current.x = md.x + dx;
+            zoom.current.y = md.y + dy;
             clamp();
             apply();
         };
-        const onMouseUp = (e: MouseEvent) => {
-            const m = md;
+        const onMouseUp = (event: MouseEvent) => {
+            const down = md;
             md = null;
-            if (!m || m.moved) return;
-            const t = e.target as HTMLElement;
-            if (t.tagName !== 'IMG' || !el.contains(t)) return;
-            if (z.current.s > 1) reset();
+            if (!down || down.moved) return;
+            const target = event.target as HTMLElement;
+            if (target.tagName !== 'IMG' || !el.contains(target)) return;
+            if (zoom.current.s > 1) reset();
             else {
-                const [fx, fy] = rel(e.clientX, e.clientY);
+                const [fx, fy] = rel(event.clientX, event.clientY);
                 zoomAt(TAP_ZOOM, fx, fy);
             }
         };
@@ -216,36 +245,46 @@ export default function PhotoViewer({ photos, index, label, captions, onClose }:
             window.removeEventListener('keydown', onKey);
             window.removeEventListener('resize', onResize);
         };
-        // The handlers only read refs, so they're attached once per open viewer.
-    }, [n, onClose]);
+        // The handlers only read refs and the stable helpers above, so they're attached once per open viewer.
+    }, [count, onClose, apply, clamp, go, reset, rel, zoomAt]);
 
     return (
         <div className={zoomed ? 'viewer zoomed' : 'viewer'} role="dialog" aria-modal="true" aria-label="Photo viewer">
             <div className="vtop">
                 <span aria-live="polite">
-                    {label} · {i + 1} of {n}
+                    {label} · {current + 1} of {count}
                 </span>
                 <button ref={closeBtn} aria-label="Close" onClick={onClose}>
                     <Icon.x />
                 </button>
             </div>
             <div className="vstrip" ref={strip}>
-                {photos.map((src, j) => (
+                {photos.map((src, photoIndex) => (
                     <div className="vslide" key={src}>
-                        <img src={src} alt={`${label}, photo ${j + 1} of ${n}`} draggable="false" />
+                        <img src={src} alt={`${label}, photo ${photoIndex + 1} of ${count}`} draggable="false" />
                     </div>
                 ))}
             </div>
-            {captions?.[i] && (
+            {captions?.[current] && (
                 <div className="vcap" aria-live="polite">
-                    {captions[i]}
+                    {captions[current]}
                 </div>
             )}
             <div className="vhint">Swipe for more · pinch or double-tap to zoom</div>
-            <button className="vnav prev" aria-label="Previous photo" disabled={i === 0} onClick={() => go(i - 1)}>
+            <button
+                className="vnav prev"
+                aria-label="Previous photo"
+                disabled={current === 0}
+                onClick={() => go(current - 1)}
+            >
                 <Icon.prev />
             </button>
-            <button className="vnav next" aria-label="Next photo" disabled={i === n - 1} onClick={() => go(i + 1)}>
+            <button
+                className="vnav next"
+                aria-label="Next photo"
+                disabled={current === count - 1}
+                onClick={() => go(current + 1)}
+            >
                 <Icon.next />
             </button>
         </div>

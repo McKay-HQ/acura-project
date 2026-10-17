@@ -35,16 +35,16 @@ import type {
 } from './types';
 
 const store = {
-    get: (k: string, d: string): string => {
+    get: (key: string, fallback: string): string => {
         try {
-            return localStorage.getItem(k) ?? d;
+            return localStorage.getItem(key) ?? fallback;
         } catch {
-            return d;
+            return fallback;
         }
     },
-    set: (k: string, v: string): void => {
+    set: (key: string, value: string): void => {
         try {
-            localStorage.setItem(k, v);
+            localStorage.setItem(key, value);
         } catch {
             /* storage unavailable */
         }
@@ -61,7 +61,7 @@ type Sub = 'parts' | 'containers' | 'tossed';
 type Route = { view: ListView; id?: undefined } | { view: DetailView; id: string };
 
 const VIEWS: readonly ListView[] = ['home', 'car', 'parts', 'containers', 'tossed', 'tasks'];
-const isListView = (v: string): v is ListView => VIEWS.some((x) => x === v);
+const isListView = (name: string): name is ListView => VIEWS.some((view) => view === name);
 const ALIASES: Record<string, ListView> = { todo: 'tasks', sale: 'parts', boxes: 'containers' };
 const SECTION: Record<View, Section> = {
     home: 'home',
@@ -85,11 +85,11 @@ const SUB: Partial<Record<View, Sub>> = {
 const DETAIL: Record<string, DetailView> = { part: 'part', container: 'container', box: 'container', task: 'task' };
 
 function parseHash(): Route {
-    const h = decodeURIComponent(window.location.hash.slice(1));
-    const m = /^(part|container|box|task)\/(.+)$/.exec(h);
-    if (m) return { view: DETAIL[m[1]], id: m[2] };
-    const v = ALIASES[h] || h;
-    return { view: isListView(v) ? v : 'home' };
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    const match = /^(part|container|box|task)\/(.+)$/.exec(hash);
+    if (match) return { view: DETAIL[match[1]], id: match[2] };
+    const name = ALIASES[hash] || hash;
+    return { view: isListView(name) ? name : 'home' };
 }
 
 /** What the modal dialog is showing; record is set when editing an existing one. */
@@ -110,8 +110,8 @@ interface KeyFormProps {
 function KeyForm({ onDone, onCancel, readsLocked }: KeyFormProps) {
     const [key, setKey] = useState<string>('');
     const [error, setError] = useState<string>('');
-    const submit = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const submit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         keyStore.set(key.trim());
         try {
             const { ok } = await api.checkKey();
@@ -136,7 +136,7 @@ function KeyForm({ onDone, onCancel, readsLocked }: KeyFormProps) {
                 <input
                     type="password"
                     value={key}
-                    onChange={(e) => setKey(e.target.value)}
+                    onChange={(event) => setKey(event.target.value)}
                     autoFocus
                     autoComplete="current-password"
                     required
@@ -191,16 +191,16 @@ export default function App() {
 
     const refresh = useCallback(async () => {
         try {
-            const [p, c, x, t] = await Promise.all([
+            const [partList, containerList, tossedList, taskList] = await Promise.all([
                 api.parts.list(),
                 api.containers.list(),
                 api.tossed.list(),
                 api.tasks.list(),
             ]);
-            setParts(p);
-            setContainers(c);
-            setTossed(x);
-            setTasks(t);
+            setParts(partList);
+            setContainers(containerList);
+            setTossed(tossedList);
+            setTasks(taskList);
             setLoadError('');
         } catch (err) {
             if (!(err instanceof ApiError && err.status === 401)) setLoadError(errorMessage(err));
@@ -214,9 +214,9 @@ export default function App() {
         let timer: ReturnType<typeof setInterval> | undefined;
         (async () => {
             try {
-                const c = await api.config();
-                setCfg(c);
-                if (c.keyRequiredForChanges && keyStore.get()) {
+                const config = await api.config();
+                setCfg(config);
+                if (config.keyRequiredForChanges && keyStore.get()) {
                     const { ok } = await api.checkKey().catch(() => ({ ok: false }));
                     if (ok) setUnlocked(true);
                     else keyStore.set('');
@@ -231,7 +231,7 @@ export default function App() {
         })();
         const onFocus = () => refresh();
         window.addEventListener('focus', onFocus);
-        const onNeedKey = () => setModal((m) => m || { type: 'key' });
+        const onNeedKey = () => setModal((current) => current || { type: 'key' });
         authEvents.addEventListener('needkey', onNeedKey);
         // A write hit a 412 (someone else changed the record first): reload in place and say so.
         // Any open form stays open; it shows the same message and keeps what was typed.
@@ -290,7 +290,7 @@ export default function App() {
     const replaceIn =
         <T extends { id: string }>(setList: Dispatch<SetStateAction<T[]>>) =>
         (rec: T) =>
-            setList((list) => list.map((x) => (x.id === rec.id ? rec : x)));
+            setList((list) => list.map((item) => (item.id === rec.id ? rec : item)));
     const replacePart = replaceIn(setParts);
     const replaceContainer = replaceIn(setContainers);
     const replaceTossed = replaceIn(setTossed);
@@ -323,82 +323,86 @@ export default function App() {
             }
             refresh();
         };
-    const tagOptions = [...new Set(parts.flatMap((p) => p.tags || []))];
-    const openTasks = tasks.filter((t) => !t.done).length;
+    const tagOptions = [...new Set(parts.flatMap((part) => part.tags || []))];
+    const openTasks = tasks.filter((task) => !task.done).length;
     const topCount = topContainers(containers).length;
 
     const partActs: PartActionHandlers = {
-        onEdit: (p) => setModal({ type: 'part', record: p }),
-        onToggleSale: (p) =>
+        onEdit: (part) => setModal({ type: 'part', record: part }),
+        onToggleSale: (part) =>
             run(
                 () =>
                     api.parts
-                        .update(p, {
-                            tags: isForSale(p)
-                                ? p.tags.filter((t) => t !== FOR_SALE)
-                                : [...p.tags.filter((t) => t !== 'Potential sale'), FOR_SALE],
+                        .update(part, {
+                            tags: isForSale(part)
+                                ? part.tags.filter((tag) => tag !== FOR_SALE)
+                                : [...part.tags.filter((tag) => tag !== 'Potential sale'), FOR_SALE],
                         })
                         .then(replacePart),
-                isForSale(p) ? `Took "${p.label}" off sale.` : `Marked "${p.label}" for sale.`,
+                isForSale(part) ? `Took "${part.label}" off sale.` : `Marked "${part.label}" for sale.`,
             ),
-        onToss: (p) => setModal({ type: 'toss', record: p }),
-        onDelete: (p) =>
+        onToss: (part) => setModal({ type: 'toss', record: part }),
+        onDelete: (part) =>
             run(
                 () =>
-                    api.parts.remove(p).then(() => {
+                    api.parts.remove(part).then(() => {
                         if (route.view === 'part') go('parts');
                     }),
-                `Deleted "${p.label}".`,
+                `Deleted "${part.label}".`,
             ),
     };
     const boxActs: ContainerActionHandlers = {
-        onEdit: (c) => setModal({ type: 'container', record: c }),
-        onDelete: (c) =>
+        onEdit: (box) => setModal({ type: 'container', record: box }),
+        onDelete: (box) =>
             run(
                 () =>
-                    api.containers.remove(c).then(() => {
-                        if (!c.parentId && route.view === 'container') go('containers');
+                    api.containers.remove(box).then(() => {
+                        if (!box.parentId && route.view === 'container') go('containers');
                     }),
-                `Removed "${c.name}".`,
+                `Removed "${box.name}".`,
             ),
     };
     const taskActs: TaskActionHandlers = {
-        onToggle: (t, done) => {
-            setTasks((ts) => ts.map((x) => (x.id === t.id ? { ...x, done } : x)));
-            run(() => api.tasks.update(t, { done }).then(replaceTask));
+        onToggle: (task, done) => {
+            setTasks((ts) => ts.map((item) => (item.id === task.id ? { ...item, done } : item)));
+            run(() => api.tasks.update(task, { done }).then(replaceTask));
         },
-        onStep: (t, index, done) => {
+        onStep: (task, index, done) => {
             // Show the tick right away; saves for one task go out one at a time, each from the latest
             // version, so quick clicks don't trip over each other's If-Match.
-            pendingSteps.current[t.id] = { ...pendingSteps.current[t.id], [index]: done };
-            const apply = (x: Task): Task => {
-                const want = pendingSteps.current[x.id] || {};
-                const steps = x.steps.map((s, i) => (i in want ? { ...s, done: want[i] } : s));
-                return { ...x, steps, done: steps.every((s) => s.done) };
+            pendingSteps.current[task.id] = { ...pendingSteps.current[task.id], [index]: done };
+            const apply = (current: Task): Task => {
+                const want = pendingSteps.current[current.id] || {};
+                const steps = current.steps.map((step, stepIndex) =>
+                    stepIndex in want ? { ...step, done: want[stepIndex] } : step,
+                );
+                return { ...current, steps, done: steps.every((step) => step.done) };
             };
-            setTasks((ts) => ts.map((x) => (x.id === t.id ? apply(x) : x)));
-            const prev = stepSaves.current[t.id] || Promise.resolve();
-            stepSaves.current[t.id] = prev.then(() =>
+            setTasks((ts) => ts.map((item) => (item.id === task.id ? apply(item) : item)));
+            const prev = stepSaves.current[task.id] || Promise.resolve();
+            stepSaves.current[task.id] = prev.then(() =>
                 run(async () => {
-                    const latest = tasksRef.current.find((x) => x.id === t.id);
+                    const latest = tasksRef.current.find((item) => item.id === task.id);
                     if (!latest) return;
-                    const want = pendingSteps.current[t.id] || {};
-                    const steps = latest.steps.map((s, i) => (i in want ? { ...s, done: want[i] } : s));
+                    const want = pendingSteps.current[task.id] || {};
+                    const steps = latest.steps.map((step, stepIndex) =>
+                        stepIndex in want ? { ...step, done: want[stepIndex] } : step,
+                    );
                     const saved = await api.tasks.update(latest, { steps });
-                    delete pendingSteps.current[t.id];
-                    tasksRef.current = tasksRef.current.map((x) => (x.id === saved.id ? saved : x));
+                    delete pendingSteps.current[task.id];
+                    tasksRef.current = tasksRef.current.map((item) => (item.id === saved.id ? saved : item));
                     replaceTask(saved);
                 }),
             );
         },
         onEdit: (task) => setModal({ type: 'task', record: task }),
-        onDelete: (t) =>
+        onDelete: (task) =>
             run(
                 () =>
-                    api.tasks.remove(t).then(() => {
+                    api.tasks.remove(task).then(() => {
                         if (route.view === 'task') go('tasks');
                     }),
-                `Deleted "${t.title}".`,
+                `Deleted "${task.title}".`,
             ),
     };
 
@@ -448,7 +452,7 @@ export default function App() {
     } else if (route.view === 'container') {
         let box = findRef(containers, route.id);
         const parentId = box?.parentId;
-        if (parentId) box = containers.find((b) => b.id === parentId) || box;
+        if (parentId) box = containers.find((parent) => parent.id === parentId) || box;
         page = (
             <ContainerDetail
                 box={box}
@@ -465,8 +469,8 @@ export default function App() {
                 tossed={tossed}
                 canEdit={canEdit}
                 onAdd={() => setModal({ type: 'tossed' })}
-                onEdit={(x) => setModal({ type: 'tossed', record: x })}
-                onDelete={(x) => run(() => api.tossed.remove(x), `Deleted the record for "${x.label}".`)}
+                onEdit={(record) => setModal({ type: 'tossed', record })}
+                onDelete={(record) => run(() => api.tossed.remove(record), `Deleted the record for "${record.label}".`)}
             />
         );
     } else if (route.view === 'tasks') {

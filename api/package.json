@@ -1,40 +1,40 @@
 {
-  "name": "acura-project-api",
-  "version": "1.0.0",
-  "private": true,
-  "description": "API for the RSX Type-S Project: parts, containers and tasks",
-  "type": "module",
-  "main": "dist/index.js",
-  "scripts": {
-    "build": "tsc -p .",
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
-    "typecheck": "tsc -p . --noEmit",
-    "format": "prettier --write \"{src,scripts}/**/*.ts\"",
-    "lint:openapi": "tsx scripts/lint-openapi.ts"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "dependencies": {
-    "@sindresorhus/slugify": "^3.0.1",
-    "express": "^5.1.0",
-    "multer": "^2.0.2",
-    "pg": "^8.13.1",
-    "sharp": "^0.34.1",
-    "swagger-jsdoc": "^6.3.0",
-    "swagger-ui-express": "^5.0.1"
-  },
-  "devDependencies": {
-    "@apidevtools/swagger-parser": "^13.1.0",
-    "@types/express": "^5.0.6",
-    "@types/multer": "^2.3.0",
-    "@types/node": "^22.20.5",
-    "@types/pg": "^8.23.1",
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8",
-    "prettier": "^3.9.10",
-    "tsx": "^4.23.15",
-    "typescript": "^5.9.3"
-  }
+    "name": "acura-project-api",
+    "version": "1.0.0",
+    "private": true,
+    "description": "API for the RSX Type-S Project: parts, containers and tasks",
+    "type": "module",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc -p .",
+        "start": "node dist/index.js",
+        "dev": "tsx watch src/index.ts",
+        "typecheck": "tsc -p . --noEmit",
+        "format": "prettier --write \"{src,scripts}/**/*.ts\"",
+        "lint:openapi": "tsx scripts/lint-openapi.ts"
+    },
+    "engines": {
+        "node": ">=20"
+    },
+    "dependencies": {
+        "@sindresorhus/slugify": "^3.0.1",
+        "express": "^5.1.0",
+        "multer": "^2.0.2",
+        "pg": "^8.13.1",
+        "sharp": "^0.34.1",
+        "swagger-jsdoc": "^6.3.0",
+        "swagger-ui-express": "^5.0.1"
+    },
+    "devDependencies": {
+        "@apidevtools/swagger-parser": "^13.1.0",
+        "@types/express": "^5.0.6",
+        "@types/multer": "^2.3.0",
+        "@types/node": "^22.20.5",
+        "@types/pg": "^8.23.1",
+        "@types/swagger-jsdoc": "^6.0.4",
+        "@types/swagger-ui-express": "^4.1.8",
+        "prettier": "^3.9.10",
+        "tsx": "^4.23.15",
+        "typescript": "^5.9.3"
+    }
 }

@@ -11,9 +11,9 @@ export async function migrate(): Promise<void> {
     await pool.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
     name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())`);
     const done = new Set(
-        (await pool.query<{ name: string }>('SELECT name FROM schema_migrations')).rows.map((r) => r.name),
+        (await pool.query<{ name: string }>('SELECT name FROM schema_migrations')).rows.map((row) => row.name),
     );
-    const files = (await fs.readdir(dir)).filter((f) => f.endsWith('.sql')).sort();
+    const files = (await fs.readdir(dir)).filter((name) => name.endsWith('.sql')).sort();
 
     for (const file of files) {
         if (done.has(file)) continue;
@@ -28,7 +28,7 @@ export async function migrate(): Promise<void> {
         } catch (err) {
             await client.query('ROLLBACK');
             // pg always rejects with an Error; the cast keeps the message lookup unchanged.
-            throw new Error(`Migration ${file} failed: ${(err as Error).message}`);
+            throw new Error(`Migration ${file} failed: ${(err as Error).message}`, { cause: err });
         } finally {
             client.release();
         }

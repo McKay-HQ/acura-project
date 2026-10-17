@@ -7,15 +7,15 @@ import type { ColumnMap } from './common.js';
 import type { Note, NoteInput, NoteRow } from '../types.js';
 
 const COLS: ColumnMap<NoteInput> = { key: 'key', title: 'title', items: 'items' };
-const toApi = (r: NoteRow): Note => ({
-    id: r.id,
-    key: r.key,
-    title: r.title,
-    items: r.items,
-    version: r.version,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-    deletedAt: r.deleted_at,
+const toApi = (row: NoteRow): Note => ({
+    id: row.id,
+    key: row.key,
+    title: row.title,
+    items: row.items,
+    version: row.version,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
 });
 
 /** Notes, oldest first; deleted ones (tombstones) only with includeDeleted. */
@@ -33,13 +33,13 @@ export async function getNote(ref: string, client?: PoolClient): Promise<Note> {
 
 export async function createNote(data: NoteInput): Promise<Note> {
     try {
-        return await tx(async (c) => {
-            if (data.key == null) data.key = await uniqueKey(c, 'notes', data.title ?? '', 'note');
+        return await tx(async (client) => {
+            if (data.key == null) data.key = await uniqueKey(client, 'notes', data.title ?? '', 'note');
             // Object.keys widens the keys to string; they are exactly the keys of NoteInput.
-            const cols = (Object.keys(COLS) as (keyof NoteInput)[]).filter((k) => data[k] !== undefined);
-            const { rows } = await c.query<NoteRow>(
-                `INSERT INTO notes (${cols.map((k) => COLS[k]).join(', ')}) VALUES (${cols.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING *`,
-                cols.map((k) => data[k]),
+            const cols = (Object.keys(COLS) as (keyof NoteInput)[]).filter((field) => data[field] !== undefined);
+            const { rows } = await client.query<NoteRow>(
+                `INSERT INTO notes (${cols.map((field) => COLS[field]).join(', ')}) VALUES (${cols.map((_field, index) => `$${index + 1}`).join(', ')}) RETURNING *`,
+                cols.map((field) => data[field]),
             );
             return toApi(rows[0]);
         });
@@ -50,12 +50,15 @@ export async function createNote(data: NoteInput): Promise<Note> {
 
 export async function updateNote(ref: string, data: NoteInput, im: IfMatch): Promise<Note> {
     try {
-        return await tx(async (c) => {
-            const id = await lockRef(c, 'notes', ref, im, getNote);
+        return await tx(async (client) => {
+            const id = await lockRef(client, 'notes', ref, im, getNote);
             const { sets, vals } = assignments(data, COLS, 2);
             if (sets.length)
-                await c.query(`UPDATE notes SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [id, ...vals]);
-            return getNote(id, c);
+                await client.query(`UPDATE notes SET ${sets.join(', ')}, updated_at = now() WHERE id = $1`, [
+                    id,
+                    ...vals,
+                ]);
+            return getNote(id, client);
         });
     } catch (err) {
         throw friendlyDbError(err);
@@ -64,9 +67,9 @@ export async function updateNote(ref: string, data: NoteInput, im: IfMatch): Pro
 
 /** Soft-delete a note. Returns the new version. */
 export async function deleteNote(ref: string, im: IfMatch): Promise<number> {
-    return tx(async (c) => {
-        const id = await lockRef(c, 'notes', ref, im, getNote);
-        await softDelete(c, 'notes', id);
-        return versionOf(c, 'notes', id);
+    return tx(async (client) => {
+        const id = await lockRef(client, 'notes', ref, im, getNote);
+        await softDelete(client, 'notes', id);
+        return versionOf(client, 'notes', id);
     });
 }

@@ -68,13 +68,13 @@ const CAPTIONS: Record<CarSection['key'], string[]> = {
     ],
 };
 
-export function carPhotos(s: CarSection): CarPhoto[] {
-    return Array.from({ length: s.count }, (_, i) => {
-        const n = String(i + 1).padStart(2, '0');
+export function carPhotos(section: CarSection): CarPhoto[] {
+    return Array.from({ length: section.count }, (_item, index) => {
+        const num = String(index + 1).padStart(2, '0');
         return {
-            src: `/car/${s.key}/${n}.jpg`,
-            thumb: `/car/${s.key}/${n}-t.jpg`,
-            caption: CAPTIONS[s.key][i] || `${s.title} photo ${i + 1}`,
+            src: `/car/${section.key}/${num}.jpg`,
+            thumb: `/car/${section.key}/${num}-t.jpg`,
+            caption: CAPTIONS[section.key][index] || `${section.title} photo ${index + 1}`,
         };
     });
 }

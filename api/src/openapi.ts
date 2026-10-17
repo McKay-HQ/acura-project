@@ -234,7 +234,9 @@ docs.use('/docs', swaggerUi.serveFiles(spec, uiOptions), swaggerUi.setup(spec, u
  *             $ref: '#/components/schemas/PhotoUpload'
  *     PhotoOrder:
  *       required: true
- *       description: The record's photo ids in the new order. Must list every photo of the record exactly once; the first is the main photo.
+ *       description: >-
+ *         The record's photo ids in the new order. Must list every photo of the record exactly once; the first is the
+ *         main photo.
  *       content:
  *         application/json:
  *           schema:

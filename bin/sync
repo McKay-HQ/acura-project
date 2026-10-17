@@ -57,7 +57,9 @@ share_catalog() {
     # A pull request opened by a workflow's own token doesn't start other workflows, so start the
     # checks by hand; required checks then report on it like on any other pull request.
     if [ -n "${GITHUB_ACTIONS:-}" ]; then
-        (cd "$ROOT" && gh workflow run check.yml --ref "$branch" >/dev/null 2>&1) || true
+        for workflow in static-checks.yml build-checks.yml; do
+            (cd "$ROOT" && gh workflow run "$workflow" --ref "$branch" >/dev/null 2>&1) || true
+        done
         (cd "$ROOT" && gh workflow run labels.yml --ref "$branch" >/dev/null 2>&1) || true
     fi
     if (cd "$ROOT" && gh pr merge "$url" --auto --squash --delete-branch >/dev/null 2>&1); then

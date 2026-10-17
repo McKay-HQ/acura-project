@@ -2,7 +2,7 @@
 import type { ReactNode, SVGProps } from 'react';
 import type { ContainerIcon } from '../types';
 
-const Svg = ({ children, ...p }: SVGProps<SVGSVGElement>) => (
+const Svg = ({ children, ...props }: SVGProps<SVGSVGElement>) => (
     <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -11,7 +11,7 @@ const Svg = ({ children, ...p }: SVGProps<SVGSVGElement>) => (
         strokeLinecap="round"
         strokeLinejoin="round"
         aria-hidden="true"
-        {...p}
+        {...props}
     >
         {children}
     </svg>
@@ -224,7 +224,7 @@ export const BOX_ICONS = {
     ],
 } satisfies Record<ContainerIcon, [label: string, glyph: ReactNode]>;
 export type BoxIconName = keyof typeof BOX_ICONS;
-export const isBoxIcon = (k: string): k is BoxIconName => Object.hasOwn(BOX_ICONS, k);
+export const isBoxIcon = (name: string): name is BoxIconName => Object.hasOwn(BOX_ICONS, name);
 
 export function BoxIcon({ icon }: { icon: BoxIconName }) {
     return (

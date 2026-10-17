@@ -11,10 +11,10 @@ export interface DraftStep {
 let nextId = 1;
 export const toDraft = (steps: TaskStep[] = []): DraftStep[] => steps.map((step) => ({ id: nextId++, step }));
 /** The steps to save: text trimmed, empty steps dropped. Checkmarks, links and photos are kept. */
-export const fromDraft = (d: DraftStep[]): TaskStep[] =>
-    d.map((x) => ({ ...x.step, text: x.step.text.trim() })).filter((s) => s.text);
+export const fromDraft = (drafts: DraftStep[]): TaskStep[] =>
+    drafts.map((draft) => ({ ...draft.step, text: draft.step.text.trim() })).filter((step) => step.text);
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
 function StepText({
     value,
@@ -31,10 +31,10 @@ function StepText({
     // Grow to fit the text.
     useLayoutEffect(() => {
         const fit = () => {
-            const t = ref.current;
-            if (!t) return;
-            t.style.height = 'auto';
-            t.style.height = `${t.scrollHeight + 2}px`;
+            const textarea = ref.current;
+            if (!textarea) return;
+            textarea.style.height = 'auto';
+            textarea.style.height = `${textarea.scrollHeight + 2}px`;
         };
         fit();
         // Again once the dialog has opened and laid out (the first pass can run before it's visible).
@@ -44,7 +44,15 @@ function StepText({
     useLayoutEffect(() => {
         if (focus) ref.current?.focus();
     }, [focus]);
-    return <textarea ref={ref} rows={2} aria-label={label} value={value} onChange={(e) => onChange(e.target.value)} />;
+    return (
+        <textarea
+            ref={ref}
+            rows={2}
+            aria-label={label}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    );
 }
 
 interface StepsEditorProps {
@@ -56,34 +64,36 @@ interface StepsEditorProps {
 
 // Edit a task's step text: add, remove and reorder. A step keeps its checkmark, links and photos.
 export default function StepsEditor({ steps, onChange, focusId, onAdded }: StepsEditorProps) {
-    const n = steps.length;
-    const move = (i: number, j: number) => {
+    const count = steps.length;
+    const move = (from: number, to: number) => {
         const next = [...steps];
-        [next[i], next[j]] = [next[j], next[i]];
+        [next[from], next[to]] = [next[to], next[from]];
         onChange(next);
     };
     return (
         <fieldset className="sedit">
             <legend>Steps</legend>
             <div className="ssteps">
-                {n === 0 && (
+                {count === 0 && (
                     <p className="fine" style={{ margin: 0 }}>
                         No steps. Without steps, Done is checked by hand.
                     </p>
                 )}
-                {steps.map((d, i) => {
-                    const links = d.step.links?.length || 0;
-                    const photos = d.step.photos?.length || 0;
+                {steps.map((draft, index) => {
+                    const links = draft.step.links?.length || 0;
+                    const photos = draft.step.photos?.length || 0;
                     return (
-                        <div className="srow" key={d.id}>
-                            <span className="snum2">{i + 1}</span>
+                        <div className="srow" key={draft.id}>
+                            <span className="snum2">{index + 1}</span>
                             <StepText
-                                value={d.step.text}
-                                label={`Step ${i + 1}`}
-                                focus={d.id === focusId}
+                                value={draft.step.text}
+                                label={`Step ${index + 1}`}
+                                focus={draft.id === focusId}
                                 onChange={(text) =>
                                     onChange(
-                                        steps.map((x) => (x.id === d.id ? { ...x, step: { ...x.step, text } } : x)),
+                                        steps.map((other) =>
+                                            other.id === draft.id ? { ...other, step: { ...other.step, text } } : other,
+                                        ),
                                     )
                                 }
                             />
@@ -91,20 +101,20 @@ export default function StepsEditor({ steps, onChange, focusId, onAdded }: Steps
                                 <button
                                     type="button"
                                     className="ibtn"
-                                    disabled={i === 0}
+                                    disabled={index === 0}
                                     title="Move up"
-                                    aria-label={`Move step ${i + 1} up`}
-                                    onClick={() => move(i, i - 1)}
+                                    aria-label={`Move step ${index + 1} up`}
+                                    onClick={() => move(index, index - 1)}
                                 >
                                     <Icon.up />
                                 </button>
                                 <button
                                     type="button"
                                     className="ibtn"
-                                    disabled={i === n - 1}
+                                    disabled={index === count - 1}
                                     title="Move down"
-                                    aria-label={`Move step ${i + 1} down`}
-                                    onClick={() => move(i, i + 1)}
+                                    aria-label={`Move step ${index + 1} down`}
+                                    onClick={() => move(index, index + 1)}
                                 >
                                     <Icon.down />
                                 </button>
@@ -112,8 +122,8 @@ export default function StepsEditor({ steps, onChange, focusId, onAdded }: Steps
                                     type="button"
                                     className="ibtn del"
                                     title="Remove step"
-                                    aria-label={`Remove step ${i + 1}`}
-                                    onClick={() => onChange(steps.filter((x) => x.id !== d.id))}
+                                    aria-label={`Remove step ${index + 1}`}
+                                    onClick={() => onChange(steps.filter((other) => other.id !== draft.id))}
                                 >
                                     <Icon.trash />
                                 </button>
@@ -134,9 +144,9 @@ export default function StepsEditor({ steps, onChange, focusId, onAdded }: Steps
                 type="button"
                 className="btn sadd"
                 onClick={() => {
-                    const [d] = toDraft([{ text: '', done: false }]);
-                    onChange([...steps, d]);
-                    onAdded(d.id);
+                    const [draft] = toDraft([{ text: '', done: false }]);
+                    onChange([...steps, draft]);
+                    onAdded(draft.id);
                 }}
             >
                 + Add step

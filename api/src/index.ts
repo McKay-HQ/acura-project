@@ -36,7 +36,6 @@ app.use('/api', (_req: Request, res: Response) => {
     res.status(404).json({ error: 'Not found' });
 });
 
-// eslint-disable-next-line no-unused-vars
 app.use((err: ErrorLike, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof multer.MulterError) {
         const msg = err.code === 'LIMIT_FILE_SIZE' ? `Photos must be under ${config.maxUploadMb} MB` : err.message;

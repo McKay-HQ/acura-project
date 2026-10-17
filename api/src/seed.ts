@@ -34,113 +34,129 @@ export async function seedIfEmpty(): Promise<void> {
     }
 
     const written: PhotoFileRow[] = [];
-    async function photos(c: PoolClient, col: string, id: string, names: string[] = []): Promise<void> {
+    async function photos(client: PoolClient, col: string, id: string, names: string[] = []): Promise<void> {
         let order = 0;
         for (const name of names) {
             const buf = await fs.readFile(path.join(seedDir, 'photos', path.basename(name)));
-            const p = await processPhoto(buf);
-            written.push({ filename: p.filename, thumb_filename: p.thumbFilename });
+            const photo = await processPhoto(buf);
+            written.push({ filename: photo.filename, thumb_filename: photo.thumbFilename });
             const photoId = crypto.randomUUID();
-            await c.query(
+            await client.query(
                 `INSERT INTO photos (id, ${col}, filename, thumb_filename, width, height, sort_order, source) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
-                [photoId, id, p.filename, p.thumbFilename, p.width, p.height, order++, photoSource(name, photoId)],
+                [
+                    photoId,
+                    id,
+                    photo.filename,
+                    photo.thumbFilename,
+                    photo.width,
+                    photo.height,
+                    order++,
+                    photoSource(name, photoId),
+                ],
             );
         }
     }
-    const ts = (v: string | null | undefined): string | null => v || null;
+    const ts = (value: string | null | undefined): string | null => value || null;
 
     console.log('Importing starter inventory (this processes every photo; give it a minute)…');
     try {
-        await tx(async (c) => {
+        await tx(async (client) => {
             const boxIds: Record<string, string> = {};
             // Top-level containers first, so sub-containers can point at their parent.
             const boxes = [...(seed.containers || [])].sort(
-                (a, b) => Number(Boolean(a.parent)) - Number(Boolean(b.parent)),
+                (left, right) => Number(Boolean(left.parent)) - Number(Boolean(right.parent)),
             );
-            for (const b of boxes) {
-                const r = await c.query<{ id: string }>(
+            for (const box of boxes) {
+                const result = await client.query<{ id: string }>(
                     `INSERT INTO containers (key, name, location, notes, parent_id, icon, sort_order, created_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,COALESCE($8::timestamptz, now())) RETURNING id`,
                     [
-                        b.key || null,
-                        b.name,
-                        b.location || '',
-                        b.notes || '',
-                        b.parent ? (boxIds[b.parent] ?? null) : null,
-                        b.icon || 'box',
-                        b.order ?? 0,
-                        ts(b.createdAt),
+                        box.key || null,
+                        box.name,
+                        box.location || '',
+                        box.notes || '',
+                        box.parent ? (boxIds[box.parent] ?? null) : null,
+                        box.icon || 'box',
+                        box.order ?? 0,
+                        ts(box.createdAt),
                     ],
                 );
                 // String() matches JS property-key conversion, so a missing key is stored under "undefined" as before.
-                boxIds[String(b.key)] = r.rows[0].id;
-                await photos(c, 'container_id', r.rows[0].id, b.photos);
+                boxIds[String(box.key)] = result.rows[0].id;
+                await photos(client, 'container_id', result.rows[0].id, box.photos);
             }
             const partIds: Record<string, string> = {};
-            for (const p of seed.parts || []) {
-                const r = await c.query<{ id: string }>(
+            for (const part of seed.parts || []) {
+                const result = await client.query<{ id: string }>(
                     `INSERT INTO parts (key, label, part_number, fits, status, tags, value_low, value_high, notes, container_id, created_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,COALESCE($11::timestamptz, now())) RETURNING id`,
                     [
-                        p.key || null,
-                        p.label,
-                        p.partNumber || '',
-                        p.fits || '',
-                        p.status || 'Unverified',
-                        p.tags || [],
-                        p.valueLow ?? null,
-                        p.valueHigh ?? null,
-                        p.notes || '',
-                        p.container ? (boxIds[p.container] ?? null) : null,
-                        ts(p.createdAt),
+                        part.key || null,
+                        part.label,
+                        part.partNumber || '',
+                        part.fits || '',
+                        part.status || 'Unverified',
+                        part.tags || [],
+                        part.valueLow ?? null,
+                        part.valueHigh ?? null,
+                        part.notes || '',
+                        part.container ? (boxIds[part.container] ?? null) : null,
+                        ts(part.createdAt),
                     ],
                 );
-                if (p.key) partIds[p.key] = r.rows[0].id;
-                await photos(c, 'part_id', r.rows[0].id, p.photos);
+                if (part.key) partIds[part.key] = result.rows[0].id;
+                await photos(client, 'part_id', result.rows[0].id, part.photos);
             }
-            for (const t of seed.tossed || []) {
-                const r = await c.query<{ id: string }>(
+            for (const item of seed.tossed || []) {
+                const result = await client.query<{ id: string }>(
                     `INSERT INTO tossed (key, label, part_number, reason, tossed_on, sort_order)
            VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
-                    [t.key || null, t.label, t.partNumber || '', t.reason || '', t.tossedOn || null, t.sortOrder ?? 0],
+                    [
+                        item.key || null,
+                        item.label,
+                        item.partNumber || '',
+                        item.reason || '',
+                        item.tossedOn || null,
+                        item.sortOrder ?? 0,
+                    ],
                 );
-                await photos(c, 'tossed_id', r.rows[0].id, t.photos);
+                await photos(client, 'tossed_id', result.rows[0].id, item.photos);
             }
-            for (const t of seed.tasks || []) {
-                const r = await c.query<{ id: string }>(
+            for (const task of seed.tasks || []) {
+                const result = await client.query<{ id: string }>(
                     `INSERT INTO tasks (key, title, phase, notes, steps, done, done_at, created_at)
            VALUES ($1,$2,$3,$4,$7::jsonb,$5,CASE WHEN $5 THEN now() END,COALESCE($6::timestamptz, now())) RETURNING id`,
                     [
-                        t.key || null,
-                        t.title,
-                        t.phase || 3,
-                        t.notes || '',
-                        t.steps?.length ? t.steps.every((s) => s.done) : Boolean(t.done),
-                        ts(t.createdAt),
-                        JSON.stringify(t.steps || []),
+                        task.key || null,
+                        task.title,
+                        task.phase || 3,
+                        task.notes || '',
+                        task.steps?.length ? task.steps.every((step) => step.done) : Boolean(task.done),
+                        ts(task.createdAt),
+                        JSON.stringify(task.steps || []),
                     ],
                 );
-                for (const [i, key] of (t.parts || []).entries()) {
+                for (const [index, key] of (task.parts || []).entries()) {
                     if (partIds[key]) {
-                        await c.query('INSERT INTO task_parts (task_id, part_id, sort_order) VALUES ($1,$2,$3)', [
-                            r.rows[0].id,
+                        await client.query('INSERT INTO task_parts (task_id, part_id, sort_order) VALUES ($1,$2,$3)', [
+                            result.rows[0].id,
                             partIds[key],
-                            i,
+                            index,
                         ]);
                     }
                 }
             }
-            for (const n of seed.notes || []) {
-                await c.query(
+            for (const note of seed.notes || []) {
+                await client.query(
                     `INSERT INTO notes (key, title, items, created_at) VALUES ($1,$2,$3,COALESCE($4::timestamptz, now()))`,
-                    [n.key || null, n.title, n.items || [], ts(n.createdAt)],
+                    [note.key || null, note.title, note.items || [], ts(note.createdAt)],
                 );
             }
-            await c.query(`INSERT INTO app_meta (key, value) VALUES ('seeded', now()::text)`);
+            await client.query(`INSERT INTO app_meta (key, value) VALUES ('seeded', now()::text)`);
         });
-        const n = (k: 'parts' | 'containers' | 'tossed' | 'tasks' | 'notes') => seed[k]?.length || 0;
+        const countOf = (kind: 'parts' | 'containers' | 'tossed' | 'tasks' | 'notes') => seed[kind]?.length || 0;
         console.log(
-            `Seeded ${n('parts')} parts, ${n('containers')} containers, ${n('tossed')} tossed, ${n('tasks')} tasks, ${n('notes')} notes.`,
+            `Seeded ${countOf('parts')} parts, ${countOf('containers')} containers, ${countOf('tossed')} tossed, ${countOf('tasks')} tasks, ${countOf('notes')} notes.`,
         );
     } catch (err) {
         await removePhotoFiles(written);

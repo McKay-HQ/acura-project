@@ -1,0 +1,77 @@
+# Checks that read the code without building it: types, and ESLint (with Prettier's formatting as a rule). Runs on every pull request,
+# and on main so code scanning has a baseline to compare pull requests against.
+# The job is named "static-checks" so the ruleset can require it before a PR merges into main.
+# TypeScript and ESLint results (formatting included) go to GitHub code scanning as SARIF
+# (docs/ci.md#sarif), which shows them on the pull request's changed lines.
+name: Static Checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  security-events: write # upload SARIF to code scanning
+
+concurrency:
+  group: static-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-checks:
+    name: static-checks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            api/package-lock.json
+            web/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci
+          npm ci --prefix api
+          npm ci --prefix web
+
+      # The SARIF steps keep going on errors so every report gets uploaded; the last step fails the job.
+      - name: Typecheck
+        id: typecheck
+        continue-on-error: true
+        run: npm run -s typecheck:sarif
+
+      - name: ESLint and Prettier
+        id: eslint
+        continue-on-error: true
+        # On errors, run it again with the readable formatter so the log shows them too.
+        run: npm run -s lint:sarif || { npm run -s lint; exit 1; }
+
+      - name: Upload TypeScript results
+        if: ${{ !cancelled() && hashFiles('typecheck.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: typecheck.sarif
+          category: typescript
+
+      - name: Upload ESLint results
+        if: ${{ !cancelled() && hashFiles('eslint.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: eslint.sarif
+          category: eslint
+
+      - name: Result
+        env:
+          TYPECHECK: ${{ steps.typecheck.outcome }}
+          ESLINT: ${{ steps.eslint.outcome }}
+        run: |
+          echo "Typecheck: $TYPECHECK, ESLint and Prettier: $ESLINT"
+          [ "$TYPECHECK" = success ] && [ "$ESLINT" = success ]

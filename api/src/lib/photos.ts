@@ -42,9 +42,9 @@ export async function processPhoto(buffer: Buffer): Promise<ProcessedPhoto> {
 export async function removePhotoFiles(rows: PhotoFileRow[]): Promise<void> {
     await Promise.all(
         rows
-            .flatMap((r) => [r.filename, r.thumb_filename].filter(Boolean))
-            .map((f) => fs.unlink(path.join(config.uploadDir, path.basename(f))).catch(() => {})),
+            .flatMap((row) => [row.filename, row.thumb_filename].filter(Boolean))
+            .map((file) => fs.unlink(path.join(config.uploadDir, path.basename(file))).catch(() => {})),
     );
 }
 
-export const photoUrl = (f: string): string => `/uploads/${f}`;
+export const photoUrl = (filename: string): string => `/uploads/${filename}`;

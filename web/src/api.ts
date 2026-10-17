@@ -27,9 +27,10 @@ export const keyStore = {
             return '';
         }
     },
-    set: (k: string): void => {
+    set: (key: string): void => {
         try {
-            k ? localStorage.setItem(KEY_STORE, k) : localStorage.removeItem(KEY_STORE);
+            if (key) localStorage.setItem(KEY_STORE, key);
+            else localStorage.removeItem(KEY_STORE);
         } catch {
             /* storage blocked */
         }
@@ -62,9 +63,9 @@ export class PreconditionFailedError extends ApiError {
     }
     /** The current version of `rec`, if the server sent it back. */
     currentFor<T extends VersionedRecord>(rec: T): T | null {
-        const c = this.current;
+        const current = this.current;
         // Cast: same id as the record that was written, so it is the same kind of record.
-        return c && c.id === rec.id ? (c as T) : null;
+        return current && current.id === rec.id ? (current as T) : null;
     }
 }
 
@@ -111,13 +112,13 @@ async function request<T>(method: Method, path: string, body?: unknown, version?
     const data: unknown = await res.json().catch(() => ({}));
     if (res.status === 401) authEvents.dispatchEvent(new Event('needkey'));
     if (!res.ok) {
-        const e = (data ?? {}) as ErrorBody; // error responses are { error, details?, current? } (api/src/index.ts)
+        const body = (data ?? {}) as ErrorBody; // error responses are { error, details?, current? } (api/src/index.ts)
         if (res.status === 412) {
             authEvents.dispatchEvent(new Event('conflict'));
-            throw new PreconditionFailedError(e.current ?? null);
+            throw new PreconditionFailedError(body.current ?? null);
         }
-        const details = Array.isArray(e.details) ? ` ${e.details.join('. ')}.` : '';
-        throw new ApiError((e.error || `Request failed (${res.status})`) + details, res.status);
+        const details = Array.isArray(body.details) ? ` ${body.details.join('. ')}.` : '';
+        throw new ApiError((body.error || `Request failed (${res.status})`) + details, res.status);
     }
     // Cast: the JSON body is not validated at runtime; its shape is the API contract in types.ts.
     return data as T;
@@ -132,11 +133,11 @@ type FormValue = string | number | boolean | string[] | null | undefined;
 
 function form(fields: Record<string, FormValue>, files: File[]): FormData {
     const fd = new FormData();
-    for (const [k, v] of Object.entries(fields)) {
-        if (v === undefined || v === null) continue;
-        fd.append(k, Array.isArray(v) ? JSON.stringify(v) : String(v));
+    for (const [name, value] of Object.entries(fields)) {
+        if (value === undefined || value === null) continue;
+        fd.append(name, Array.isArray(value) ? JSON.stringify(value) : String(value));
     }
-    for (const f of files) fd.append('photos', f);
+    for (const file of files) fd.append('photos', file);
     return fd;
 }
 
@@ -185,9 +186,9 @@ export const api = {
     tossed: resource<Tossed, TossedInput>('tossed'),
     tasks: {
         list: () => request<Task[]>('GET', '/tasks'),
-        create: (f: Partial<TaskInput> & Pick<TaskInput, 'title'>) => request<Task>('POST', '/tasks', f),
-        update: (task: Task, f: Partial<TaskInput>) =>
-            write<Task>('PATCH', `/tasks/${encodeURIComponent(task.id)}`, task, f),
+        create: (input: Partial<TaskInput> & Pick<TaskInput, 'title'>) => request<Task>('POST', '/tasks', input),
+        update: (task: Task, changes: Partial<TaskInput>) =>
+            write<Task>('PATCH', `/tasks/${encodeURIComponent(task.id)}`, task, changes),
         remove: (task: Task) => write<null>('DELETE', `/tasks/${encodeURIComponent(task.id)}`, task),
     },
     notes: { list: () => request<Note[]>('GET', '/notes') },
