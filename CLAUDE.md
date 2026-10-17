@@ -13,4 +13,4 @@ Add a scope when it helps: `feat(web): ...`, `fix(api): ...`, `ci(release): ...`
 
 ## Branches
 
-`main` deploys on every push. For bigger changes use a branch named `<type>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`). More conventions in the README.
+`main` deploys on every merge and only takes pull requests (squash or rebase). Work on a branch named `<type>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`), open a pull request whose title has a type too (it becomes the squashed commit), and merge it. More conventions in the README.

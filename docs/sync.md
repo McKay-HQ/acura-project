@@ -6,14 +6,14 @@ Two-way sync between the catalog (`api/seed/`) and the live app, through the app
 ./bin/sync [-d] [-C] [-c | -a] [-P] [-h]
 ```
 
-| Option | |
-|---|---|
-| `-d` | Dry run: list the changes without making them |
-| `-C` | Don't commit and push the updated catalog |
-| `-c` | Settle conflicts in favor of the catalog |
-| `-a` | Settle conflicts in favor of the app |
-| `-P` | Don't run `git pull` first |
-| `-h` | Show this page |
+| Option |                                                           |
+| ------ | --------------------------------------------------------- |
+| `-d`   | Dry run: list the changes without making them             |
+| `-C`   | Don't commit the updated catalog or open its pull request |
+| `-c`   | Settle conflicts in favor of the catalog                  |
+| `-a`   | Settle conflicts in favor of the app                      |
+| `-P`   | Don't run `git pull` first                                |
+| `-h`   | Show this page                                            |
 
 Lowercase options turn something on; uppercase ones turn a default off.
 
@@ -35,19 +35,19 @@ Each record (matched by key) is compared three ways: the catalog, the app, and h
 
 Writes to the app carry the version the sync just read (`If-Match`). If someone saves an edit in the app at that moment, the app refuses the write (412), nothing is overwritten, and the record is reported; the next run picks it up.
 
-When the run pulled anything from the app, it commits `api/seed/` and pushes, so the artifact can take the changes in.
+When the run pulled anything from the app, it commits `api/seed/` on a new `sync/catalog-<date>-<time>` branch, pushes it and opens a pull request into `main` that merges itself (with auto-merge once checks pass, if the repo allows auto-merge; otherwise right away). Without `gh` signed in, it prints the branch to open a pull request for. Your current branch is left as it was; `git pull` brings the catalog in once the pull request is merged. `-C` skips all of this.
 
 Exit status: 0 in sync, 3 when conflicts were left, 1 on errors.
 
 ## Environment
 
-| Variable | Default |
-|---|---|
-| `APP_URL` | the Azure app's address (looked up with `az`) |
+| Variable  | Default                                          |
+| --------- | ------------------------------------------------ |
+| `APP_URL` | the Azure app's address (looked up with `az`)    |
 | `API_KEY` | the app's `api-key` secret (looked up with `az`) |
 
 For a local copy: `APP_URL=http://localhost:8080 API_KEY=... ./bin/sync -C`.
 
 ## Needs
 
-`python3` (part of Ubuntu), `git`, and `az` signed in unless both `APP_URL` and `API_KEY` are set. Design notes: [sync-design.md](sync-design.md).
+`python3` (part of Ubuntu), `git`, `gh` signed in (to open the catalog pull request), and `az` signed in unless both `APP_URL` and `API_KEY` are set. Design notes: [sync-design.md](sync-design.md).

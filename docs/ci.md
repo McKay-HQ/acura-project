@@ -5,7 +5,7 @@ Four workflows in `.github/workflows/`. Each can be run on its own from the Acti
 | Workflow                    | What it does                                                                                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Build** (`build.yml`)     | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`)                                                  |
-| **Sync** (`sync.yml`)       | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app is committed back to `main`                                                      |
+| **Sync** (`sync.yml`)       | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app goes into `main` through a pull request that merges itself                       |
 | **Release** (`release.yml`) | Tags a commit with the next [semantic version](https://semver.org) and publishes a GitHub release with notes generated from the commits since the previous version |
 | **Deploy** (`deploy.yml`)   | Build → roll out the new images and wait for the app to answer → Sync → Release                                                                                    |
 
@@ -18,7 +18,9 @@ Four workflows in `.github/workflows/`. Each can be run on its own from the Acti
 
 Running **Deploy** by hand builds, rolls out and releases even with no code change (untick the box to only sync). Deploys never overlap: a push while one is going waits for it.
 
-A run fails (red X) if the build or rollout fails, or if the sync finds a **conflict** (the same field changed in both the catalog and the app). The release still happens after a sync conflict, since the code was deployed. Settle the conflict locally with `./bin/sync -c` (catalog wins) or `./bin/sync -a` (app wins), see [sync.md](sync.md). Commits made by the workflows (`github-actions[bot]`) don't start new runs.
+A run fails (red X) if the build or rollout fails, or if the sync finds a **conflict** (the same field changed in both the catalog and the app). The release still happens after a sync conflict, since the code was deployed. Settle the conflict locally with `./bin/sync -c` (catalog wins) or `./bin/sync -a` (app wins), see [sync.md](sync.md). Merges the workflows make themselves (the sync's pull requests) don't start a deploy.
+
+The sync's pull requests come from the workflow's own token, which GitHub doesn't let start other workflows, so the sync starts the Check workflow on them itself. For this, Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests" must be on.
 
 ## Setup
 
