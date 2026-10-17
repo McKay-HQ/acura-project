@@ -124,6 +124,16 @@ export const Icon = {
             <path d="M5 12.5l4.5 4.5L19 7.5" />
         </Svg>
     ),
+    up: () => (
+        <Svg>
+            <path d="M6 15l6-6 6 6" />
+        </Svg>
+    ),
+    down: () => (
+        <Svg>
+            <path d="M6 9l6 6 6-6" />
+        </Svg>
+    ),
     prev: () => (
         <Svg>
             <path d="M15 6l-6 6 6 6" />

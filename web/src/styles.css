@@ -2408,3 +2408,66 @@ a.ibtn {
         margin-left: 30px;
     }
 }
+
+/* Task form: steps editor */
+.sedit {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px 10px;
+    display: grid;
+    gap: 8px;
+}
+.sedit legend {
+    font-weight: 600;
+    padding: 0 4px;
+}
+.ssteps {
+    display: grid;
+    gap: 8px;
+}
+.srow {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: start;
+}
+.srow textarea {
+    width: 100%;
+    min-height: 40px;
+    resize: vertical;
+    overflow: hidden;
+}
+.snum2 {
+    font: 700 1rem/2 var(--display);
+    color: var(--muted);
+    min-width: 1.2em;
+    text-align: right;
+}
+.sbtns {
+    display: flex;
+    gap: 4px;
+}
+.sbtns .ibtn {
+    width: 30px;
+    height: 30px;
+}
+.sbtns .ibtn svg {
+    width: 15px;
+    height: 15px;
+}
+.skeep {
+    grid-column: 2 / -1;
+    margin: -4px 0 0;
+}
+.sadd {
+    justify-self: start;
+}
+@media (max-width: 520px) {
+    .srow {
+        grid-template-columns: auto 1fr;
+    }
+    .sbtns {
+        grid-column: 2;
+        justify-content: flex-end;
+    }
+}

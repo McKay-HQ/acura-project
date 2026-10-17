@@ -3,6 +3,7 @@ import { useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'rea
 import { api, errorMessage, PreconditionFailedError } from '../api';
 import { useEditFields, clashText, CONFLICT_IN_FORM } from './forms';
 import { RowActions, AddButton, FormButtons } from './ui';
+import StepsEditor, { fromDraft, toDraft, type DraftStep } from './StepsEditor';
 import { PHASES, PHASE_NUMBERS, phaseClass, href, isWithin } from '../constants';
 import type { Part, Phase, Task, TaskActionHandlers, TaskInput } from '../types';
 
@@ -18,6 +19,7 @@ interface TaskFields {
     phase: string;
     notes: string;
     partIds: string[];
+    steps: DraftStep[];
 }
 
 const taskFields = (task?: Task): TaskFields => ({
@@ -25,19 +27,22 @@ const taskFields = (task?: Task): TaskFields => ({
     phase: String(task?.phase || 1),
     notes: task?.notes || '',
     partIds: (task?.parts || []).map((p) => p.id),
+    steps: toDraft(task?.steps),
 });
 // Cast: the phase <select> only offers the PHASES keys 1..4. Part ids are sorted so order doesn't count as a change.
-const taskInput = (f: TaskFields): Omit<TaskInput, 'done' | 'steps'> => ({
+const taskInput = (f: TaskFields): Omit<TaskInput, 'done'> => ({
     title: f.title,
     phase: Number(f.phase) as Phase,
     notes: f.notes,
     partIds: [...f.partIds].sort(),
+    steps: fromDraft(f.steps),
 });
 const TASK_LABELS: Record<keyof TaskFields, string> = {
     title: 'Task',
     phase: 'Phase',
     notes: 'Description',
     partIds: 'Parts for this task',
+    steps: 'Steps',
 };
 
 export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
@@ -49,8 +54,9 @@ export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
     const [rec, setRec] = useState<Task | undefined>(task);
     const [busy, setBusy] = useState<boolean>(false);
     const [error, setError] = useState<string>('');
+    const [focusStep, setFocusStep] = useState<number>();
     const set =
-        (k: Exclude<keyof TaskFields, 'partIds'>) =>
+        (k: Exclude<keyof TaskFields, 'partIds' | 'steps'>) =>
         (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
             setF({ ...f, [k]: e.target.value });
     const toggle = (id: string) =>
@@ -117,6 +123,12 @@ export function TaskForm({ task, parts, onSaved, onCancel }: TaskFormProps) {
                 Description
                 <textarea rows={4} value={f.notes} onChange={set('notes')} />
             </label>
+            <StepsEditor
+                steps={f.steps}
+                onChange={(steps) => setF({ ...f, steps })}
+                focusId={focusStep}
+                onAdded={setFocusStep}
+            />
             <fieldset className="ppick">
                 <legend>Parts</legend>
                 <input
