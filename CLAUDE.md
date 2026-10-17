@@ -11,7 +11,6 @@ The release version bump comes from pull request labels (docs/ci.md#versions). G
 - `breaking` a breaking change, or a new page or section in the app → major
 - `feature` a new feature or a change in what the app does → minor
 - `fix` a fix or anything else → patch
-- `sync` a catalog sync from the app (bin/sync opens these) → no bump
 
 ## Branches
 

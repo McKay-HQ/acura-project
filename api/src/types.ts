@@ -10,13 +10,13 @@ export type PhotoTable = 'parts' | 'containers' | 'tossed';
 /** Tables whose records can be looked up by UUID or key; all are versioned and soft-deleted. */
 export type KeyedTable = PhotoTable | 'notes' | 'tasks';
 
-/** Columns every record row has for sync: version (bumped by triggers) and the soft-delete time. */
+/** Columns every record row has: version (bumped by triggers, for If-Match) and the soft-delete time. */
 export interface SyncRow {
     version: number;
     deleted_at: Date | null;
 }
 
-/** Fields every record in an API response has for sync. */
+/** Fields every record in an API response has: its version (for If-Match) and when it was deleted. */
 export interface Versioned {
     version: number;
     deletedAt: Date | null;
@@ -46,7 +46,7 @@ export interface Photo {
     thumbUrl: string;
     width: number | null;
     height: number | null;
-    /** The uploaded file's name; for catalog photos, "<catalog id>.jpg". */
+    /** The uploaded file's name; for starter-data photos, "<32 hex digits>.jpg". */
     source: string | null;
 }
 

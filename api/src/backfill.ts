@@ -2,8 +2,8 @@
 //
 // backfillPhotoSources: photos.source for databases seeded before sources were recorded.
 // Matches each record's photos, in display order, to the files the starter data gave it at the time
-// (seed/history/2026-10-12-photos.json). Records whose photos changed since are left alone; bin/sync
-// replaces those. Runs once: app_meta records it.
+// (seed/history/2026-10-12-photos.json). Records whose photos changed since are left alone. Runs once: app_meta
+// records it.
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

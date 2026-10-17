@@ -1,4 +1,4 @@
-// HTTP preconditions for writes to existing records (docs/sync-design.md, "API contract"):
+// HTTP preconditions for writes to existing records (optimistic locking):
 // the client sends the version it last saw in If-Match; responses carry the current one in ETag.
 import type { Request, Response } from 'express';
 import { HttpError } from './errors.js';

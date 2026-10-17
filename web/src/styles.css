@@ -1,4 +1,4 @@
-/* RSX Type-S Project styles (kept in step with the artifact page). */
+/* RSX Type-S Project styles. */
 /* Layout: a parts shelf — summary strip, filter chips, then a grid of tagged part cards (photo + manila-style label). */
 :root {
     --bg: #eef0f2;

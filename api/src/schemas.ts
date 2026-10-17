@@ -69,9 +69,9 @@
  *           type: string
  *           nullable: true
  *           description: >-
- *             A stable, unique name for the photo: the uploaded file's name when it is named like a catalog photo
+ *             A stable, unique name for the photo: the uploaded file's name when it is named like a starter-data photo
  *             (32 hex digits plus .jpg/.jpeg/.png/.webp, e.g. `77dd58464b9a5e54c6bdc3f6f251c440.jpg`), otherwise
- *             `<photo id>.jpg`. bin/sync uses it to match photos.
+ *             `<photo id>.jpg`.
  *     PhotoUpload:
  *       type: object
  *       required: [photos]
