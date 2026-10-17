@@ -4,6 +4,7 @@ name: Build Checks
 
 on:
   pull_request:
+  merge_group: # each pull request in the merge queue, on its merge with main
   workflow_dispatch:
 
 permissions:

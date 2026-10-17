@@ -1,6 +1,6 @@
 # GitHub Actions
 
-Seven workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs Build, Sync and Release and starts by itself on every push to `main`; **Static Checks**, **Build Checks** and **Version label** run on every pull request.
+Seven workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs Build, Sync and Release and starts by itself on every push to `main`; **Static Checks**, **Build Checks** and **Version label** run on every pull request, and again in the merge queue on the pull request's merge with `main` (`merge_group`), since the queue waits for every required check there too.
 
 | Workflow                                | What it does                                                                                                                                                                                                                      |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
