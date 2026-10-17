@@ -23,7 +23,7 @@ Running **Deploy** by hand builds, rolls out and releases even with no code chan
 
 A run fails (red X) if the build or rollout fails, or if the sync finds a **conflict** (the same field changed in both the catalog and the app). The release still happens after a sync conflict, since the code was deployed. Settle the conflict locally with `./bin/sync -c` (catalog wins) or `./bin/sync -a` (app wins), see [sync.md](sync.md). Merges the workflows make themselves (the sync's pull requests) don't start a deploy.
 
-The sync's pull requests come from the workflow's own token, which GitHub doesn't let start other workflows, so the sync starts the Check workflow on them itself. For this, Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests" must be on.
+The sync's pull requests come from the workflow's own token, which GitHub doesn't let start other workflows, so the sync starts Static Checks, Build Checks and Version label on them itself. For this, Settings > Actions > General > "Allow GitHub Actions to create and approve pull requests" must be on.
 
 ## Setup
 
