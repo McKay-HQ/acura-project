@@ -98,46 +98,6 @@ api.get('/health', async (_req, res) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Config'
- * components:
- *   schemas:
- *     Config:
- *       type: object
- *       required: [keyRequiredForChanges, keyRequiredForReads, statuses, phases, icons, maxUploadMb]
- *       properties:
- *         keyRequiredForChanges:
- *           type: boolean
- *           description: True when API_KEY is set.
- *         keyRequiredForReads:
- *           type: boolean
- *           description: True when API_KEY is set and API_KEY_FOR_READS=true.
- *         statuses:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/PartStatus'
- *         phases:
- *           type: object
- *           description: Phase number to name.
- *           required: ['1', '2', '3', '4']
- *           properties:
- *             '1':
- *               type: string
- *               example: Before Driving
- *             '2':
- *               type: string
- *               example: Priority
- *             '3':
- *               type: string
- *               example: Non-Priority
- *             '4':
- *               type: string
- *               example: Performance
- *         icons:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/ContainerIcon'
- *         maxUploadMb:
- *           type: number
- *           description: Largest photo upload accepted, in MB.
  */
 api.get('/config', (_req, res) => {
     res.json({
@@ -279,57 +239,14 @@ function photoResource<T extends Versioned, I>(
  *     description: Filters are optional and combined with AND. Oldest first.
  *     parameters:
  *       - $ref: '#/components/parameters/includeDeleted'
- *       - name: status
- *         in: query
- *         description: Only parts with any of these statuses (repeat the parameter or separate with commas).
- *         style: form
- *         explode: true
- *         schema:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/PartStatus'
- *       - name: tag
- *         in: query
- *         description: >-
- *           Only parts with any of these tags (repeat or separate with commas). Special values: `Phase 1`..`Phase 4`
- *           match parts used by an open task in that phase; `Other cars` matches parts whose `fits` is set and is not
- *           `RSX`.
- *         style: form
- *         explode: true
- *         schema:
- *           type: array
- *           items:
- *             type: string
- *       - name: fits
- *         in: query
- *         description: Only parts whose `fits` is exactly one of these values (repeat or separate with commas).
- *         style: form
- *         explode: true
- *         schema:
- *           type: array
- *           items:
- *             type: string
- *       - name: container
- *         in: query
- *         description: >-
- *           A container UUID or key: parts in that container or its sub-containers (404 if there is no such container).
- *           `none` = parts not in any container.
- *         schema:
- *           type: string
- *       - name: q
- *         in: query
- *         description: Case-insensitive text search in name, part number, notes and tags.
- *         schema:
- *           type: string
+ *       - $ref: '#/components/parameters/partStatusFilter'
+ *       - $ref: '#/components/parameters/partTagFilter'
+ *       - $ref: '#/components/parameters/partFitsFilter'
+ *       - $ref: '#/components/parameters/partContainerFilter'
+ *       - $ref: '#/components/parameters/partSearch'
  *     responses:
  *       200:
- *         description: The parts.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Part'
+ *         $ref: '#/components/responses/PartList'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -344,39 +261,10 @@ function photoResource<T extends Versioned, I>(
  *       required. A part with photos is created only if every photo can be processed.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/PartInput'
- *               - required: [label]
- *           example:
- *             { label: Injen cold air intake, key: injen-intake, status: Verified, tags: [Intake, For sale],
- *               valueLow: 150, valueHigh: 220, containerId: box-engine }
- *         multipart/form-data:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/PartInput'
- *               - type: object
- *                 required: [label]
- *                 properties:
- *                   photos:
- *                     type: array
- *                     maxItems: 12
- *                     items:
- *                       type: string
- *                       format: binary
+ *       $ref: '#/components/requestBodies/PartCreate'
  *     responses:
  *       201:
- *         description: The created part.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Part'
+ *         $ref: '#/components/responses/PartCreated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -395,14 +283,7 @@ function photoResource<T extends Versioned, I>(
  *     summary: Get a part
  *     responses:
  *       200:
- *         description: The part.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Part'
+ *         $ref: '#/components/responses/Part'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -415,23 +296,12 @@ function photoResource<T extends Versioned, I>(
  *     description: Changes only the fields sent. An empty body changes nothing and returns the part.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/PartInput'
+ *       $ref: '#/components/requestBodies/PartUpdate'
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The updated part.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Part'
+ *         $ref: '#/components/responses/PartUpdated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -456,10 +326,7 @@ function photoResource<T extends Versioned, I>(
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       204:
- *         description: Deleted; the ETag is the tombstone's version.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
+ *         $ref: '#/components/responses/Deleted'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -484,14 +351,7 @@ function photoResource<T extends Versioned, I>(
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
- *         description: The part with its photos.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Part'
+ *         $ref: '#/components/responses/PartPhotosAdded'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -517,14 +377,7 @@ function photoResource<T extends Versioned, I>(
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The part with its photos in the new order.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Part'
+ *         $ref: '#/components/responses/PartPhotosReordered'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -561,23 +414,12 @@ photoResource('parts', {
  *       it from its tasks. The body is optional. The ETag is the new tossed record's version.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/PartTossInput'
+ *       $ref: '#/components/requestBodies/PartToss'
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
- *         description: The new tossed record.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/TossedFromPart'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -607,13 +449,7 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
- *         description: The containers.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Container'
+ *         $ref: '#/components/responses/ContainerList'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -628,37 +464,10 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *       required.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/ContainerInput'
- *               - required: [name]
- *           example: { name: Small Trim, key: small-trim, parentId: body-trim, icon: trim }
- *         multipart/form-data:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/ContainerInput'
- *               - type: object
- *                 required: [name]
- *                 properties:
- *                   photos:
- *                     type: array
- *                     maxItems: 12
- *                     items:
- *                       type: string
- *                       format: binary
+ *       $ref: '#/components/requestBodies/ContainerCreate'
  *     responses:
  *       201:
- *         description: The created container.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Container'
+ *         $ref: '#/components/responses/ContainerCreated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -677,14 +486,7 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     summary: Get a container
  *     responses:
  *       200:
- *         description: The container.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Container'
+ *         $ref: '#/components/responses/Container'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -697,23 +499,12 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     description: Changes only the fields sent. An empty body changes nothing and returns the container.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ContainerInput'
+ *       $ref: '#/components/requestBodies/ContainerUpdate'
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The updated container.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Container'
+ *         $ref: '#/components/responses/ContainerUpdated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -738,10 +529,7 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       204:
- *         description: Deleted; the ETag is the tombstone's version.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
+ *         $ref: '#/components/responses/Deleted'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -766,14 +554,7 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
- *         description: The container with its photos.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Container'
+ *         $ref: '#/components/responses/ContainerPhotosAdded'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -799,14 +580,7 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The container with its photos in the new order.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Container'
+ *         $ref: '#/components/responses/ContainerPhotosReordered'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -839,13 +613,7 @@ photoResource('containers', {
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
- *         description: The tossed records.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/TossedList'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -860,37 +628,10 @@ photoResource('containers', {
  *       required; tossedOn defaults to today. New records go to the end of the list.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/TossedInput'
- *               - required: [label]
- *           example: { label: Cracked headlight, reason: Mount tabs broken, tossedOn: 2026-10-06 }
- *         multipart/form-data:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/TossedInput'
- *               - type: object
- *                 required: [label]
- *                 properties:
- *                   photos:
- *                     type: array
- *                     maxItems: 12
- *                     items:
- *                       type: string
- *                       format: binary
+ *       $ref: '#/components/requestBodies/TossedCreate'
  *     responses:
  *       201:
- *         description: The created tossed record.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/TossedCreated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -909,14 +650,7 @@ photoResource('containers', {
  *     summary: Get a tossed record
  *     responses:
  *       200:
- *         description: The tossed record.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/Tossed'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -929,23 +663,12 @@ photoResource('containers', {
  *     description: Changes only the fields sent. An empty body changes nothing and returns the tossed record.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/TossedInput'
+ *       $ref: '#/components/requestBodies/TossedUpdate'
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The updated tossed record.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/TossedUpdated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -967,10 +690,7 @@ photoResource('containers', {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       204:
- *         description: Deleted; the ETag is the tombstone's version.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
+ *         $ref: '#/components/responses/Deleted'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -995,14 +715,7 @@ photoResource('containers', {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       201:
- *         description: The tossed record with its photos.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/TossedPhotosAdded'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1028,14 +741,7 @@ photoResource('containers', {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The tossed record with its photos in the new order.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/TossedPhotosReordered'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1074,17 +780,7 @@ photoResource('tossed', {
  *       - $ref: '#/components/parameters/ifMatch'
  *     responses:
  *       200:
- *         description: The record the photo belonged to.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               oneOf:
- *                 - $ref: '#/components/schemas/Part'
- *                 - $ref: '#/components/schemas/Container'
- *                 - $ref: '#/components/schemas/Tossed'
+ *         $ref: '#/components/responses/PhotoDeleted'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1114,13 +810,7 @@ api.delete('/photos/:id', async (req, res) => {
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
- *         description: The tasks.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/TaskList'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
@@ -1136,24 +826,10 @@ api.get('/tasks', async (req, res) => {
  *     description: Only `title` is required. Unknown part ids or keys in `partIds` are a 400.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/TaskInput'
- *               - required: [title]
- *           example: { title: Replace clutch master cylinder, phase: 1, partIds: [injen-intake] }
+ *       $ref: '#/components/requestBodies/TaskCreate'
  *     responses:
  *       201:
- *         description: The created task.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/TaskCreated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1173,14 +849,7 @@ api.post('/tasks', async (req, res) => {
  *       - $ref: '#/components/parameters/taskRef'
  *     responses:
  *       200:
- *         description: The task.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/Task'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1203,22 +872,10 @@ api.get('/tasks/:ref', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *       - $ref: '#/components/parameters/taskRef'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/TaskInput'
- *           example: { done: true }
+ *       $ref: '#/components/requestBodies/TaskUpdate'
  *     responses:
  *       200:
- *         description: The updated task.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Task'
+ *         $ref: '#/components/responses/TaskUpdated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1251,10 +908,7 @@ api.patch('/tasks/:ref', async (req, res) => {
  *       - $ref: '#/components/parameters/taskRef'
  *     responses:
  *       204:
- *         description: Deleted; the ETag is the tombstone's version.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
+ *         $ref: '#/components/responses/Deleted'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1284,13 +938,7 @@ api.delete('/tasks/:ref', async (req, res) => {
  *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200:
- *         description: The notes.
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Note'
+ *         $ref: '#/components/responses/NoteList'
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
@@ -1307,14 +955,7 @@ api.get('/notes', async (req, res) => {
  *       - $ref: '#/components/parameters/noteRef'
  *     responses:
  *       200:
- *         description: The note.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Note'
+ *         $ref: '#/components/responses/Note'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1334,24 +975,10 @@ api.get('/notes/:ref', async (req, res) => {
  *     description: Only `title` is required.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             allOf:
- *               - $ref: '#/components/schemas/NoteInput'
- *               - required: [title]
- *           example: { title: Interior observations, items: [Driver seat bolster worn, Headliner sagging] }
+ *       $ref: '#/components/requestBodies/NoteCreate'
  *     responses:
  *       201:
- *         description: The created note.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Note'
+ *         $ref: '#/components/responses/NoteCreated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1374,21 +1001,10 @@ api.post('/notes', async (req, res) => {
  *       - $ref: '#/components/parameters/ifMatch'
  *       - $ref: '#/components/parameters/noteRef'
  *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/NoteInput'
+ *       $ref: '#/components/requestBodies/NoteUpdate'
  *     responses:
  *       200:
- *         description: The updated note.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Note'
+ *         $ref: '#/components/responses/NoteUpdated'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
@@ -1423,10 +1039,7 @@ api.patch('/notes/:ref', async (req, res) => {
  *       - $ref: '#/components/parameters/noteRef'
  *     responses:
  *       204:
- *         description: Deleted; the ETag is the tombstone's version.
- *         headers:
- *           ETag:
- *             $ref: '#/components/headers/ETag'
+ *         $ref: '#/components/responses/Deleted'
  *       400:
  *         $ref: '#/components/responses/BadRequest'
  *       401:
