@@ -1,6 +1,8 @@
 # Tag a commit with the next semantic version and publish a GitHub release for it, with notes
-# generated from the commits since the previous version. The first release is v1.0.0; after that
-# each release bumps the patch number unless asked for a minor or major bump.
+# generated from the commits since the previous version. The first release is v1.0.0. After that the
+# bump comes from the commit messages since the previous version (docs/ci.md#versions):
+#   page: (a new page or section) -> major,  feat: (a change in what the app does) -> minor,
+#   anything else (fix:, docs:, ci:, ...) -> patch. The biggest one wins.
 # Runs on its own from the Actions tab (tags the branch tip), or as the last step of Deploy (tags
 # the commit that was deployed).
 name: Release
@@ -9,10 +11,10 @@ on:
     workflow_dispatch:
         inputs:
             bump:
-                description: Which part of the version to raise
+                description: Which part of the version to raise (auto reads the commit messages)
                 type: choice
-                options: [patch, minor, major]
-                default: patch
+                options: [auto, patch, minor, major]
+                default: auto
     workflow_call:
         inputs:
             sha:
@@ -24,10 +26,10 @@ on:
                 type: string
                 required: false
             bump:
-                description: patch, minor or major
+                description: auto, patch, minor or major
                 type: string
                 required: false
-                default: patch
+                default: auto
         outputs:
             version:
                 description: The release's tag, e.g. v1.2.3
@@ -50,10 +52,18 @@ jobs:
               id: tag
               env:
                   SHA: ${{ inputs.sha || github.sha }}
-                  BUMP: ${{ inputs.bump || 'patch' }}
+                  BUMP: ${{ inputs.bump || 'auto' }}
               run: |
                   # Latest vMAJOR.MINOR.PATCH tag (other tags, like the old dated ones, are ignored).
                   last=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+                  if [ -n "$last" ] && [ "$BUMP" = auto ]; then
+                      # Commit subjects like "feat(web): ..." or "page!: ..." -> their type.
+                      types=$(git log --format=%s "$last..$SHA" | sed -nE 's/^([a-z]+)(\([^)]*\))?!?:.*/\1/p')
+                      if grep -qx page <<< "$types"; then BUMP=major
+                      elif grep -qx feat <<< "$types"; then BUMP=minor
+                      else BUMP=patch; fi
+                      echo "Commit types since $last: $(sort <<< "$types" | uniq -c | tr -s ' \n' ' ')-> $BUMP"
+                  fi
                   if [ -z "$last" ]; then
                       version=v1.0.0
                   else

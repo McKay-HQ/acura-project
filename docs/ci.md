@@ -34,7 +34,18 @@ The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Bu
 
 ## Versions
 
-Releases use semantic versioning, starting at `v1.0.0`. A deploy from a push bumps the patch number (`v1.0.0` → `v1.0.1`). To bump the minor or major number instead, run **Deploy** (or **Release** on its own) from the Actions tab and pick `minor` (`v1.0.1` → `v1.1.0`) or `major` (→ `v2.0.0`).
+Releases use [semantic versioning](https://semver.org), starting at `v1.0.0`. Each release raises one part of the version, chosen from the commit messages since the previous release. A commit message starts with its type, optionally a scope, then a colon:
+
+| Type | For | Bumps |
+|---|---|---|
+| `page:` | A new page or section (e.g. The Car tab) | major: `v1.4.2` → `v2.0.0` |
+| `feat:` | A change in what the app does (new controls, new behavior) | minor: `v1.4.2` → `v1.5.0` |
+| `fix:` | A fix | patch: `v1.4.2` → `v1.4.3` |
+| anything else (`docs:`, `ci:`, `refactor:`, `style:`, `chore:`, ...) | Changes that aren't features or fixes | patch |
+
+The biggest bump among the commits wins. A scope goes in parentheses: `feat(web): photo captions`, `fix(api): reject empty step text`.
+
+To override it, run **Deploy** (or **Release** on its own) from the Actions tab and pick `patch`, `minor` or `major` instead of `auto`.
 
 ## The local commands still work
 

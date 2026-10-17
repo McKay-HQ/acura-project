@@ -14,10 +14,10 @@ on:
                 type: boolean
                 default: true
             bump:
-                description: Release version bump (pushes always bump the patch)
+                description: Release version bump (auto reads the commit messages, as pushes do)
                 type: choice
-                options: [patch, minor, major]
-                default: patch
+                options: [auto, patch, minor, major]
+                default: auto
 
 # One deploy at a time; a newer push waits for the current run instead of cancelling it mid-rollout.
 concurrency:
@@ -89,4 +89,4 @@ jobs:
         with:
             sha: ${{ github.sha }}
             image-tag: ${{ needs.build.outputs.image-tag }}
-            bump: ${{ inputs.bump || 'patch' }}
+            bump: ${{ inputs.bump || 'auto' }}
