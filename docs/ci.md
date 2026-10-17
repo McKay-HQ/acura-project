@@ -1,15 +1,16 @@
 # GitHub Actions
 
-Six workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs Build, Sync and Release and starts by itself on every push to `main`; **Static Checks** and **Build Checks** run on every pull request.
+Seven workflows in `.github/workflows/`. Each can be run on its own from the Actions tab (pick it, then **Run workflow**); **Deploy** runs Build, Sync and Release and starts by itself on every push to `main`; **Static Checks**, **Build Checks** and **Version label** run on every pull request.
 
 | Workflow                                | What it does                                                                                                                                                                                                                      |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Build** (`build.yml`)                 | Builds both images and pushes them to the registry, tagged with the commit (`acura-api:<sha>`, `acura-web:<sha>`)                                                                                                                 |
 | **Sync** (`sync.yml`)                   | Two-way sync of the catalog with the app (`bin/sync`); what it pulls from the app goes into `main` through a pull request that merges itself                                                                                      |
-| **Release** (`release.yml`)             | Tags a commit with the next [semantic version](https://semver.org) and publishes a GitHub release with notes generated from the commits since the previous version                                                                |
+| **Release** (`release.yml`)             | Tags a commit with the next [semantic version](https://semver.org) (bump from the merged pull requests' labels) and publishes a GitHub release with notes generated from the commits since the previous version                   |
 | **Deploy** (`deploy.yml`)               | Build → roll out the new images and wait for the app to answer → Sync → Release                                                                                                                                                   |
 | **Static Checks** (`static-checks.yml`) | Typechecks `api/` and `web/` and runs ESLint, which includes Prettier's formatting; TypeScript and ESLint results go to code scanning as [SARIF](#sarif). Also runs on `main`. Job `static-checks`, which the ruleset can require |
 | **Build Checks** (`build-checks.yml`)   | Builds the API, checks its `@openapi` docs against the build, and builds the web app. Job `build-checks`, which the ruleset can require                                                                                           |
+| **Version label** (`labels.yml`)        | Fails unless the pull request has exactly one of the `breaking`, `feature`, `fix` or `sync` labels. Job `version-label`, which the ruleset can require                                                                            |
 
 ## What a push to main does
 
@@ -38,16 +39,16 @@ The Azure sign-in steps live in `.github/actions/azure/action.yml`, shared by Bu
 
 ## Versions
 
-Releases use [semantic versioning](https://semver.org), starting at `v1.0.0`. Each release raises one part of the version, chosen from the commit messages since the previous release. A commit message starts with its type, optionally a scope, then a colon:
+Releases use [semantic versioning](https://semver.org), starting at `v1.0.0`. Each release raises one part of the version, chosen from the labels on the pull requests merged since the previous release:
 
-| Type                                                                 | For                                                        | Bumps                      |
-| -------------------------------------------------------------------- | ---------------------------------------------------------- | -------------------------- |
-| `page:`                                                              | A new page or section (e.g. The Car tab)                   | major: `v1.4.2` → `v2.0.0` |
-| `feat:`                                                              | A change in what the app does (new controls, new behavior) | minor: `v1.4.2` → `v1.5.0` |
-| `fix:`                                                               | A fix                                                      | patch: `v1.4.2` → `v1.4.3` |
-| anything else (`docs:`, `ci:`, `refactor:`, `style:`, `chore:`, ...) | Changes that aren't features or fixes                      | patch                      |
+| Label      | For                                                                      | Bumps                      |
+| ---------- | ------------------------------------------------------------------------ | -------------------------- |
+| `breaking` | A breaking change, or a new page or section (e.g. The Car tab)           | major: `v1.4.2` → `v2.0.0` |
+| `feature`  | A new feature or a change in what the app does that keeps things working | minor: `v1.4.2` → `v1.5.0` |
+| `fix`      | A fix, or anything else (docs, CI, refactoring)                          | patch: `v1.4.2` → `v1.4.3` |
+| `sync`     | A catalog sync from the app (`bin/sync`)                                 | none                       |
 
-The biggest bump among the commits wins. A scope goes in parentheses: `feat(web): photo captions`, `fix(api): reject empty step text`.
+The biggest bump among the pull requests wins, and a pull request without a label counts as `fix`. `sync` pull requests don't count at all: if they're all there is since the previous release, Release makes no new version. Every pull request needs exactly one of these labels: the **Version label** workflow (`labels.yml`) fails until it has one, and runs again when labels change. Pull requests the sync opens are labeled `sync`. Labels are read when the release runs, so a wrong label can still be fixed after merging, until the deploy reaches Release.
 
 To override it, run **Deploy** (or **Release** on its own) from the Actions tab and pick `patch`, `minor` or `major` instead of `auto`.
 

@@ -1,0 +1,37 @@
+# Every pull request into main needs exactly one version label, which decides the next release's bump
+# (docs/ci.md#versions): breaking -> major, feature -> minor, fix -> patch, sync -> no bump.
+# The job is named "version-label" so the ruleset can require it. Adding or removing a label re-runs it.
+# Run from the Actions tab on a branch, it checks that branch's open pull request.
+name: Version label
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+  workflow_dispatch:
+
+permissions:
+  pull-requests: read
+
+jobs:
+  version-label:
+    name: version-label
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check the label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              labels=$(jq -r '.[]' <<< "$EVENT_LABELS")
+          else
+              labels=$(gh api "repos/$GITHUB_REPOSITORY/pulls?state=open&head=${GITHUB_REPOSITORY_OWNER}:$BRANCH" \
+                  --jq '.[0].labels[].name')
+          fi
+          found=$(grep -xE 'breaking|feature|fix|sync' <<< "$labels" || true)
+          case $(grep -c . <<< "$found") in
+              1) echo "Version label: $found" ;;
+              0) echo "::error::Add one label: breaking (major), feature (minor), fix (patch) or sync (no bump)"; exit 1 ;;
+              *) echo "::error::Only one version label, please (found: $(tr '\n' ' ' <<< "$found"))"; exit 1 ;;
+          esac

@@ -2,18 +2,20 @@
 
 ## Commit messages
 
-Start every commit subject with a type, which decides the release version bump (docs/ci.md#versions):
+Start every commit subject with a type: `feat:`, `fix:`, `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:`. Add a scope when it helps: `feat(web): ...`, `fix(api): ...`, `ci(release): ...`. A pull request's title follows the same pattern, since squashing makes it the commit.
 
-- `page:` a new page or section in the app → major
-- `feat:` a change in what the app does → minor
-- `fix:` a fix → patch
-- `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:` → patch
+## Version labels
 
-Add a scope when it helps: `feat(web): ...`, `fix(api): ...`, `ci(release): ...`.
+The release version bump comes from pull request labels, not commit types (docs/ci.md#versions). Give every pull request exactly one:
+
+- `breaking` a breaking change, or a new page or section in the app → major
+- `feature` a new feature or a change in what the app does → minor
+- `fix` a fix or anything else → patch
+- `sync` a catalog sync from the app (bin/sync opens these) → no bump
 
 ## Branches
 
-`main` deploys on every merge and only takes pull requests (squash or rebase). Work on a branch named `<type>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`), open a pull request whose title has a type too (it becomes the squashed commit), and merge it. More conventions in the README.
+`main` deploys on every merge and only takes pull requests (squash or rebase). Work on a branch named `<kind>/<short-description>` (`feat/task-steps`, `fix/photo-viewer-zoom`), open a pull request whose title has a type too (it becomes the squashed commit), and merge it. More conventions in the README.
 
 ## Code style
 

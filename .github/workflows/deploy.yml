@@ -14,7 +14,7 @@ on:
         type: boolean
         default: true
       bump:
-        description: Release version bump (auto reads the commit messages, as pushes do)
+        description: Release version bump (auto reads the merged pull requests' labels, as pushes do)
         type: choice
         options: [auto, patch, minor, major]
         default: auto
@@ -28,6 +28,7 @@ permissions:
   contents: write
   pull-requests: write # Sync opens a pull request for what it pulls from the app
   actions: write # and starts the checks on it
+  # pull-requests: write also lets Release read the merged pull requests' labels
   id-token: write
 
 jobs:

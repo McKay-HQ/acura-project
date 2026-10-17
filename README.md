@@ -56,18 +56,20 @@ Everything else is in [docs/](docs/README.md). Each command shows its page with 
 
 ## Conventions
 
-**Branches.** `main` is what's live: every merge into it deploys (see [GitHub Actions](#github-actions)). It only takes changes through pull requests (squash or rebase, linear history, no force pushes, no deleting it), so every change goes on a branch named `<type>/<short-description>` with the same types as commit messages, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`, `page/the-car`. The sync's branches are `sync/catalog-<date>-<time>`. With squash merges the pull request's title becomes the commit on `main`, so give the title a type too.
+**Branches.** `main` is what's live: every merge into it deploys (see [GitHub Actions](#github-actions)). It only takes changes through pull requests (squash or rebase, linear history, no force pushes, no deleting it), so every change goes on a branch named `<kind>/<short-description>`, e.g. `feat/task-steps`, `fix/photo-viewer-zoom`. The sync's branches are `sync/catalog-<date>-<time>`. With squash merges the pull request's title becomes the commit on `main`, so give the title a type too.
 
-**Commit messages** start with a type, which also decides the release version bump ([docs/ci.md](docs/ci.md#versions)):
+**Version labels.** Every pull request gets exactly one label, which decides how the next release raises the version ([docs/ci.md](docs/ci.md#versions)):
 
-| Type                                                               | For                           | Release bump |
-| ------------------------------------------------------------------ | ----------------------------- | ------------ |
-| `page:`                                                            | A new page or section         | major        |
-| `feat:`                                                            | A change in what the app does | minor        |
-| `fix:`                                                             | A fix                         | patch        |
-| `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:` | Everything else               | patch        |
+| Label      | For                                             | Release bump |
+| ---------- | ----------------------------------------------- | ------------ |
+| `breaking` | A breaking change, or a new page or section     | major        |
+| `feature`  | A new feature or change in what the app does    | minor        |
+| `fix`      | A fix, or anything else (docs, CI, refactoring) | patch        |
+| `sync`     | A catalog sync from the app                     | none         |
 
-Add a scope when it helps: `feat(web): photo captions`, `fix(api): reject empty step text`. The sync's pull requests are titled `chore(sync): catalog from the app ...` and merge themselves.
+The **Version label** check fails until a pull request has one. Pull requests the sync opens are labeled `sync`, so catalog changes alone never make a release.
+
+**Commit messages** start with a type that says what kind of change it is: `feat:`, `fix:`, `docs:`, `ci:`, `refactor:`, `style:`, `chore:`, `build:`, `test:`, with a scope when it helps (`feat(web): photo captions`, `fix(api): reject empty step text`). The type doesn't affect the version; the label does. The sync's pull requests are titled `chore(sync): catalog from the app ...` and merge themselves.
 
 **Versions** are semantic, starting at `v1.0.0`, tagged and released by the workflows; local deploys aren't released.
 
