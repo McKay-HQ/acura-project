@@ -231,7 +231,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- TagCount (Tag) ----
@@ -330,7 +330,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- Tossed ----
@@ -376,7 +376,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- TaskPartRef ----
@@ -495,7 +495,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- Note ----
@@ -533,7 +533,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- Summary ----

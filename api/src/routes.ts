@@ -24,7 +24,7 @@ import * as tossed from './services/tossed.js';
 import * as tasks from './services/tasks.js';
 import * as notes from './services/notes.js';
 import { addRecordPhotos, reorderPhotos, deletePhoto } from './services/common.js';
-import { etag, ifMatch, includeDeleted, sendRecord } from './lib/preconditions.js';
+import { etag, ifMatch, sendRecord } from './lib/preconditions.js';
 import type { IfMatch } from './lib/preconditions.js';
 import { getSummary } from './services/summary.js';
 import { docs } from './openapi.js';
@@ -179,7 +179,7 @@ api.get('/tags', async (_req, res) => {
 /** The service functions behind a record type with photos. T is the API shape, I the validated input. */
 interface PhotoResource<T extends Versioned, I> {
     noun: string;
-    list: (q: Request['query'], includeDeleted: boolean) => Promise<T[]>;
+    list: (q: Request['query']) => Promise<T[]>;
     get: (ref: string, client?: PoolClient) => Promise<T>;
     create: (data: I, files?: Express.Multer.File[]) => Promise<T>;
     update: (ref: string, data: I, im: IfMatch) => Promise<T>;
@@ -190,7 +190,7 @@ interface PhotoResource<T extends Versioned, I> {
 
 /**
  * Standard routes for a record type with photos:
- *   GET /<name> (?includeDeleted=1), GET /<name>/:ref, POST /<name> (JSON, or multipart with "photos" files),
+ *   GET /<name>, GET /<name>/:ref, POST /<name> (JSON, or multipart with "photos" files),
  *   PATCH /<name>/:ref, DELETE /<name>/:ref,
  *   POST /<name>/:ref/photos (multipart "photos"), PUT /<name>/:ref/photos/order { ids: [...] }
  * :ref is a UUID or the record's key. Writes to an existing record need If-Match with its version;
@@ -201,7 +201,7 @@ function photoResource<T extends Versioned, I>(
     { list, get, create, update, remove, validate, noun }: PhotoResource<T, I>,
 ): void {
     api.get(`/${name}`, async (req, res) => {
-        res.json(await list(req.query, includeDeleted(req)));
+        res.json(await list(req.query));
     });
     api.get(`/${name}/:ref`, async (req, res) => {
         sendRecord(res, 200, await get(assertRef(req.params.ref, noun)));
@@ -236,7 +236,6 @@ function photoResource<T extends Versioned, I>(
  *     summary: List parts
  *     description: Filters are optional and combined with AND. Oldest first.
  *     parameters:
- *       - $ref: '#/components/parameters/includeDeleted'
  *       - $ref: '#/components/parameters/partStatusFilter'
  *       - $ref: '#/components/parameters/partTagFilter'
  *       - $ref: '#/components/parameters/partFitsFilter'
@@ -295,9 +294,9 @@ function photoResource<T extends Versioned, I>(
  *     tags: [Parts]
  *     summary: Delete a part
  *     description: >-
- *       Soft-deletes the part: it becomes a tombstone (`deletedAt` set, version bumped) that only lists with
- *       `includeDeleted=1` show, and its key stays taken. Its photos are deleted and it is removed from tasks (their
- *       versions are bumped). To keep it on the Tossed list instead, use POST /parts/{ref}/toss.
+ *       Soft-deletes the part: it becomes a tombstone (`deletedAt` set, version bumped) that no read returns,
+ *       and its key stays taken. Its photos are deleted and it is removed from tasks (their versions are bumped).
+ *       To keep it on the Tossed list instead, use POST /parts/{ref}/toss.
  *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
  *     parameters:
  *       - $ref: '#/components/parameters/ifMatch'
@@ -349,7 +348,7 @@ function photoResource<T extends Versioned, I>(
  */
 photoResource('parts', {
     noun: 'part id',
-    list: (filters, all) => parts.listParts(filters, all),
+    list: (filters) => parts.listParts(filters),
     get: parts.getPart,
     create: parts.createPart,
     update: parts.updatePart,
@@ -397,8 +396,6 @@ api.post('/parts/:ref/toss', async (req, res) => {
  *     tags: [Containers]
  *     summary: List containers
  *     description: All containers, top-level and sub-containers, in display order (sortOrder, then oldest first).
- *     parameters:
- *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200: { $ref: '#/components/responses/ContainerList' }
  *       400: { $ref: '#/components/responses/BadRequest' }
@@ -506,7 +503,7 @@ api.post('/parts/:ref/toss', async (req, res) => {
  */
 photoResource('containers', {
     noun: 'container id',
-    list: (_q, all) => containers.listContainers(all),
+    list: () => containers.listContainers(),
     get: containers.getContainer,
     create: containers.createContainer,
     update: containers.updateContainer,
@@ -521,8 +518,6 @@ photoResource('containers', {
  *     tags: [Tossed]
  *     summary: List tossed records
  *     description: Tossed parts in display order.
- *     parameters:
- *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200: { $ref: '#/components/responses/TossedList' }
  *       400: { $ref: '#/components/responses/BadRequest' }
@@ -627,7 +622,7 @@ photoResource('containers', {
  */
 photoResource('tossed', {
     noun: 'tossed id',
-    list: (_q, all) => tossed.listTossed(all),
+    list: () => tossed.listTossed(),
     get: tossed.getTossed,
     create: tossed.createTossed,
     update: tossed.updateTossed,
@@ -672,14 +667,12 @@ api.delete('/photos/:id', async (req, res) => {
  *     tags: [Tasks]
  *     summary: List tasks
  *     description: By phase; within a phase open tasks first, then oldest first.
- *     parameters:
- *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200: { $ref: '#/components/responses/TaskList' }
  *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.get('/tasks', async (req, res) => {
-    res.json(await tasks.listTasks(includeDeleted(req)));
+    res.json(await tasks.listTasks());
 });
 /**
  * @openapi
@@ -779,14 +772,12 @@ api.delete('/tasks/:ref', async (req, res) => {
  *     tags: [Notes]
  *     summary: List notes
  *     description: Oldest first.
- *     parameters:
- *       - $ref: '#/components/parameters/includeDeleted'
  *     responses:
  *       200: { $ref: '#/components/responses/NoteList' }
  *       401: { $ref: '#/components/responses/Unauthorized' }
  */
 api.get('/notes', async (req, res) => {
-    res.json(await notes.listNotes(includeDeleted(req)));
+    res.json(await notes.listNotes());
 });
 /**
  * @openapi

@@ -55,10 +55,11 @@ const toApi = (row: ContainerRow): Container => ({
     deletedAt: row.deleted_at,
 });
 
-/** All containers, top-level and sub, in display order; deleted ones (tombstones) only with includeDeleted. */
-export async function listContainers(includeDeleted = false): Promise<Container[]> {
-    const where = includeDeleted ? '' : 'WHERE x.deleted_at IS NULL';
-    const { rows } = await query<ContainerRow>(`${SELECT} ${where} ORDER BY x.sort_order, x.created_at, x.id`);
+/** All containers, top-level and sub, in display order; deleted ones (tombstones) are left out. */
+export async function listContainers(): Promise<Container[]> {
+    const { rows } = await query<ContainerRow>(
+        `${SELECT} WHERE x.deleted_at IS NULL ORDER BY x.sort_order, x.created_at, x.id`,
+    );
     return rows.map(toApi);
 }
 

@@ -48,7 +48,7 @@ too): without it the answer is 428; if the record has changed since, 412 with th
 and nothing is changed.
 
 **Deletes are soft.** A deleted record keeps its key and gets \`deletedAt\`; it is left out of every read
-(GET by id is a 404) except lists with \`includeDeleted=1\`.
+(GET by id is a 404).
 
 **Errors** are JSON: \`{ "error": "message" }\`, plus \`details\` (a list of field problems) for validation errors.
 

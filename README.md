@@ -95,7 +95,7 @@ The **Version label** check fails until a pull request has one.
 | `api/docker/`                | API Dockerfile and entrypoint                                                                                                     |
 | `api/migrations/`            | SQL schema changes, applied in order on startup                                                                                   |
 | `api/scripts/`               | `lint-openapi.ts` (`npm run lint:openapi`)                                                                                        |
-| `api/seed/`                  | Starter snapshot for an empty database: `seed.json` and its photos; `history/` is read by a one-time photo backfill               |
+| `api/seed/`                  | Starter snapshot for an empty database: `seed.json` and its photos                                                                |
 | `api/src/`                   | The API: `routes.ts`, OpenAPI pieces in `components.ts` and `schemas.ts`, `openapi.ts`, `services/` (one per record type), `lib/` |
 | `web/docker/`                | Web Dockerfile and the nginx config template                                                                                      |
 | `web/public/`                | Static files: icons, Home photos, The Car photos (`car/`)                                                                         |

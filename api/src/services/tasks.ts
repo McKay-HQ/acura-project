@@ -31,10 +31,11 @@ const toApi = (row: TaskRow): Task => ({
     deletedAt: row.deleted_at,
 });
 
-// By phase, open tasks first within a phase, then oldest first. Deleted tasks (tombstones) only with includeDeleted.
-export async function listTasks(includeDeleted = false): Promise<Task[]> {
-    const where = includeDeleted ? '' : 'WHERE t.deleted_at IS NULL';
-    const { rows } = await query<TaskRow>(`${SELECT} ${where} ORDER BY t.phase, t.done, t.created_at, t.id`);
+// By phase, open tasks first within a phase, then oldest first. Deleted tasks (tombstones) are left out.
+export async function listTasks(): Promise<Task[]> {
+    const { rows } = await query<TaskRow>(
+        `${SELECT} WHERE t.deleted_at IS NULL ORDER BY t.phase, t.done, t.created_at, t.id`,
+    );
     return rows.map(toApi);
 }
 
