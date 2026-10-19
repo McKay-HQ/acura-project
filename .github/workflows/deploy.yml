@@ -1,7 +1,6 @@
-# On every push to main (see docs/ci.md):
-#   - Code changed: Build -> roll out the new images -> Sync -> Release.
-#   - Only other files changed (e.g. the catalog in api/seed/): Sync.
-# Run it from the Actions tab to deploy without a push; Build, Sync and Release also run on their own.
+# On every push to main (see docs/ci.md): when code changed, Build -> roll out the new images -> Release.
+# When only other files changed (e.g. docs), nothing goes out.
+# Run it from the Actions tab to deploy without a push; Build and Release also run on their own.
 name: Deploy
 
 on:
@@ -9,10 +8,6 @@ on:
     branches: [main]
   workflow_dispatch:
     inputs:
-      deploy:
-        description: Build, deploy and release even if no code changed
-        type: boolean
-        default: true
       bump:
         description: Release version bump (auto reads the merged pull requests' labels, as pushes do)
         type: choice
@@ -25,11 +20,9 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
-  pull-requests: write # Sync opens a pull request for what it pulls from the app
-  actions: write # and starts the checks on it
-  # pull-requests: write also lets Release read the merged pull requests' labels
-  id-token: write
+  contents: write # Release tags the commit and publishes the release
+  pull-requests: read # Release reads the merged pull requests' labels
+  id-token: write # Azure sign-in
 
 jobs:
   # Code changed since the last release, i.e. the last commit Deploy rolled out, not just in this push: a push
@@ -40,7 +33,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      code: ${{ steps.diff.outputs.code == 'true' || (github.event_name == 'workflow_dispatch' && inputs.deploy) }}
+      code: ${{ steps.diff.outputs.code == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -86,17 +79,10 @@ jobs:
       - name: Roll out
         env:
           IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
-        run: ./bin/deploy -P -S
-
-  # After a rollout, or on its own when no code changed.
-  sync:
-    needs: [changes, rollout]
-    if: ${{ !cancelled() && !failure() }}
-    uses: ./.github/workflows/sync.yml
+        run: ./bin/deploy -P
 
   release:
-    needs: [build, rollout, sync]
-    if: ${{ !cancelled() && needs.rollout.result == 'success' }}
+    needs: [build, rollout]
     uses: ./.github/workflows/release.yml
     with:
       sha: ${{ github.sha }}

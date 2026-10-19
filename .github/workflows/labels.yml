@@ -1,5 +1,5 @@
 # Every pull request into main needs exactly one version label, which decides the next release's bump
-# (docs/ci.md#versions): breaking -> major, feature -> minor, fix -> patch, sync -> no bump.
+# (docs/ci.md#versions): breaking -> major, feature -> minor, fix -> patch.
 # The job is named "version-label" so the ruleset can require it. Adding or removing a label re-runs it.
 # Run from the Actions tab on a branch, it checks that branch's open pull request.
 name: Version label
@@ -44,9 +44,9 @@ jobs:
               fi
               labels=$(jq -r '.[0].labels[].name' <<< "$prs")
           fi
-          found=$(grep -xE 'breaking|feature|fix|sync' <<< "$labels" || true)
+          found=$(grep -xE 'breaking|feature|fix' <<< "$labels" || true)
           case $(grep -c . <<< "$found") in
               1) echo "Version label: $found" ;;
-              0) echo "::error::Add one label: breaking (major), feature (minor), fix (patch) or sync (no bump)"; exit 1 ;;
+              0) echo "::error::Add one label: breaking (major), feature (minor) or fix (patch)"; exit 1 ;;
               *) echo "::error::Only one version label, please (found: $(tr '\n' ' ' <<< "$found"))"; exit 1 ;;
           esac

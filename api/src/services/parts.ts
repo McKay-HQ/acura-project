@@ -98,13 +98,10 @@ function toApi(row: PartRow): Part {
  *   fits       one or more fits values (any of them)
  *   container  container id or key (includes its sub-containers), or "none" for parts not in a container
  *   q          text search in name, part number, notes and tags
- * Deleted parts (tombstones) are left out unless includeDeleted is set.
+ * Deleted parts (tombstones) are left out.
  */
-export async function listParts(
-    { status, tag, fits, container, q }: PartFilters = {},
-    includeDeleted = false,
-): Promise<Part[]> {
-    const where: string[] = includeDeleted ? [] : ['x.deleted_at IS NULL'];
+export async function listParts({ status, tag, fits, container, q }: PartFilters = {}): Promise<Part[]> {
+    const where: string[] = ['x.deleted_at IS NULL'];
     const params: unknown[] = [];
     const list = (value: unknown): string[] =>
         value == null

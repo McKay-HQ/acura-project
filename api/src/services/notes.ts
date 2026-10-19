@@ -18,10 +18,9 @@ const toApi = (row: NoteRow): Note => ({
     deletedAt: row.deleted_at,
 });
 
-/** Notes, oldest first; deleted ones (tombstones) only with includeDeleted. */
-export async function listNotes(includeDeleted = false): Promise<Note[]> {
-    const where = includeDeleted ? '' : 'WHERE deleted_at IS NULL';
-    const { rows } = await query<NoteRow>(`SELECT * FROM notes ${where} ORDER BY created_at, id`);
+/** Notes, oldest first; deleted ones (tombstones) are left out. */
+export async function listNotes(): Promise<Note[]> {
+    const { rows } = await query<NoteRow>(`SELECT * FROM notes WHERE deleted_at IS NULL ORDER BY created_at, id`);
     return rows.map(toApi);
 }
 

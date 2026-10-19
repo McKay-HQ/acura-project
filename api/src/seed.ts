@@ -1,4 +1,4 @@
-// One-time import of seed/seed.json (the inventory carried over from the artifact page).
+// One-time import of seed/seed.json, a starter snapshot of the inventory; it isn't kept up to date with the app.
 // Runs only against an empty database, and only once: app_meta records it.
 import fs from 'node:fs/promises';
 import path from 'node:path';

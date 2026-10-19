@@ -43,10 +43,9 @@ const toApi = (row: TossedRow): Tossed => ({
     deletedAt: row.deleted_at,
 });
 
-/** Tossed records in display order; deleted ones (tombstones) only with includeDeleted. */
-export async function listTossed(includeDeleted = false): Promise<Tossed[]> {
-    const where = includeDeleted ? '' : 'WHERE x.deleted_at IS NULL';
-    const { rows } = await query<TossedRow>(`${SELECT} ${where} ORDER BY x.sort_order, x.created_at`);
+/** Tossed records in display order; deleted ones (tombstones) are left out. */
+export async function listTossed(): Promise<Tossed[]> {
+    const { rows } = await query<TossedRow>(`${SELECT} WHERE x.deleted_at IS NULL ORDER BY x.sort_order, x.created_at`);
     return rows.map(toApi);
 }
 

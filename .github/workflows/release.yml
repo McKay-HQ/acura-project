@@ -1,8 +1,7 @@
 # Tag a commit with the next semantic version and publish a GitHub release for it, with notes
 # generated from the commits since the previous version. The first release is v1.0.0. After that the
 # bump comes from the labels on the pull requests merged since the previous version (docs/ci.md#versions):
-#   breaking -> major,  feature -> minor,  fix (or no label) -> patch,  sync -> nothing. The biggest
-#   one wins; when every pull request is a sync, there's no new release.
+#   breaking -> major,  feature -> minor,  fix (or no label) -> patch. The biggest one wins.
 # Runs on its own from the Actions tab (tags the branch tip), or as the last step of Deploy (tags
 # the commit that was deployed).
 name: Release
@@ -68,20 +67,12 @@ jobs:
                       || { echo "::error::Couldn't look up the pull request for $commit" >&2; exit 1; }
               done | sort -u)
               labels=$(cut -d' ' -f2- <<< "$prs" | tr ',' '\n')
-              # Catalog syncs don't count toward the bump.
-              counted=$(grep -vE '^#[0-9]+ (.*,)?sync(,|$)' <<< "$prs" || true)
               if grep -qx breaking <<< "$labels"; then BUMP=major
               elif grep -qx feature <<< "$labels"; then BUMP=minor
-              elif [ -n "$prs" ] && [ -z "$counted" ]; then BUMP=none
               else BUMP=patch; fi
               echo "Pull requests since $last:"
               sed 's/^/  /' <<< "${prs:-none}"
               echo "-> $BUMP"
-          fi
-          if [ "$BUMP" = none ]; then
-              echo "Only catalog syncs since $last, so no new release."
-              echo "version=" >> "$GITHUB_OUTPUT"
-              exit 0
           fi
           if [ -z "$last" ]; then
               version=v1.0.0
@@ -100,7 +91,6 @@ jobs:
           echo "Releasing $SHA as $version (previous: ${last:-none})"
 
       - name: Tag and publish
-        if: steps.tag.outputs.version != ''
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.tag.outputs.version }}

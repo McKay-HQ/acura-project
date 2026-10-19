@@ -165,7 +165,7 @@ export function assignments<T extends object>(
 const CATALOG_NAME = /^[0-9a-f]{32}\.(jpe?g|png|webp)$/i;
 
 /**
- * The name a photo is recorded under: the uploaded file's base name when it is named like a catalog photo
+ * The name a photo is recorded under: the uploaded file's base name when it is named like a starter-data photo
  * (`<32 hex>.jpg`), otherwise `<photo id>.jpg`. Either way every photo has a stable, unique name.
  */
 export function photoSource(uploadedName: string | undefined, photoId: string): string {
