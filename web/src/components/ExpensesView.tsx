@@ -3,8 +3,19 @@ import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { api, errorMessage, PreconditionFailedError } from '../api';
 import { useEditFields, clashText, CONFLICT_IN_FORM } from './forms';
 import { RowActions, AddButton, FormButtons } from './ui';
+import { Icon } from './Icons';
 import { money, fmtDate } from '../constants';
 import type { Expense, ExpenseInput } from '../types';
+
+type SortDir = 'asc' | 'desc';
+/** Sort key for the Paid column: the paid date, with not paid after every date ('~' sorts after any digit). */
+const paidKey = (expense: Expense): string => (expense.paid ? expense.paidOn || '' : '~');
+const cmp = (left: string, right: string): number => (left < right ? -1 : left > right ? 1 : 0);
+/** By the Paid column, ties (e.g. several not paid) by id, both in the chosen direction. */
+const byPaid =
+    (dir: SortDir) =>
+    (left: Expense, right: Expense): number =>
+        (cmp(paidKey(left), paidKey(right)) || cmp(left.id, right.id)) * (dir === 'asc' ? 1 : -1);
 
 const sum = (list: Expense[]): number => list.reduce((total, expense) => total + Number(expense.price), 0);
 /** Dollars and cents, e.g. $1,234.50. */
@@ -22,6 +33,20 @@ interface ExpensesViewProps {
 export function ExpensesView({ expenses, canEdit, onAdd, onEdit, onDelete }: ExpensesViewProps) {
     const spent = sum(expenses.filter((expense) => expense.paid));
     const toPay = sum(expenses.filter((expense) => !expense.paid));
+    const [dir, setDir] = useState<SortDir>('desc');
+    const sorted = [...expenses].sort(byPaid(dir));
+    const sortButton = (to: SortDir, label: string, icon: JSX.Element) => (
+        <button
+            type="button"
+            className="sortbtn"
+            aria-pressed={dir === to}
+            title={label}
+            aria-label={label}
+            onClick={() => setDir(to)}
+        >
+            {icon}
+        </button>
+    );
     return (
         <section className="view" style={{ display: 'grid', gap: 20 }}>
             <div className="bar">
@@ -51,7 +76,13 @@ export function ExpensesView({ expenses, canEdit, onAdd, onEdit, onDelete }: Exp
                         <thead>
                             <tr>
                                 <th>Item</th>
-                                <th>Paid</th>
+                                <th aria-sort={dir === 'asc' ? 'ascending' : 'descending'}>
+                                    <span className="sorth">
+                                        Paid
+                                        {sortButton('asc', 'Oldest first, not paid last', <Icon.up />)}
+                                        {sortButton('desc', 'Not paid first, then newest', <Icon.down />)}
+                                    </span>
+                                </th>
                                 <th className="num">Price</th>
                                 {canEdit && (
                                     <th>
@@ -61,7 +92,7 @@ export function ExpensesView({ expenses, canEdit, onAdd, onEdit, onDelete }: Exp
                             </tr>
                         </thead>
                         <tbody>
-                            {expenses.map((expense) => (
+                            {sorted.map((expense) => (
                                 <tr key={expense.id}>
                                     <td className="lbl">
                                         <div>{expense.label}</div>

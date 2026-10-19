@@ -804,6 +804,34 @@ table.tbl {
     white-space: nowrap;
     font-weight: 600;
 }
+/* A column header with sort buttons; the chosen direction is highlighted */
+.tbl .sorth {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+.sortbtn {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--muted);
+    opacity: 0.5;
+    cursor: pointer;
+}
+.sortbtn:hover,
+.sortbtn[aria-pressed='true'] {
+    opacity: 1;
+    color: var(--ink);
+}
+.sortbtn svg {
+    width: 14px;
+    height: 14px;
+}
 /* Short columns (dates, badges, actions) that shouldn't wrap */
 .tbl .nowrap {
     white-space: nowrap;
