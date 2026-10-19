@@ -6,12 +6,10 @@ source "$ROOT/lib/azure.sh"
 
 BUILD=0
 PULL=1
-SYNC=1
 ARGS=()
-while getopts ":bSPh" opt; do
+while getopts ":bPh" opt; do
     case $opt in
         b) BUILD=1; ARGS+=(-b) ;;
-        S) SYNC=0; ARGS+=(-S) ;;
         P) PULL=0 ;;
         h) show_help; exit 0 ;;
         *) bad_option "$OPTARG" ;;
@@ -104,7 +102,7 @@ if [ "$NEW_KEY" = 1 ]; then
 fi
 
 # Wait for the new revision to run and the API to answer (it starts listening only after the
-# migrations and, on the first start, the starter data), then sync the catalog with it.
+# migrations and, on the first start, the starter data).
 echo
 echo "Waiting for revision $REVISION_SUFFIX to start..."
 REVISION="$APP--$REVISION_SUFFIX"
@@ -124,10 +122,3 @@ until curl -fsS -o /dev/null "$URL/api/health" 2>/dev/null; do
 done
 
 echo "Revision $REVISION_SUFFIX is up."
-[ "$SYNC" = 1 ] || exit 0
-
-echo
-STATUS=0
-APP_URL="$URL" API_KEY="$API_KEY" "$ROOT/bin/sync" -P || STATUS=$?
-[ "$STATUS" = 3 ] && echo "Deployed, but the sync left conflicts (see above)."
-exit "$STATUS"

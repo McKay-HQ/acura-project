@@ -69,13 +69,6 @@
  *       schema:
  *         type: string
  *       example: '"3"'
- *     includeDeleted:
- *       name: includeDeleted
- *       in: query
- *       description: '`1` (or `true`) also lists deleted records (tombstones, with `deletedAt` set).'
- *       schema:
- *         type: string
- *         enum: ['0', '1', 'false', 'true']
  *     photoId:
  *       name: id
  *       in: path

@@ -69,9 +69,9 @@
  *           type: string
  *           nullable: true
  *           description: >-
- *             A stable, unique name for the photo: the uploaded file's name when it is named like a catalog photo
+ *             A stable, unique name for the photo: the uploaded file's name when it is named like a starter-data photo
  *             (32 hex digits plus .jpg/.jpeg/.png/.webp, e.g. `77dd58464b9a5e54c6bdc3f6f251c440.jpg`), otherwise
- *             `<photo id>.jpg`. bin/sync uses it to match photos.
+ *             `<photo id>.jpg`.
  *     PhotoUpload:
  *       type: object
  *       required: [photos]
@@ -231,7 +231,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- TagCount (Tag) ----
@@ -330,7 +330,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- Tossed ----
@@ -376,7 +376,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- TaskPartRef ----
@@ -495,7 +495,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- Note ----
@@ -533,7 +533,7 @@
  *           type: string
  *           format: date-time
  *           nullable: true
- *           description: When the record was deleted; null unless listed with includeDeleted=1.
+ *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
 // ---- Summary ----

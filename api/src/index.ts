@@ -5,7 +5,7 @@ import { config, describeDb } from './config.js';
 import { pool, waitForDb } from './db.js';
 import { migrate } from './migrate.js';
 import { seedIfEmpty } from './seed.js';
-import { backfillPhotoSources, backfillTaskKeys } from './backfill.js';
+import { backfillTaskKeys, nameUnsourcedPhotos } from './backfill.js';
 import { ensureUploadDir } from './lib/photos.js';
 import { api } from './routes.js';
 
@@ -61,7 +61,7 @@ async function start(): Promise<void> {
     await waitForDb();
     await migrate();
     if (config.seedOnEmpty) await seedIfEmpty();
-    await backfillPhotoSources();
+    await nameUnsourcedPhotos();
     await backfillTaskKeys();
     const server = app.listen(config.port, () => console.log(`API listening on :${config.port}`));
     const stop = () => server.close(() => pool.end().then(() => process.exit(0)));

@@ -1,4 +1,4 @@
-// HTTP preconditions for writes to existing records (docs/sync-design.md, "API contract"):
+// HTTP preconditions for writes to existing records (optimistic locking):
 // the client sends the version it last saw in If-Match; responses carry the current one in ETag.
 import type { Request, Response } from 'express';
 import { HttpError } from './errors.js';
@@ -43,9 +43,3 @@ export const etag = (version: number): string => `"${version}"`;
 export function sendRecord(res: Response, status: number, record: Versioned): void {
     res.status(status).set('ETag', etag(record.version)).json(record);
 }
-
-/** `?includeDeleted=1` (or `true`) on list endpoints. */
-export const includeDeleted = (req: Request): boolean => {
-    const value = req.query.includeDeleted;
-    return value === '1' || value === 'true';
-};
