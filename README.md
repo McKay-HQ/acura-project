@@ -1,11 +1,12 @@
 # RSX Type-S Project
 
-A self-hosted tracker for the 2002 Acura RSX Type-S project: the car, the parts haul, the containers they're stored in, tossed parts, and the task list, all with photos.
+A self-hosted tracker for the 2002 Acura RSX Type-S project: the car, the parts haul, the containers they're stored in, tossed parts, the task list, and what it all costs.
 
 - **Home:** the car, the Phase 1 list, charts of the haul by container, mods and upgrade ideas.
 - **The Car:** condition notes and photos of the exterior, engine bay and interior (`web/src/car.ts`, photos in `web/public/car/`).
 - **Parts:** Parts (cards or table, filters, a page per part), Containers and Tossed.
 - **Tasks:** grouped into four phases, each with a page listing its parts.
+- **Expenses:** purchases and costs, each with a price and whether it's paid, with totals spent and still to pay.
 
 It's a TypeScript API (Express + Postgres) and a React web app, each in its own container.
 
@@ -77,7 +78,7 @@ The **Version label** check fails until a pull request has one. Pull requests th
 
 **Commands** live in `bin/` with no file extension, share helpers from `lib/`, and each prints its page in `docs/` with `-h`. Options: lowercase turns something on (`-b` build first, `-d` dry run), uppercase turns a default off (`-P` don't `git pull`, `-S` don't sync, `-C` don't commit).
 
-**Records** (parts, containers, tossed parts, tasks, notes) have a human-readable `key` (`injen-intake`), usable anywhere the API takes an id, and a `version` that every write must send back as `If-Match`. Deletes are soft. Photos keep a stable file name (`source`) so the catalog and the app can match them.
+**Records** (parts, containers, tossed parts, tasks, notes, expenses) have a human-readable `key` (`injen-intake`), usable anywhere the API takes an id, and a `version` that every write must send back as `If-Match`. Deletes are soft. Photos keep a stable file name (`source`) so the catalog and the app can match them.
 
 **The catalog** in `api/seed/` is the bridge between the claude.ai artifact and the app ([docs/sync-design.md](docs/sync-design.md)). Edit records in the app or the artifact, not in `seed.json` by hand.
 

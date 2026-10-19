@@ -4,6 +4,7 @@ import { badRequest } from './errors.js';
 import type {
     ContainerIcon,
     ContainerInput,
+    ExpenseInput,
     NoteInput,
     PartInput,
     PartStatus,
@@ -76,6 +77,10 @@ const NAMES: Record<string, string> = {
     items: 'Items',
     done: 'Done',
     steps: 'Steps',
+    vendor: 'Vendor',
+    price: 'Price',
+    paid: 'Paid',
+    paidOn: 'Date paid',
 };
 const nm = (key: string): string => NAMES[key] || key;
 
@@ -362,5 +367,23 @@ export function validateNote(input: unknown = {}, { create = false }: ValidateOp
         title: text(body, 'title', errors, { required: create, nonEmpty: true, max: 200 }),
         items: stringList(body, 'items', errors, { maxItems: 200, maxLen: 2000, unique: false }),
     });
+    return done(out, errors);
+}
+
+export function validateExpense(input: unknown = {}, { create = false }: ValidateOptions = {}): ExpenseInput {
+    const body = asBody(input);
+    const errors: string[] = [];
+    const out = compact<ExpenseInput>({
+        key: keyField(body, errors),
+        label: text(body, 'label', errors, { required: create, nonEmpty: true, max: 200 }),
+        vendor: text(body, 'vendor', errors, { max: 200 }),
+        price: money(body, 'price', errors),
+        paid: bool(body, 'paid', errors),
+        paidOn: dateOnly(body, 'paidOn', errors),
+        notes: text(body, 'notes', errors, { max: 5000 }),
+    });
+    // Every expense has a price: required on create, and it can't be cleared.
+    if (create && !('price' in body)) errors.push('Price is required');
+    else if (out.price === null) errors.push('Price cannot be empty');
     return done(out, errors);
 }

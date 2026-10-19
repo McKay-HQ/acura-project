@@ -18,6 +18,7 @@ import PartsView, { type Layout } from './components/PartsView';
 import { PartDetail, ContainerDetail, TaskDetail } from './components/Details';
 import { ContainersView, TossedView } from './components/OtherViews';
 import { TasksView, TaskForm } from './components/TasksView';
+import { ExpensesView, ExpenseForm } from './components/ExpensesView';
 import { PartForm, ContainerForm, TossedForm, TossPartForm } from './components/forms';
 import { TagFilter } from './components/ui';
 import { isForSale, FOR_SALE, findRef, topContainers } from './constants';
@@ -25,6 +26,7 @@ import type {
     AppConfig,
     Container,
     ContainerActionHandlers,
+    Expense,
     FilterKey,
     Part,
     PartActionHandlers,
@@ -51,16 +53,16 @@ const store = {
     },
 };
 
-// Main sections: Home, Parts (Parts / Containers / Tossed), Tasks.
-type ListView = 'home' | 'car' | 'parts' | 'containers' | 'tossed' | 'tasks';
+// Main sections: Home, Parts (Parts / Containers / Tossed), Tasks, Expenses.
+type ListView = 'home' | 'car' | 'parts' | 'containers' | 'tossed' | 'tasks' | 'expenses';
 type DetailView = 'part' | 'container' | 'task';
 type View = ListView | DetailView;
-type Section = 'home' | 'car' | 'parts' | 'tasks';
+type Section = 'home' | 'car' | 'parts' | 'tasks' | 'expenses';
 type Sub = 'parts' | 'containers' | 'tossed';
 /** A list page, or a record's page with the id or key from the URL. */
 type Route = { view: ListView; id?: undefined } | { view: DetailView; id: string };
 
-const VIEWS: readonly ListView[] = ['home', 'car', 'parts', 'containers', 'tossed', 'tasks'];
+const VIEWS: readonly ListView[] = ['home', 'car', 'parts', 'containers', 'tossed', 'tasks', 'expenses'];
 const isListView = (name: string): name is ListView => VIEWS.some((view) => view === name);
 const ALIASES: Record<string, ListView> = { todo: 'tasks', sale: 'parts', boxes: 'containers' };
 const SECTION: Record<View, Section> = {
@@ -73,6 +75,7 @@ const SECTION: Record<View, Section> = {
     tossed: 'parts',
     tasks: 'tasks',
     task: 'tasks',
+    expenses: 'expenses',
 };
 const SUB: Partial<Record<View, Sub>> = {
     parts: 'parts',
@@ -99,7 +102,8 @@ type ModalState =
     | { type: 'container'; record?: Container }
     | { type: 'tossed'; record?: Tossed }
     | { type: 'toss'; record: Part }
-    | { type: 'task'; record?: Task };
+    | { type: 'task'; record?: Task }
+    | { type: 'expense'; record?: Expense };
 
 interface KeyFormProps {
     onDone: () => void;
@@ -182,6 +186,7 @@ export default function App() {
     const [containers, setContainers] = useState<Container[]>([]);
     const [tossed, setTossed] = useState<Tossed[]>([]);
     const [tasks, setTasks] = useState<Task[]>([]);
+    const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loaded, setLoaded] = useState<boolean>(false);
     const [loadError, setLoadError] = useState<string>('');
     const [route, setRoute] = useState<Route>(parseHash);
@@ -209,17 +214,19 @@ export default function App() {
     const refresh = useCallback(async () => {
         const current = ++refreshes.current;
         try {
-            const [partList, containerList, tossedList, taskList] = await Promise.all([
+            const [partList, containerList, tossedList, taskList, expenseList] = await Promise.all([
                 api.parts.list(),
                 api.containers.list(),
                 api.tossed.list(),
                 api.tasks.list(),
+                api.expenses.list(),
             ]);
             if (current !== refreshes.current) return;
             setParts(keepNewer(partList));
             setContainers(keepNewer(containerList));
             setTossed(keepNewer(tossedList));
             setTasks(keepNewer(taskList));
+            setExpenses(keepNewer(expenseList));
             setLoadError('');
         } catch (err) {
             if (!(err instanceof ApiError && err.status === 401)) setLoadError(errorMessage(err));
@@ -267,7 +274,7 @@ export default function App() {
         };
     }, [refresh, showToast]);
 
-    // Hash routing: #home, #parts, #containers, #tossed, #tasks, #part/<key>, #container/<key>, #task/<id>.
+    // Hash routing: #home, #parts, #containers, #tossed, #tasks, #expenses, #part/<key>, #container/<key>, #task/<id>.
     useEffect(() => {
         const onHash = () => {
             setRoute((prev) => {
@@ -287,6 +294,7 @@ export default function App() {
             container: findRef(containers, route.id)?.name,
             task: findRef(tasks, route.id)?.title,
             car: 'The Car',
+            expenses: 'Expenses',
         };
         document.title = titles[route.view] ? `${titles[route.view]} · RSX Type-S Project` : 'RSX Type-S Project';
     }, [route, parts, containers, tasks]);
@@ -314,6 +322,7 @@ export default function App() {
     const replaceContainer = replaceIn(setContainers);
     const replaceTossed = replaceIn(setTossed);
     const replaceTask = replaceIn(setTasks);
+    const replaceExpense = replaceIn(setExpenses);
     // Step saves: the latest tasks (for versions), the checks not yet saved, and each task's save queue.
     const tasksRef = useRef<Task[]>(tasks);
     tasksRef.current = tasks;
@@ -508,6 +517,16 @@ export default function App() {
                 onDelete={(record) => run(() => api.tossed.remove(record), `Deleted the record for "${record.label}".`)}
             />
         );
+    } else if (route.view === 'expenses') {
+        page = (
+            <ExpensesView
+                expenses={expenses}
+                canEdit={canEdit}
+                onAdd={() => setModal({ type: 'expense' })}
+                onEdit={(record) => setModal({ type: 'expense', record })}
+                onDelete={(record) => run(() => api.expenses.remove(record), `Deleted "${record.label}".`)}
+            />
+        );
     } else if (route.view === 'tasks') {
         page = <TasksView tasks={tasks} canEdit={canEdit} onAdd={() => setModal({ type: 'task' })} {...taskActs} />;
     } else {
@@ -567,6 +586,9 @@ export default function App() {
                     </button>
                     <button role="tab" aria-selected={section === 'tasks'} onClick={() => go('tasks')}>
                         Tasks{openTasks ? ` (${openTasks})` : ''}
+                    </button>
+                    <button role="tab" aria-selected={section === 'expenses'} onClick={() => go('expenses')}>
+                        Expenses
                     </button>
                 </nav>
                 {section === 'parts' && (
@@ -670,6 +692,13 @@ export default function App() {
                             parts={parts}
                             onCancel={close}
                             onSaved={saved('Saved.', replaceTask)}
+                        />
+                    )}
+                    {modal?.type === 'expense' && (
+                        <ExpenseForm
+                            expense={modal.record}
+                            onCancel={close}
+                            onSaved={saved(modal.record ? 'Saved.' : 'Expense added.', replaceExpense)}
                         />
                     )}
                 </Modal>
