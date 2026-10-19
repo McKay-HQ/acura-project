@@ -782,7 +782,6 @@ table.tbl {
 }
 .tbl .lbl {
     font-weight: 600;
-    min-width: 160px;
 }
 .tbl .pn {
     font: 500 0.78rem var(--mono);
@@ -799,25 +798,24 @@ table.tbl {
     gap: 4px;
     margin-top: 4px;
 }
-.tbl .lbl {
-    max-width: 340px;
-}
 .tbl .num {
     text-align: right;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     font-weight: 600;
 }
-.tbl .nt {
-    color: var(--muted);
-    min-width: 200px;
-    max-width: 340px;
+/* Short columns (dates, badges, actions) that shouldn't wrap */
+.tbl .nowrap {
+    white-space: nowrap;
 }
-.tbl .nt div {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.tbl .vendor,
+.tbl .nt {
+    font-weight: 400;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+.tbl .nt {
+    margin-top: 2px;
 }
 .thumb {
     position: relative;
@@ -1315,7 +1313,6 @@ table.tbl {
 }
 .tbl td.phc .boxlink {
     display: block;
-    max-width: 96px;
     margin-top: 5px;
     font-size: 0.72rem;
     line-height: 1.25;

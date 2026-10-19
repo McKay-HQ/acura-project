@@ -65,10 +65,10 @@ export function ExpensesView({ expenses, canEdit, onAdd, onEdit, onDelete }: Exp
                                 <tr key={expense.id}>
                                     <td className="lbl">
                                         <div>{expense.label}</div>
-                                        {expense.vendor && <div className="pn">{expense.vendor}</div>}
+                                        {expense.vendor && <div className="vendor">{expense.vendor}</div>}
                                         {expense.notes && <div className="nt">{expense.notes}</div>}
                                     </td>
-                                    <td>
+                                    <td className="nowrap">
                                         {expense.paid ? (
                                             <span className="pill tdate">{fmtDate(expense.paidOn) || 'Paid'}</span>
                                         ) : (
