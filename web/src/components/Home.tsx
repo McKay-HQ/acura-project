@@ -277,10 +277,14 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
                         <dd>K20A2 2.0L i-VTEC, 200 hp / 142 lb-ft (factory)</dd>
                         <dt>Gearbox</dt>
                         <dd>6-speed manual</dd>
-                        <dt>Mileage</dt>
-                        <dd>173,000</dd>
+                        <dt>VIN</dt>
+                        <dd>JH4DC548X2C010606</dd>
+                        <dt>Bought</dt>
+                        <dd>Oct 4, 2026, private sale in Madison, TN</dd>
                         <dt>Paid</dt>
                         <dd>$2,600</dd>
+                        <dt>Odometer</dt>
+                        <dd>173,840 miles when bought</dd>
                     </dl>
                     <a className="ibtn" href="#car" title="Open the car" aria-label="Open the car">
                         <Icon.forward />
