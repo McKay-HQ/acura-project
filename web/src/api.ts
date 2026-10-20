@@ -5,6 +5,8 @@ import type {
     AppConfig,
     Container,
     ContainerInput,
+    Expense,
+    ExpenseInput,
     Note,
     Part,
     PartInput,
@@ -192,4 +194,11 @@ export const api = {
         remove: (task: Task) => write<null>('DELETE', `/tasks/${encodeURIComponent(task.id)}`, task),
     },
     notes: { list: () => request<Note[]>('GET', '/notes') },
+    expenses: {
+        list: () => request<Expense[]>('GET', '/expenses'),
+        create: (input: ExpenseInput) => request<Expense>('POST', '/expenses', input),
+        update: (expense: Expense, changes: Partial<ExpenseInput>) =>
+            write<Expense>('PATCH', `/expenses/${encodeURIComponent(expense.id)}`, expense, changes),
+        remove: (expense: Expense) => write<null>('DELETE', `/expenses/${encodeURIComponent(expense.id)}`, expense),
+    },
 };

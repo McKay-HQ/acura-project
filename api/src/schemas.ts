@@ -536,6 +536,55 @@
  *           description: Always null, since deleted records aren't returned; kept so the response shape is unchanged.
  */
 
+// ---- Expense ----
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     Expense:
+ *       type: object
+ *       required: [id, key, label, vendor, price, paid, paidOn, notes, version, createdAt, updatedAt, deletedAt]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         key:
+ *           type: string
+ *           nullable: true
+ *         label:
+ *           type: string
+ *         vendor:
+ *           type: string
+ *           description: Where it was bought or who was paid.
+ *         price:
+ *           type: number
+ *           description: What it cost (or will cost) in dollars, everything included.
+ *         paid:
+ *           type: boolean
+ *           description: False for something planned or not paid yet.
+ *         paidOn:
+ *           type: string
+ *           format: date
+ *           nullable: true
+ *         notes:
+ *           type: string
+ *         version:
+ *           type: integer
+ *           minimum: 1
+ *           description: Bumped by the database on every change; sent as the ETag and expected in If-Match.
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *         deletedAt:
+ *           type: string
+ *           format: date-time
+ *           nullable: true
+ *           description: Always null, since deleted records aren't returned.
+ */
+
 // ---- Summary ----
 /**
  * @openapi
@@ -812,6 +861,44 @@
  *           items:
  *             type: string
  *             maxLength: 2000
+ */
+
+// ---- ExpenseInput ----
+/**
+ * @openapi
+ * components:
+ *   schemas:
+ *     ExpenseInput:
+ *       type: object
+ *       description: Fields to set; omitted fields are left unchanged (on create, paid defaults to true).
+ *       properties:
+ *         key:
+ *           $ref: '#/components/schemas/Key'
+ *         label:
+ *           type: string
+ *           minLength: 1
+ *           maxLength: 200
+ *           description: Required on create; can't be set to empty.
+ *         vendor:
+ *           type: string
+ *           nullable: true
+ *           maxLength: 200
+ *         price:
+ *           type: number
+ *           minimum: 0
+ *           maximum: 99999999
+ *           description: Required on create; can't be cleared. Rounded to cents; numeric strings are accepted.
+ *         paid:
+ *           type: boolean
+ *         paidOn:
+ *           type: string
+ *           format: date
+ *           nullable: true
+ *           description: '`null` or `''` clears it.'
+ *         notes:
+ *           type: string
+ *           nullable: true
+ *           maxLength: 5000
  */
 
 // ---- Config (GET /config) ----

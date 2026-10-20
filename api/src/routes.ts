@@ -12,6 +12,7 @@ import {
     validateTossed,
     validateTask,
     validateNote,
+    validateExpense,
     STATUSES,
     PHASES,
     ICONS,
@@ -23,6 +24,7 @@ import * as containers from './services/containers.js';
 import * as tossed from './services/tossed.js';
 import * as tasks from './services/tasks.js';
 import * as notes from './services/notes.js';
+import * as expenses from './services/expenses.js';
 import { addRecordPhotos, reorderPhotos, deletePhoto } from './services/common.js';
 import { etag, ifMatch, sendRecord } from './lib/preconditions.js';
 import type { IfMatch } from './lib/preconditions.js';
@@ -867,5 +869,112 @@ api.patch('/notes/:ref', async (req, res) => {
 api.delete('/notes/:ref', async (req, res) => {
     const im = ifMatch(req);
     const version = await notes.deleteNote(assertRef(req.params.ref, 'note id'), im);
+    res.status(204).set('ETag', etag(version)).end();
+});
+
+// ---- expenses ----
+/**
+ * @openapi
+ * /expenses:
+ *   get:
+ *     tags: [Expenses]
+ *     summary: List expenses
+ *     description: Unpaid ones first, then the newest paid first.
+ *     responses:
+ *       200: { $ref: '#/components/responses/ExpenseList' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ */
+api.get('/expenses', async (_req, res) => {
+    res.json(await expenses.listExpenses());
+});
+/**
+ * @openapi
+ * /expenses/{ref}:
+ *   get:
+ *     tags: [Expenses]
+ *     summary: Get an expense
+ *     parameters:
+ *       - $ref: '#/components/parameters/expenseRef'
+ *     responses:
+ *       200: { $ref: '#/components/responses/Expense' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ */
+api.get('/expenses/:ref', async (req, res) => {
+    sendRecord(res, 200, await expenses.getExpense(assertRef(req.params.ref, 'expense id')));
+});
+/**
+ * @openapi
+ * /expenses:
+ *   post:
+ *     tags: [Expenses]
+ *     summary: Create an expense
+ *     description: '`label` and `price` are required; `paid` defaults to true.'
+ *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     requestBody:
+ *       $ref: '#/components/requestBodies/ExpenseCreate'
+ *     responses:
+ *       201: { $ref: '#/components/responses/ExpenseCreated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ */
+api.post('/expenses', async (req, res) => {
+    sendRecord(res, 201, await expenses.createExpense(validateExpense(req.body || {}, { create: true })));
+});
+/**
+ * @openapi
+ * /expenses/{ref}:
+ *   patch:
+ *     tags: [Expenses]
+ *     summary: Update an expense
+ *     description: >-
+ *       Changes only the fields sent, e.g. `{ "paid": true, "paidOn": "2026-10-20" }` once it's paid.
+ *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
+ *       - $ref: '#/components/parameters/expenseRef'
+ *     requestBody:
+ *       $ref: '#/components/requestBodies/ExpenseUpdate'
+ *     responses:
+ *       200: { $ref: '#/components/responses/ExpenseUpdated' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
+ */
+api.patch('/expenses/:ref', async (req, res) => {
+    const im = ifMatch(req);
+    sendRecord(
+        res,
+        200,
+        await expenses.updateExpense(assertRef(req.params.ref, 'expense id'), validateExpense(req.body || {}), im),
+    );
+});
+/**
+ * @openapi
+ * /expenses/{ref}:
+ *   delete:
+ *     tags: [Expenses]
+ *     summary: Delete an expense
+ *     description: Soft-deletes the expense (a tombstone, as for parts).
+ *     security: [{ bearerAuth: [] }, { apiKeyHeader: [] }]
+ *     parameters:
+ *       - $ref: '#/components/parameters/ifMatch'
+ *       - $ref: '#/components/parameters/expenseRef'
+ *     responses:
+ *       204: { $ref: '#/components/responses/Deleted' }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ *       412: { $ref: '#/components/responses/PreconditionFailed' }
+ *       428: { $ref: '#/components/responses/PreconditionRequired' }
+ */
+api.delete('/expenses/:ref', async (req, res) => {
+    const im = ifMatch(req);
+    const version = await expenses.deleteExpense(assertRef(req.params.ref, 'expense id'), im);
     res.status(204).set('ETag', etag(version)).end();
 });

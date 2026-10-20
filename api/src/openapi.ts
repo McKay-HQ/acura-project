@@ -25,7 +25,7 @@ function packageVersion(): string {
 }
 
 const description = `
-Parts, containers, tossed parts, tasks and notes for the Acura RSX Type-S project.
+Parts, containers, tossed parts, tasks, notes and expenses for the Acura RSX Type-S project.
 
 **Access key.** The API has an optional access key (the \`API_KEY\` setting):
 
@@ -40,8 +40,8 @@ Use **Authorize** to enter the key once; it is then sent with every request trie
 **Ids.** Path ids accept the record's UUID or its human-readable \`key\` (e.g. \`injen-intake\`),
 except photos, which only have UUIDs. A key is generated from the name when a record is created without one.
 
-**Versions.** Parts, containers, tossed records, tasks and notes have a \`version\` (starting at 1) that the
-database bumps on every change, including adding, removing or reordering photos and changing a task's parts.
+**Versions.** Parts, containers, tossed records, tasks, notes and expenses have a \`version\` (starting at 1)
+that the database bumps on every change, including adding, removing or reordering photos and changing a task's parts.
 Single-record responses carry it as \`ETag: "<version>"\`. Changing or deleting an existing record (PATCH,
 DELETE, toss, photo upload, reorder and delete) needs \`If-Match: "<version>"\` (a bare number or \`W/"n"\` works
 too): without it the answer is 428; if the record has changed since, 412 with the current record in \`current\`,
@@ -67,6 +67,7 @@ const definition: swaggerJsdoc.OAS3Definition = {
         { name: 'Tossed', description: 'Parts thrown away, kept for reference' },
         { name: 'Tasks', description: 'Work to do on the car, in four phases' },
         { name: 'Notes', description: 'Titled lists of observations' },
+        { name: 'Expenses', description: 'Purchases and costs, each with a price; unpaid ones are still to pay' },
         { name: 'Photos', description: 'Photo order and deletion (uploads are under each record type)' },
         { name: 'System', description: 'Health, app configuration, access key check, tags, totals and these docs' },
     ],

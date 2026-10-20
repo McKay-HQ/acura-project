@@ -8,7 +8,7 @@ export type ContainerIcon = 'trim' | 'engine' | 'electrical' | 'other' | 'askcod
 /** Tables that own photos. */
 export type PhotoTable = 'parts' | 'containers' | 'tossed';
 /** Tables whose records can be looked up by UUID or key; all are versioned and soft-deleted. */
-export type KeyedTable = PhotoTable | 'notes' | 'tasks';
+export type KeyedTable = PhotoTable | 'notes' | 'tasks' | 'expenses';
 
 /** Columns every record row has: version (bumped by triggers, for If-Match) and the soft-delete time. */
 export interface SyncRow {
@@ -277,6 +277,35 @@ export interface Note extends Versioned {
     updatedAt: Date;
 }
 
+// ---- expenses ----
+
+export interface ExpenseRow extends SyncRow {
+    id: string;
+    key: string | null;
+    label: string;
+    vendor: string;
+    price: number;
+    paid: boolean;
+    /** DATE column, returned as 'YYYY-MM-DD' (see db.ts). */
+    paid_on: string | null;
+    notes: string;
+    created_at: Date;
+    updated_at: Date;
+}
+
+export interface Expense extends Versioned {
+    id: string;
+    key: string | null;
+    label: string;
+    vendor: string;
+    price: number;
+    paid: boolean;
+    paidOn: string | null;
+    notes: string;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 // ---- summary ----
 
 export interface SummaryRow {
@@ -355,6 +384,16 @@ export interface NoteInput {
     key?: string | null;
     title?: string;
     items?: string[];
+}
+
+export interface ExpenseInput {
+    key?: string | null;
+    label?: string;
+    vendor?: string;
+    price?: number | null;
+    paid?: boolean;
+    paidOn?: string | null;
+    notes?: string;
 }
 
 // ---- seed/seed.json ----

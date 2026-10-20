@@ -26,6 +26,7 @@ const LABEL: Readonly<Record<KeyedTable, string>> = {
     tossed: 'Tossed item',
     notes: 'Note',
     tasks: 'Task',
+    expenses: 'Expense',
 };
 
 /** SQL expression returning a JSON array of a record's photos, in display order. */

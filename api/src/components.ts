@@ -44,6 +44,13 @@
  *       description: The tossed record's UUID or its key.
  *       schema:
  *         $ref: '#/components/schemas/Ref'
+ *     expenseRef:
+ *       name: ref
+ *       in: path
+ *       required: true
+ *       description: The expense's UUID or its key.
+ *       schema:
+ *         $ref: '#/components/schemas/Ref'
  *     noteRef:
  *       name: ref
  *       in: path
@@ -139,7 +146,7 @@
  *     PreconditionFailed:
  *       description: >-
  *         The record has changed since the version sent in If-Match. Nothing was changed; `current` is the record
- *         as it is now (a Part, Container, Tossed, Task or Note).
+ *         as it is now (a Part, Container, Tossed, Task, Note or Expense).
  *       content:
  *         application/json:
  *           schema:
@@ -155,6 +162,7 @@
  *                       - $ref: '#/components/schemas/Tossed'
  *                       - $ref: '#/components/schemas/Task'
  *                       - $ref: '#/components/schemas/Note'
+ *                       - $ref: '#/components/schemas/Expense'
  *     PreconditionRequired:
  *       description: The If-Match header with the record's version is missing.
  *       content:
@@ -355,6 +363,22 @@
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/NoteInput'
+ *     ExpenseCreate:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             allOf:
+ *               - $ref: '#/components/schemas/ExpenseInput'
+ *               - required: [label, price]
+ *           example: { label: Injen air filter, vendor: Elite Race Fab, price: 111.54, paidOn: '2026-10-16' }
+ *     ExpenseUpdate:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ExpenseInput'
+ *           example: { paid: true, paidOn: '2026-10-20' }
  */
 
 // ---- success responses for each record type's routes ----
@@ -617,4 +641,39 @@
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/Note'
+ *     ExpenseList:
+ *       description: The expenses.
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               $ref: '#/components/schemas/Expense'
+ *     Expense:
+ *       description: The expense.
+ *       headers:
+ *         ETag:
+ *           $ref: '#/components/headers/ETag'
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Expense'
+ *     ExpenseCreated:
+ *       description: The created expense.
+ *       headers:
+ *         ETag:
+ *           $ref: '#/components/headers/ETag'
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Expense'
+ *     ExpenseUpdated:
+ *       description: The updated expense.
+ *       headers:
+ *         ETag:
+ *           $ref: '#/components/headers/ETag'
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Expense'
  */

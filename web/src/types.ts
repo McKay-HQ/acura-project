@@ -152,8 +152,25 @@ export interface Note {
     updatedAt: string;
 }
 
+export interface Expense {
+    id: string;
+    key: string | null;
+    /** Bumped by the API on every change; sent back as If-Match on writes. */
+    version: number;
+    label: string;
+    vendor: string;
+    /** Dollars, everything included. */
+    price: number;
+    /** False for something planned or not paid yet. */
+    paid: boolean;
+    paidOn: string | null;
+    notes: string;
+    createdAt: string;
+    updatedAt: string;
+}
+
 /** Any record the API versions (optimistic locking). */
-export type VersionedRecord = Part | Container | Tossed | Task | Note;
+export type VersionedRecord = Part | Container | Tossed | Task | Note | Expense;
 
 export interface Summary {
     parts: { total: number; verified: number; unverified: number; unknown: number };
@@ -207,6 +224,15 @@ export type TossedInput = {
     partNumber: string;
     reason: string;
     tossedOn: string | null;
+};
+
+export type ExpenseInput = {
+    label: string;
+    vendor: string;
+    price: number | null;
+    paid: boolean;
+    paidOn: string | null;
+    notes: string;
 };
 
 export type TaskInput = {

@@ -535,6 +535,15 @@ textarea {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
+/* A checkbox with its label beside it, e.g. Paid on the expense form */
+label.check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+label.check input {
+    width: auto;
+}
 @media (max-width: 480px) {
     .row {
         grid-template-columns: 1fr;
@@ -773,7 +782,6 @@ table.tbl {
 }
 .tbl .lbl {
     font-weight: 600;
-    min-width: 160px;
 }
 .tbl .pn {
     font: 500 0.78rem var(--mono);
@@ -790,25 +798,52 @@ table.tbl {
     gap: 4px;
     margin-top: 4px;
 }
-.tbl .lbl {
-    max-width: 340px;
-}
 .tbl .num {
     text-align: right;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     font-weight: 600;
 }
-.tbl .nt {
-    color: var(--muted);
-    min-width: 200px;
-    max-width: 340px;
+/* A column header with sort buttons; the chosen direction is highlighted */
+.tbl .sorth {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
 }
-.tbl .nt div {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.sortbtn {
+    display: inline-grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--muted);
+    opacity: 0.5;
+    cursor: pointer;
+}
+.sortbtn:hover,
+.sortbtn[aria-pressed='true'] {
+    opacity: 1;
+    color: var(--ink);
+}
+.sortbtn svg {
+    width: 14px;
+    height: 14px;
+}
+/* Short columns (dates, badges, actions) that shouldn't wrap */
+.tbl .nowrap {
+    white-space: nowrap;
+}
+.tbl .vendor,
+.tbl .nt {
+    font-weight: 400;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+.tbl .nt {
+    margin-top: 2px;
 }
 .thumb {
     position: relative;
@@ -1306,7 +1341,6 @@ table.tbl {
 }
 .tbl td.phc .boxlink {
     display: block;
-    max-width: 96px;
     margin-top: 5px;
     font-size: 0.72rem;
     line-height: 1.25;
