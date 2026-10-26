@@ -19,6 +19,7 @@ import {
     isWithin,
 } from '../constants';
 import type { FilterKey, Part, PartActionHandlers } from '../types';
+import { navigate } from '../router';
 
 export type Layout = 'cards' | 'table';
 type SetFilters = (filters: Set<FilterKey>) => void;
@@ -200,7 +201,7 @@ interface PartsViewProps extends PartActionHandlers {
 export default function PartsView({ parts, layout, canEdit, filters, setFilters, onAdd, ...acts }: PartsViewProps) {
     const list = parts.filter((part) => matches(part, filters));
     const open = (part: Part) => {
-        window.location.hash = href.part(part);
+        navigate(href.part(part));
     };
     const onRowClick = (part: Part) => (event: MouseEvent<HTMLElement>) => {
         if (!isWithin(event.target, 'a,button,input')) open(part);

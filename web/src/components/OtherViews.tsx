@@ -5,6 +5,7 @@ import { RowActions, AddButton, NavTools } from './ui';
 import { fmtDate, href, topContainers, subContainers, partsInTree, isWithin } from '../constants';
 import type { MouseEvent } from 'react';
 import type { Container, ContainerActionHandlers, Part, Tossed } from '../types';
+import { navigate } from '../router';
 
 interface ContainersViewProps extends ContainerActionHandlers {
     containers: Container[];
@@ -17,7 +18,7 @@ export function ContainersView({ containers, parts, canEdit, onAdd, onEdit, onDe
     const tops = topContainers(containers);
     const assigned = parts.filter((part) => part.container).length;
     const open = (box: Container) => (event: MouseEvent<HTMLElement>) => {
-        if (!isWithin(event.target, 'a,button')) window.location.hash = href.box(box);
+        if (!isWithin(event.target, 'a,button')) navigate(href.box(box));
     };
     return (
         <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>

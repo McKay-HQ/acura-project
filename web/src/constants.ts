@@ -97,9 +97,9 @@ interface Ref {
 
 /** In-app links. Records with a human-readable key use it in the URL. */
 export const href = {
-    part: (part: Ref): string => `#part/${encodeURIComponent(part.key || part.id)}`,
-    box: (box: Ref): string => `#container/${encodeURIComponent(box.key || box.id)}`,
-    task: (task: Pick<Ref, 'id'>): string => `#task/${encodeURIComponent(task.id)}`,
+    part: (part: Ref): string => `/part/${encodeURIComponent(part.key || part.id)}`,
+    box: (box: Ref): string => `/container/${encodeURIComponent(box.key || box.id)}`,
+    task: (task: Pick<Ref, 'id'>): string => `/task/${encodeURIComponent(task.id)}`,
 };
 export const findRef = <T extends Ref>(list: T[], ref: string | undefined): T | undefined =>
     list.find((item) => item.id === ref || item.key === ref);

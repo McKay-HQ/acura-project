@@ -110,7 +110,7 @@ export interface TaskPartRef {
     status: PartStatus;
 }
 
-/** A link from a task step: a page in the app (#part/..., #task/...) or an https URL. */
+/** A link from a task step: a page in the app (/part/..., /task/...) or an https URL. */
 export interface StepLink {
     label: string;
     href: string;

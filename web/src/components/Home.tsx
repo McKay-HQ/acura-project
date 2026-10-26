@@ -286,7 +286,7 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
                         <dt>Odometer</dt>
                         <dd>173,840 miles when bought</dd>
                     </dl>
-                    <a className="ibtn" href="#car" title="Open the car" aria-label="Open the car">
+                    <a className="ibtn" href="/car" title="Open the car" aria-label="Open the car">
                         <Icon.forward />
                     </a>
                     <p>
@@ -311,7 +311,7 @@ export default function Home({ parts, containers, tasks }: HomeProps) {
                             <li>Nothing left before driving.</li>
                         )}
                     </ul>
-                    <a className="ibtn" href="#tasks" title="Open tasks" aria-label="Open tasks">
+                    <a className="ibtn" href="/tasks" title="Open tasks" aria-label="Open tasks">
                         <Icon.forward />
                     </a>
                     <p className="fine">

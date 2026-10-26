@@ -6,6 +6,7 @@ import { RowActions, AddButton, FormButtons, NavTools } from './ui';
 import StepsEditor, { fromDraft, toDraft, type DraftStep } from './StepsEditor';
 import { PHASES, PHASE_NUMBERS, phaseClass, href, isWithin } from '../constants';
 import type { Part, Phase, Task, TaskActionHandlers, TaskInput } from '../types';
+import { navigate } from '../router';
 
 interface TaskFormProps {
     task?: Task;
@@ -169,7 +170,7 @@ interface TasksViewProps extends TaskActionHandlers {
 
 export function TasksView({ tasks, canEdit, onAdd, onToggle, onEdit, onDelete }: TasksViewProps) {
     const open = (task: Task) => (event: MouseEvent<HTMLElement>) => {
-        if (!isWithin(event.target, 'a,button,input')) window.location.hash = href.task(task);
+        if (!isWithin(event.target, 'a,button,input')) navigate(href.task(task));
     };
     return (
         <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>

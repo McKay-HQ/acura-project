@@ -288,7 +288,8 @@ export function validateTossed(input: unknown = {}, { create = false }: Validate
 }
 
 const PHOTO_REF = /^(exterior|engine|interior):\d{1,2}$/;
-const HREF = /^(https:\/\/\S+|#[a-z]+(\/[A-Za-z0-9._%-]+)?)$/;
+// An https URL, or a page in the app: /part/key (or the older #part/key, from before the app used paths).
+const HREF = /^(https:\/\/\S+|[/#][a-z]+(\/[A-Za-z0-9._%-]+)?)$/;
 
 /** Task steps: [{text, done, links?, photos?}]. null or [] clears them. */
 function steps(body: Body, errors: string[]): TaskStep[] | undefined {
@@ -321,7 +322,7 @@ function steps(body: Body, errors: string[]): TaskStep[] | undefined {
                     if (!label || label.length > 120)
                         errors.push(`${stepName}: each link needs a label (120 characters max)`);
                     if (!HREF.test(href) || href.length > 2000)
-                        errors.push(`${stepName}: links must be https:// URLs or app pages like #part/key`);
+                        errors.push(`${stepName}: links must be https:// URLs or app pages like /part/key`);
                     return { label, href };
                 });
                 if (!step.links.length) delete step.links;
