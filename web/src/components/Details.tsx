@@ -60,7 +60,7 @@ interface PartDetailProps extends PartActionHandlers {
 }
 
 export function PartDetail({ part, loaded, canEdit, ...acts }: PartDetailProps) {
-    const back = <BackLink to="#parts" label="All parts" />;
+    const back = <BackLink to="/parts" label="All parts" />;
     if (!part) return <Missing back={back} what="part" label="part" loaded={loaded} />;
     const ownTags = (part.tags || []).filter((tag) => tag !== 'For sale');
     return (
@@ -145,7 +145,7 @@ interface ContainerDetailProps extends ContainerActionHandlers {
 }
 
 export function ContainerDetail({ box, boxes, parts, loaded, canEdit, onEdit, onDelete }: ContainerDetailProps) {
-    const back = <BackLink to="#containers" label="All containers" />;
+    const back = <BackLink to="/containers" label="All containers" />;
     if (!box) return <Missing back={back} what="container" label="container" loaded={loaded} />;
     const subs = subContainers(boxes, box.id);
     const all = partsInTree(parts, boxes, box.id);
@@ -234,7 +234,7 @@ interface TaskDetailProps extends TaskActionHandlers {
 }
 
 export function TaskDetail({ task, parts, loaded, canEdit, onToggle, onStep, onEdit, onDelete }: TaskDetailProps) {
-    const back = <BackLink to="#tasks" label="All tasks" />;
+    const back = <BackLink to="/tasks" label="All tasks" />;
     if (!task) return <Missing back={back} what="task" label="task" loaded={loaded} />;
     const linked = (task.parts || [])
         .map((link) => parts.find((part) => part.id === link.id))

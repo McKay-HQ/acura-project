@@ -22,6 +22,7 @@ import { TasksView, TaskForm } from './components/TasksView';
 import { ExpensesView, ExpenseForm } from './components/ExpensesView';
 import { PartForm, ContainerForm, TossedForm, TossPartForm } from './components/forms';
 import { NavTools, TagFilter, ToolSlot, useMediaQuery } from './components/ui';
+import { followAppLink, navigate, upgradeHashUrl } from './router';
 import { isForSale, FOR_SALE, findRef, topContainers } from './constants';
 import type {
     AppConfig,
@@ -96,13 +97,16 @@ const SUB: Partial<Record<View, Sub>> = {
 /** URL prefixes of record pages; "box" is an old name for "container". */
 const DETAIL: Record<string, DetailView> = { part: 'part', container: 'container', box: 'container', task: 'task' };
 
-function parseHash(): Route {
-    const hash = decodeURIComponent(window.location.hash.slice(1));
-    const match = /^(part|container|box|task)\/(.+)$/.exec(hash);
+function parseLocation(): Route {
+    const path = decodeURIComponent(window.location.pathname).replace(/^\/+|\/+$/g, '');
+    const match = /^(part|container|box|task)\/(.+)$/.exec(path);
     if (match) return { view: DETAIL[match[1]], id: match[2] };
-    const name = ALIASES[hash] || hash;
+    const name = ALIASES[path] || path;
     return { view: isListView(name) ? name : 'home' };
 }
+
+/** The path of a list page: / for home. */
+const pathOf = (view: ListView): string => (view === 'home' ? '/' : `/${view}`);
 
 /** What the modal dialog is showing; record is set when editing an existing one. */
 type ModalState =
@@ -202,10 +206,10 @@ export default function App() {
     const [expenses, setExpenses] = useState<Expense[]>([]);
     const [loaded, setLoaded] = useState<boolean>(false);
     const [loadError, setLoadError] = useState<string>('');
-    const [route, setRoute] = useState<Route>(parseHash);
+    const [route, setRoute] = useState<Route>(parseLocation);
     const [layout, setLayout] = useState<Layout>(() => (store.get('layout', '') === 'table' ? 'table' : 'cards'));
     const [filters, setFilters] = useState<Set<FilterKey>>(
-        () => new Set<FilterKey>(window.location.hash === '#sale' ? [`tag:${FOR_SALE}`] : []),
+        () => new Set<FilterKey>(window.location.pathname === '/sale' ? [`tag:${FOR_SALE}`] : []),
     );
     const [modal, setModal] = useState<ModalState | null>(null);
     const [toast, setToast] = useState<string>('');
@@ -287,17 +291,25 @@ export default function App() {
         };
     }, [refresh, showToast]);
 
-    // Hash routing: #home, #parts, #containers, #tossed, #tasks, #expenses, #part/<key>, #container/<key>, #task/<id>.
+    // Routes (router.ts): /, /car, /parts, /containers, /tossed, /tasks, /expenses, /part/<key>, /container/<key>,
+    // /task/<id>. Back and forward, and links to the app's pages, change the path without reloading.
     useEffect(() => {
-        const onHash = () => {
+        const onPath = () => {
             setRoute((prev) => {
-                const next = parseHash();
+                const next = parseLocation();
                 if (prev.view === 'parts' && next.view !== 'parts') listScroll.current = window.scrollY;
                 return next;
             });
         };
-        window.addEventListener('hashchange', onHash);
-        return () => window.removeEventListener('hashchange', onHash);
+        window.addEventListener('popstate', onPath);
+        // An old hash URL typed or pasted into the address bar.
+        window.addEventListener('hashchange', upgradeHashUrl);
+        document.addEventListener('click', followAppLink, true);
+        return () => {
+            window.removeEventListener('popstate', onPath);
+            window.removeEventListener('hashchange', upgradeHashUrl);
+            document.removeEventListener('click', followAppLink, true);
+        };
     }, []);
     useEffect(() => {
         if (route.id) window.scrollTo(0, 0);
@@ -315,14 +327,12 @@ export default function App() {
         store.set('layout', layout);
     }, [layout]);
 
-    const go = (view: ListView) => {
-        window.location.hash = `#${view}`;
-    };
+    const go = (view: ListView) => navigate(pathOf(view));
     // Clicking any tag shows only parts with that tag.
     const onTag = useCallback((key: FilterKey) => {
         setFilters(new Set([key]));
         listScroll.current = 0;
-        if (window.location.hash !== '#parts') window.location.hash = '#parts';
+        if (window.location.pathname !== '/parts') navigate('/parts');
         else window.scrollTo(0, 0);
     }, []);
 
@@ -556,7 +566,7 @@ export default function App() {
                     <div className="masthead">
                         <header>
                             <div>
-                                <a className="brand" href="#home" aria-label="RSX Type-S Project, home">
+                                <a className="brand" href="/" aria-label="RSX Type-S Project, home">
                                     <img src="/icon.jpg" alt="" />
                                     <h1>RSX Type-S Project</h1>
                                 </a>

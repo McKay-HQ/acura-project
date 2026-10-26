@@ -1984,7 +1984,7 @@
      "links": [
       {
        "label": "2002 owner's manual",
-       "href": "#part/owners-manual-2002-rsx"
+       "href": "/part/owners-manual-2002-rsx"
       }
      ]
     },
@@ -2072,11 +2072,11 @@
      "links": [
       {
        "label": "A/C hose",
-       "href": "#part/ac-hose"
+       "href": "/part/ac-hose"
       },
       {
        "label": "A/C hose (Nichirin)",
-       "href": "#part/ac-hose-nichirin"
+       "href": "/part/ac-hose-nichirin"
       }
      ]
     },
@@ -2115,7 +2115,7 @@
      "links": [
       {
        "label": "Cruise actuator",
-       "href": "#part/cruise-actuator"
+       "href": "/part/cruise-actuator"
       }
      ]
     },
@@ -2153,7 +2153,7 @@
      "links": [
       {
        "label": "2002 owner's manual",
-       "href": "#part/owners-manual-2002-rsx"
+       "href": "/part/owners-manual-2002-rsx"
       }
      ],
      "photos": [
@@ -2270,7 +2270,7 @@
      "links": [
       {
        "label": "2002 owner's manual",
-       "href": "#part/owners-manual-2002-rsx"
+       "href": "/part/owners-manual-2002-rsx"
       }
      ]
     },
@@ -2284,7 +2284,7 @@
      "links": [
       {
        "label": "Chrome lug nuts",
-       "href": "#part/lug-nuts-chrome-4"
+       "href": "/part/lug-nuts-chrome-4"
       }
      ]
     }
@@ -2313,7 +2313,7 @@
      "links": [
       {
        "label": "Upgrade ideas (Home)",
-       "href": "#home"
+       "href": "/home"
       }
      ]
     },
@@ -2389,7 +2389,7 @@
      "links": [
       {
        "label": "Turn signal sockets",
-       "href": "#part/front-turn-sockets"
+       "href": "/part/front-turn-sockets"
       }
      ]
     },
@@ -2406,15 +2406,15 @@
      "links": [
       {
        "label": "2002 owner's manual",
-       "href": "#part/owners-manual-2002-rsx"
+       "href": "/part/owners-manual-2002-rsx"
       },
       {
        "label": "Spare under-dash fuse box",
-       "href": "#part/fusebox-underdash-spare"
+       "href": "/part/fusebox-underdash-spare"
       },
       {
        "label": "Spare under-hood fuse box",
-       "href": "#part/fusebox-underhood-spare"
+       "href": "/part/fusebox-underhood-spare"
       }
      ],
      "photos": [
@@ -2497,7 +2497,7 @@
      "links": [
       {
        "label": "Interior door handles",
-       "href": "#part/door-handles-inner-pair"
+       "href": "/part/door-handles-inner-pair"
       }
      ]
     },
@@ -2511,15 +2511,15 @@
      "links": [
       {
        "label": "Hardware bag B",
-       "href": "#part/hw-bag-b"
+       "href": "/part/hw-bag-b"
       },
       {
        "label": "Rexka door trim clips",
-       "href": "#part/rexka-door-trim-clips"
+       "href": "/part/rexka-door-trim-clips"
       },
       {
        "label": "Driver door panel",
-       "href": "#part/door-panel-driver"
+       "href": "/part/door-panel-driver"
       }
      ]
     },
@@ -2566,7 +2566,7 @@
       },
       {
        "label": "Injen intake",
-       "href": "#part/injen-intake"
+       "href": "/part/injen-intake"
       }
      ]
     },
@@ -2672,11 +2672,11 @@
      "links": [
       {
        "label": "Refinish interior",
-       "href": "#task/refinish-interior"
+       "href": "/task/refinish-interior"
       },
       {
        "label": "Trace the under-dash connectors",
-       "href": "#task/trace-underdash-connectors"
+       "href": "/task/trace-underdash-connectors"
       }
      ]
     },
@@ -2686,15 +2686,15 @@
      "links": [
       {
        "label": "Column covers",
-       "href": "#part/column-cover-lower-unknown"
+       "href": "/part/column-cover-lower-unknown"
       },
       {
        "label": "Left column cover",
-       "href": "#part/cover-l-unknown"
+       "href": "/part/cover-l-unknown"
       },
       {
        "label": "Driver lower dash cover",
-       "href": "#part/dash-lower-cover-driver"
+       "href": "/part/dash-lower-cover-driver"
       }
      ]
     },
@@ -2716,15 +2716,15 @@
      "links": [
       {
        "label": "Windshield molding",
-       "href": "#part/windshield-molding-lh"
+       "href": "/part/windshield-molding-lh"
       },
       {
        "label": "Fender fairings",
-       "href": "#part/front-splash-strip"
+       "href": "/part/front-splash-strip"
       },
       {
        "label": "Wiper arms",
-       "href": "#part/wiper-arms-front"
+       "href": "/part/wiper-arms-front"
       }
      ]
     },
@@ -2734,11 +2734,11 @@
      "links": [
       {
        "label": "Mirror garnish",
-       "href": "#part/mirror-garnish-r"
+       "href": "/part/mirror-garnish-r"
       },
       {
        "label": "K20 coil cover",
-       "href": "#part/engine-coil-cover"
+       "href": "/part/engine-coil-cover"
       }
      ]
     }
@@ -2772,7 +2772,7 @@
       },
       {
        "label": "Injen washer reservoir",
-       "href": "#part/injen-washer-reservoir"
+       "href": "/part/injen-washer-reservoir"
       }
      ]
     },
@@ -2841,7 +2841,7 @@
      "links": [
       {
        "label": "OBD2 adapter",
-       "href": "#part/adapter-pigtail"
+       "href": "/part/adapter-pigtail"
       }
      ]
     }
@@ -2992,7 +2992,7 @@
      "links": [
       {
        "label": "OBD2 adapter cable (For sale box)",
-       "href": "#part/adapter-pigtail"
+       "href": "/part/adapter-pigtail"
       }
      ]
     },
@@ -3074,15 +3074,15 @@
      "links": [
       {
        "label": "Harness 1",
-       "href": "#part/harness-1-dash-s6m"
+       "href": "/part/harness-1-dash-s6m"
       },
       {
        "label": "Harness 2",
-       "href": "#part/harness-2-dash-s6m"
+       "href": "/part/harness-2-dash-s6m"
       },
       {
        "label": "Electrical box",
-       "href": "#box/box-electrical"
+       "href": "/box/box-electrical"
       }
      ]
     },

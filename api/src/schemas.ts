@@ -421,7 +421,7 @@
  *         links:
  *           type: array
  *           maxItems: 10
- *           description: Pages in the app (`#part/injen-intake`, `#task/...`, `#container/...`) or https URLs.
+ *           description: Pages in the app (`/part/injen-intake`, `/task/...`, `/container/...`) or https URLs.
  *           items:
  *             type: object
  *             required: [label, href]
@@ -431,7 +431,7 @@
  *                 maxLength: 120
  *               href:
  *                 type: string
- *                 example: '#part/owners-manual-2002-rsx'
+ *                 example: '/part/owners-manual-2002-rsx'
  *         photos:
  *           type: array
  *           maxItems: 6
