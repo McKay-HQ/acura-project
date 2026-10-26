@@ -73,6 +73,7 @@ fi
 
 # Fill in the spec template. It ends up holding secrets, so it goes in a private temp file
 # that is always removed. Only the variables listed here are substituted.
+# shellcheck disable=SC2016 # the names stay literal for envsubst
 SPEC_VARS='${LOCATION} ${IDENTITY_ID} ${ENV_ID} ${ACR} ${IMAGE_TAG} ${REVISION_SUFFIX} ${CUSTOM_DOMAINS} ${PG_SERVER} ${PG_ADMIN} ${PG_DATABASE} ${PG_PASSWORD} ${API_KEY}'
 export LOCATION IDENTITY_ID ENV_ID ACR IMAGE_TAG REVISION_SUFFIX CUSTOM_DOMAINS PG_SERVER PG_ADMIN PG_DATABASE PG_PASSWORD API_KEY
 umask 077

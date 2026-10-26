@@ -1,0 +1,9 @@
+# shellcheck for bin/ and lib/: find bin lib -type f ! -name '*.yaml' -exec shellcheck {} +
+# The scripts source lib/ through a path built at runtime, so tell shellcheck where it is and let it follow.
+source-path=SCRIPTDIR/../lib
+external-sources=true
+
+# A bare cd is fine: lib/common.sh turns on set -e, so a failed cd stops the script.
+disable=SC2164
+# show_help's page argument is optional, so calling it with none is intended (shellcheck before 0.11 flags it).
+disable=SC2119

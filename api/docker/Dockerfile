@@ -1,11 +1,14 @@
 # Build context is api/ (see docker-compose.yml): docker build -f api/docker/Dockerfile api
-# ---- build: compile TypeScript to dist/ ----
-FROM node:22-slim AS build
+# ---- dev: Node and the API's dependencies; the api-dev service in docker-compose.yml stops here (bin/api) ----
+FROM node:22-slim AS dev
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN npm ci
+
+# ---- build: compile TypeScript to dist/ ----
+FROM dev AS build
 
 COPY tsconfig.json ./
 COPY src ./src

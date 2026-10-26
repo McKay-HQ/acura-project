@@ -10,6 +10,7 @@
 | [ci-setup.md](ci-setup.md)             | `bin/ci-setup`: one-time Azure sign-in setup for the workflow                  |
 | [replace-photos.md](replace-photos.md) | `bin/replace-photos`: swap a record's photos on the live app                   |
 | [access-key.md](access-key.md)         | `bin/access-key`: print the live app's access key                              |
+| [node.md](node.md)                     | `bin/api`, `bin/web`: run Node commands in the dev containers                  |
 
 The API documents itself: open `/api/docs/` on any running copy of the app.
 
