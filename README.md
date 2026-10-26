@@ -19,6 +19,8 @@ docker compose up -d --build
 
 Runs the app with a local Postgres at http://localhost:8080 and loads the starter inventory on first start. More in [docs/docker.md](docs/docker.md).
 
+While working on the web app, `./bin/up` runs it with Vite's dev server instead, at http://localhost:5173, reloading as files change, and `./bin/down` stops it ([docs/up.md](docs/up.md)).
+
 ## Build the images
 
 ```sh
@@ -86,6 +88,7 @@ The **Version label** check fails until a pull request has one.
 | `CLAUDE.md`              | Conventions for Claude working in this repo                                                                                       |
 | `bin/access-key`         | Print the live app's access key                                                                                                   |
 | `bin/api`, `bin/web`     | Run Node commands (npm, lint, typecheck) in the dev containers                                                                    |
+| `bin/up`, `bin/down`     | Start the dev stack (Vite with live reload, the API and the local database) and stop it                                           |
 | `bin/build`              | Build both images and push them to the registry                                                                                   |
 | `bin/ci-setup`           | One-time Azure sign-in setup for GitHub Actions                                                                                   |
 | `bin/deploy`             | Create or update the Azure container app; `bin/deploy.d/containerapp.yaml` is its spec template                                   |

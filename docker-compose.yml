@@ -99,3 +99,18 @@ services:
     working_dir: /repo/web
     volumes:
       - .:/repo
+
+  # Vite's dev server for web/, which reloads the page as files change, forwarding /api and /uploads to the api service.
+  # Started (with the api and the database) by bin/up: http://localhost:5173
+  vite:
+    # The web-dev container (image, profile, user, repo mount), running the dev server.
+    extends: web-dev
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_URL: http://api:3000
+    # The same port inside and out, so the page's live-reload connection finds it.
+    command: ["npx", "vite", "--host", "0.0.0.0", "--port", "${VITE_PORT:-5173}", "--strictPort"]
+    ports:
+      - "${VITE_PORT:-5173}:${VITE_PORT:-5173}"
