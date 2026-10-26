@@ -10,7 +10,8 @@
         "format": "prettier --write .",
         "check": "npm run lint && npm run typecheck",
         "typecheck": "npm run -s typecheck --prefix api && npm run -s typecheck --prefix web",
-        "typecheck:sarif": "node tools/sarif/typecheck.js typecheck.sarif"
+        "typecheck:sarif": "node tools/sarif/typecheck.js typecheck.sarif",
+        "shellcheck:sarif": "node tools/sarif/shellcheck.js shellcheck.sarif"
     },
     "engines": {
         "node": ">=22"

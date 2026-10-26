@@ -1,10 +1,13 @@
 # Build context is  (see docker-compose.yml): docker build -f docker/Dockerfile web
 
-# Build the React app...
-FROM node:22-alpine AS build
+# Node and the web dependencies: the web-dev service in docker-compose.yml stops here (bin/web).
+FROM node:22-alpine AS dev
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+
+# Build the React app...
+FROM dev AS build
 COPY tsconfig.json vite.config.ts index.html ./
 COPY public ./public
 COPY src ./src

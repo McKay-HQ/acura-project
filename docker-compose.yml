@@ -1,8 +1,7 @@
 name: acura-project
 
-# The app: API + web. The database is NOT part of this file. Point DATABASE_URL at
-# any Postgres (a managed provider in production). For local development, add the
-# bundled Postgres with docker-compose.localdb.yml (the default in .env.example).
+# The app: API + web. Point DATABASE_URL at any Postgres (a managed provider in production). For local development,
+# the localdb profile adds a bundled Postgres (COMPOSE_PROFILES=localdb, the default in .env.example).
 #
 # Images are named for the Azure Container Registry, so `docker compose build` then
 # `docker compose push api web` publishes them. Override with IMAGE_REGISTRY / IMAGE_TAG.
@@ -35,6 +34,11 @@ services:
     volumes:
       # Photos live on the host, so they survive container rebuilds.
       - ${DATA_DIR:-./data}/uploads:/data/uploads
+    depends_on:
+      # Only with the localdb profile; without it the API uses DATABASE_URL and this is skipped.
+      db:
+        condition: service_healthy
+        required: false
 
   web:
     build:
@@ -48,3 +52,50 @@ services:
     depends_on:
       api:
         condition: service_healthy
+
+  # Local development / testing database, enabled by the localdb profile. Point DATABASE_URL at it (see .env.example).
+  db:
+    image: postgres:16-alpine
+    profiles: [localdb]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-garage}
+      POSTGRES_USER: ${POSTGRES_USER:-garage}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-garage-local}
+    ports:
+      # Exposed on localhost so you can inspect it (psql, TablePlus, etc.).
+      - "127.0.0.1:${LOCAL_DB_PORT:-5432}:5432"
+    volumes:
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Node for development, since the api image runs production dependencies only and the web image is nginx only. They
+  # mount the repo at /repo and run as your user; their profile keeps them out of `up` and `build`. Use them through
+  # bin/api and bin/web (docs/node.md), e.g. ./bin/web npm run check
+  api-dev:
+    build:
+      context: ./api
+      dockerfile: docker/Dockerfile
+      target: dev
+    image: acura-api-dev
+    profiles: [dev]
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /repo/api
+    volumes:
+      - .:/repo
+
+  web-dev:
+    build:
+      context: ./web
+      dockerfile: docker/Dockerfile
+      target: dev
+    image: acura-web-dev
+    profiles: [dev]
+    user: "${UID:-1000}:${GID:-1000}"
+    working_dir: /repo/web
+    volumes:
+      - .:/repo

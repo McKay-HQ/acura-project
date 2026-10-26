@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Runs a command with Node in the api dev container, passing the arguments through: ./bin/api npm run check
+# Help: ./bin/api -h (docs/node.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+source "$ROOT/lib/node.sh"
+
+# Only a leading -h is ours; anything after the command belongs to it.
+[ "${1:-}" = -h ] && { show_help node; exit 0; }
+node_run api "$@"

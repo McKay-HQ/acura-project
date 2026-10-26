@@ -20,10 +20,11 @@ need() {
     command -v "$1" >/dev/null || die "$1 is missing. Install it with: $2"
 }
 
-# Show docs/<command>.md: rendered with glow when it's installed, plain markdown otherwise.
+# Show docs/<command>.md, or docs/<page>.md when given: rendered with glow when it's installed, plain markdown otherwise.
 show_help() {
-    local doc="$ROOT/docs/$CMD.md"
-    [ -f "$doc" ] || die "no help page at docs/$CMD.md"
+    local page=${1:-$CMD}
+    local doc="$ROOT/docs/$page.md"
+    [ -f "$doc" ] || die "no help page at docs/$page.md"
     if command -v glow >/dev/null; then
         # Use the terminal's width (glow defaults to 80), capped so lines stay readable.
         local width=${COLUMNS:-$(tput cols 2>/dev/null || echo 100)}

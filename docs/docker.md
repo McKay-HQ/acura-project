@@ -6,7 +6,7 @@ The app is two images, built from each package's `docker/` folder:
 | ------------------- | ----------------------------------- | -------------------------------------------------------------- |
 | `api`               | `acuraproject.azurecr.io/acura-api` | `api/docker/Dockerfile` (Node, TypeScript compiled to `dist/`) |
 | `web`               | `acuraproject.azurecr.io/acura-web` | `web/docker/Dockerfile` (Vite build, served by nginx)          |
-| `db` _(local only)_ | `postgres:16-alpine`                | `docker-compose.localdb.yml`                                   |
+| `db` _(local only)_ | `postgres:16-alpine`                | `localdb` profile in `docker-compose.yml`                      |
 
 nginx serves the web app and forwards `/api` and `/uploads` to the API (`API_URL`, default `http://api:3000`), so everything is on one port.
 
@@ -17,7 +17,7 @@ cp .env.example .env
 docker compose up -d --build
 ```
 
-Open http://localhost:8080. The default `.env` sets `COMPOSE_FILE=docker-compose.yml:docker-compose.localdb.yml`, which adds a local Postgres.
+Open http://localhost:8080. The default `.env` sets `COMPOSE_PROFILES=localdb`, which adds a local Postgres, and points `DATABASE_URL` at it.
 
 On the first start the API creates the tables and imports the starter inventory in `api/seed/` (84 parts, 14 containers, 11 tossed items, 24 tasks, 6 notes and their photos), which takes about a minute. The import runs once, and only into an empty database; set `SEED_ON_EMPTY=false` to start blank.
 
@@ -28,12 +28,16 @@ docker compose down               # stop (data is kept)
 docker compose up -d --build      # rebuild after changing code
 ```
 
+## Node for development
+
+The `api` image has production dependencies only and the `web` image is nginx only, so `api-dev` and `web-dev` (the `dev` stage of each Dockerfile) run Node commands in development, through `./bin/api` and `./bin/web` ([node.md](node.md)).
+
 ## Using a managed database
 
 Any Postgres 13+ works. In `.env`:
 
 ```sh
-COMPOSE_FILE=docker-compose.yml          # drop the local database container
+# COMPOSE_PROFILES=localdb              # commented out: no local database container
 DATABASE_URL=postgres://user:password@host:5432/dbname
 DATABASE_SSL=require                     # or no-verify for a self-signed certificate
 ```
