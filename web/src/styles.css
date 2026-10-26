@@ -1715,7 +1715,7 @@ button.sicon {
 .p-perf {
     color: #7a5af0;
 }
-.phase {
+section.phase {
     display: grid;
     gap: 8px;
     margin-bottom: 18px;
