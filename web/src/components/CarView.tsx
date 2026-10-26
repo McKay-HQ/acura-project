@@ -23,13 +23,13 @@ function ConditionList({ title, items, first }: { title: string; items: string[]
 }
 
 // The car itself: what the latest photos show, then the photos by area. On phones each area is a
-// row to swipe; from 720px it's a grid of four thumbnails per row. Any photo opens the viewer.
+// row to swipe; from 45em it's a grid of four thumbnails per row. Any photo opens the viewer.
 export default function CarView({ tasks }: CarViewProps) {
     const [open, setOpen] = useState<{ photos: CarPhoto[]; index: number; label: string } | null>(null);
     const follow = CONDITION_TASKS.map((key) => findRef(tasks, key)).filter((task): task is Task => !!task);
 
     return (
-        <section id="carView" style={{ display: 'grid', gap: 16 }}>
+        <section id="carView" style={{ display: 'grid', gap: '1rem' }}>
             <div className="panel">
                 <h3>Condition</h3>
                 <p className="fine">From the photos below, taken {CONDITION_DATE}.</p>

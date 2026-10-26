@@ -1,7 +1,7 @@
 // Containers (top-level only; click one for its page) and Tossed.
 import Gallery from './Gallery';
 import { BoxIcon } from './Icons';
-import { RowActions, AddButton } from './ui';
+import { RowActions, AddButton, NavTools } from './ui';
 import { fmtDate, href, topContainers, subContainers, partsInTree, isWithin } from '../constants';
 import type { MouseEvent } from 'react';
 import type { Container, ContainerActionHandlers, Part, Tossed } from '../types';
@@ -20,7 +20,7 @@ export function ContainersView({ containers, parts, canEdit, onAdd, onEdit, onDe
         if (!isWithin(event.target, 'a,button')) window.location.hash = href.box(box);
     };
     return (
-        <section className="view" style={{ display: 'grid', gap: 20 }}>
+        <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>
             <div className="bar">
                 {tops.length > 0 && (
                     <span className="mini">
@@ -28,7 +28,11 @@ export function ContainersView({ containers, parts, canEdit, onAdd, onEdit, onDe
                     </span>
                 )}
                 <span className="spacer" />
-                {canEdit && <AddButton label="Add container" onClick={onAdd} />}
+                {canEdit && (
+                    <NavTools>
+                        <AddButton label="Add container" onClick={onAdd} />
+                    </NavTools>
+                )}
             </div>
             {!tops.length ? (
                 <div className="empty">No containers yet. Add each box or bin with a photo.</div>
@@ -86,14 +90,18 @@ interface TossedViewProps {
 
 export function TossedView({ tossed, canEdit, onAdd, onEdit, onDelete }: TossedViewProps) {
     return (
-        <section className="view" style={{ display: 'grid', gap: 20 }}>
+        <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>
             <div className="bar">
                 <span className="mini">
                     Parts sorted out of the pile and thrown away, kept here for reference in case something turns up
                     missing.
                 </span>
                 <span className="spacer" />
-                {canEdit && <AddButton label="Log tossed item" onClick={onAdd} />}
+                {canEdit && (
+                    <NavTools>
+                        <AddButton label="Log tossed item" onClick={onAdd} />
+                    </NavTools>
+                )}
             </div>
             {!tossed.length ? (
                 <div className="empty">Nothing tossed yet.</div>

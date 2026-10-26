@@ -2,7 +2,7 @@
 import { useState, type ChangeEvent, type FormEvent, type MouseEvent } from 'react';
 import { api, errorMessage, PreconditionFailedError } from '../api';
 import { useEditFields, clashText, CONFLICT_IN_FORM } from './forms';
-import { RowActions, AddButton, FormButtons } from './ui';
+import { RowActions, AddButton, FormButtons, NavTools } from './ui';
 import StepsEditor, { fromDraft, toDraft, type DraftStep } from './StepsEditor';
 import { PHASES, PHASE_NUMBERS, phaseClass, href, isWithin } from '../constants';
 import type { Part, Phase, Task, TaskActionHandlers, TaskInput } from '../types';
@@ -172,10 +172,14 @@ export function TasksView({ tasks, canEdit, onAdd, onToggle, onEdit, onDelete }:
         if (!isWithin(event.target, 'a,button,input')) window.location.hash = href.task(task);
     };
     return (
-        <section className="view" style={{ display: 'grid', gap: 20 }}>
+        <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>
             <div className="bar">
                 <span className="spacer" />
-                {canEdit && <AddButton label="Add task" onClick={onAdd} />}
+                {canEdit && (
+                    <NavTools>
+                        <AddButton label="Add task" onClick={onAdd} />
+                    </NavTools>
+                )}
             </div>
             {!tasks.length ? (
                 <div className="empty">No tasks yet.</div>

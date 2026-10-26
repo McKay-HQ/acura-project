@@ -11,7 +11,7 @@ interface CarStripProps {
 const GAP = 10;
 
 // One Car tab section. On phones it's a row of full-width photos to swipe, with arrows and a
-// "n / total" count over the photo; from 720px it's a grid of four thumbnails per row (CSS only).
+// "n / total" count over the photo; from 45em it's a grid of four thumbnails per row (CSS only).
 export default function CarStrip({ title, photos, onOpen }: CarStripProps) {
     const row = useRef<HTMLDivElement>(null);
     const [current, setCurrent] = useState<number>(0);
