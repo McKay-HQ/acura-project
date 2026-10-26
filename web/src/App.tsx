@@ -5,6 +5,7 @@ import {
     useState,
     type Dispatch,
     type FormEvent,
+    type ReactElement,
     type ReactNode,
     type SetStateAction,
 } from 'react';
@@ -20,7 +21,7 @@ import { ContainersView, TossedView } from './components/OtherViews';
 import { TasksView, TaskForm } from './components/TasksView';
 import { ExpensesView, ExpenseForm } from './components/ExpensesView';
 import { PartForm, ContainerForm, TossedForm, TossPartForm } from './components/forms';
-import { TagFilter } from './components/ui';
+import { NavTools, TagFilter, ToolSlot, useMediaQuery } from './components/ui';
 import { isForSale, FOR_SALE, findRef, topContainers } from './constants';
 import type {
     AppConfig,
@@ -58,6 +59,14 @@ type ListView = 'home' | 'car' | 'parts' | 'containers' | 'tossed' | 'tasks' | '
 type DetailView = 'part' | 'container' | 'task';
 type View = ListView | DetailView;
 type Section = 'home' | 'car' | 'parts' | 'tasks' | 'expenses';
+/** The main tabs. On narrow screens they show only their icons (styles.css), so each keeps its name as a label. */
+const TABS: [section: Section, label: string, icon: () => ReactElement][] = [
+    ['home', 'Home', Icon.home],
+    ['car', 'The Car', Icon.car],
+    ['parts', 'Parts', Icon.wrench],
+    ['tasks', 'Tasks', Icon.tasks],
+    ['expenses', 'Expenses', Icon.receipt],
+];
 type Sub = 'parts' | 'containers' | 'tossed';
 /** A list page, or a record's page with the id or key from the URL. */
 type Route = { view: ListView; id?: undefined } | { view: DetailView; id: string };
@@ -182,6 +191,10 @@ const keepNewer =
 export default function App() {
     const [cfg, setCfg] = useState<AppConfig | null>(null);
     const [unlocked, setUnlocked] = useState<boolean>(false);
+    // With room for them (the labelled tabs and Parts' filter, layout and add buttons), pages put their tools in the
+    // main nav, through NavTools; below that they stay in each page's own bar.
+    const navHasRoom = useMediaQuery('(min-width: 50em)');
+    const [toolSlot, setToolSlot] = useState<HTMLDivElement | null>(null);
     const [parts, setParts] = useState<Part[]>([]);
     const [containers, setContainers] = useState<Container[]>([]);
     const [tossed, setTossed] = useState<Tossed[]>([]);
@@ -537,178 +550,194 @@ export default function App() {
 
     return (
         <TagFilter.Provider value={onTag}>
-            <div className="wrap">
-                <header>
-                    <div>
-                        <a className="brand" href="#home" aria-label="RSX Type-S Project, home">
-                            <img src="/icon.jpg" alt="" />
-                            <h1>RSX Type-S Project</h1>
-                        </a>
-                        <p className="sub">2002 Acura RSX Type-S: the car, its parts, and the tasks</p>
-                    </div>
-                    <div className="hdrtools">
-                        {cfg?.keyRequiredForChanges &&
-                            (unlocked ? (
-                                <button
-                                    className="chip lockbtn"
-                                    title="Lock editing in this browser"
-                                    aria-label="Lock editing"
-                                    onClick={() => {
-                                        keyStore.set('');
-                                        setUnlocked(false);
-                                    }}
-                                >
-                                    <Icon.unlock />
-                                </button>
-                            ) : (
-                                <button
-                                    className="chip lockbtn"
-                                    title="Unlock editing"
-                                    aria-label="Unlock editing"
-                                    onClick={() => setModal({ type: 'key' })}
-                                >
-                                    <Icon.lock />
-                                </button>
-                            ))}
-                        <ThemeToggle />
-                    </div>
-                </header>
-
-                <nav className="tabs" role="tablist">
-                    <button role="tab" aria-selected={section === 'home'} onClick={() => go('home')}>
-                        Home
-                    </button>
-                    <button role="tab" aria-selected={section === 'car'} onClick={() => go('car')}>
-                        The Car
-                    </button>
-                    <button role="tab" aria-selected={section === 'parts'} onClick={() => go('parts')}>
-                        Parts
-                    </button>
-                    <button role="tab" aria-selected={section === 'tasks'} onClick={() => go('tasks')}>
-                        Tasks{openTasks ? ` (${openTasks})` : ''}
-                    </button>
-                    <button role="tab" aria-selected={section === 'expenses'} onClick={() => go('expenses')}>
-                        Expenses
-                    </button>
-                </nav>
-                {section === 'parts' && (
-                    <nav className="subtabs" role="tablist" aria-label="Parts sections">
-                        <button role="tab" aria-selected={sub === 'parts'} onClick={() => go('parts')}>
-                            Parts
-                        </button>
-                        <button role="tab" aria-selected={sub === 'containers'} onClick={() => go('containers')}>
-                            Containers{topCount ? ` (${topCount})` : ''}
-                        </button>
-                        <button role="tab" aria-selected={sub === 'tossed'} onClick={() => go('tossed')}>
-                            Tossed{tossed.length ? ` (${tossed.length})` : ''}
-                        </button>
-                        <span className="spacer" />
-                        {route.view === 'parts' && (
-                            <div className="seg" role="group" aria-label="Layout">
-                                <button
-                                    aria-pressed={layout === 'cards'}
-                                    aria-label="Card layout"
-                                    title="Cards"
-                                    onClick={() => setLayout('cards')}
-                                >
-                                    <Icon.cards />
-                                </button>
-                                <button
-                                    aria-pressed={layout === 'table'}
-                                    aria-label="Table layout"
-                                    title="Table"
-                                    onClick={() => setLayout('table')}
-                                >
-                                    <Icon.table />
-                                </button>
+            <ToolSlot.Provider value={navHasRoom ? toolSlot : null}>
+                <div className="wrap">
+                    {/* The header and main nav share a full-width band (styles.css); Parts subtabs sit below it. */}
+                    <div className="masthead">
+                        <header>
+                            <div>
+                                <a className="brand" href="#home" aria-label="RSX Type-S Project, home">
+                                    <img src="/icon.jpg" alt="" />
+                                    <h1>RSX Type-S Project</h1>
+                                </a>
+                                <p className="sub">2002 Acura RSX Type-S: the car, its parts, and the tasks</p>
                             </div>
+                            <div className="hdrtools">
+                                {cfg?.keyRequiredForChanges &&
+                                    (unlocked ? (
+                                        <button
+                                            className="chip lockbtn"
+                                            title="Lock editing in this browser"
+                                            aria-label="Lock editing"
+                                            onClick={() => {
+                                                keyStore.set('');
+                                                setUnlocked(false);
+                                            }}
+                                        >
+                                            <Icon.unlock />
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className="chip lockbtn"
+                                            title="Unlock editing"
+                                            aria-label="Unlock editing"
+                                            onClick={() => setModal({ type: 'key' })}
+                                        >
+                                            <Icon.lock />
+                                        </button>
+                                    ))}
+                                <ThemeToggle />
+                            </div>
+                        </header>
+
+                        <nav className="tabs" role="tablist">
+                            {TABS.map(([tab, label, TabIcon]) => {
+                                // Tasks shows how many are open: "(3)" after the label, or a count by the icon alone.
+                                const count = tab === 'tasks' && openTasks ? openTasks : 0;
+                                const name = count ? `${label} (${count})` : label;
+                                return (
+                                    <button
+                                        key={tab}
+                                        role="tab"
+                                        aria-selected={section === tab}
+                                        aria-label={name}
+                                        title={name}
+                                        onClick={() => go(tab)}
+                                    >
+                                        <TabIcon />
+                                        <span className="t">{name}</span>
+                                        {count > 0 && (
+                                            <span className="n" aria-hidden="true">
+                                                {count}
+                                            </span>
+                                        )}
+                                    </button>
+                                );
+                            })}
+                            {navHasRoom && <div className="navtools" ref={setToolSlot} />}
+                        </nav>
+                    </div>
+                    {section === 'parts' && (
+                        <nav className="subtabs" role="tablist" aria-label="Parts sections">
+                            <button role="tab" aria-selected={sub === 'parts'} onClick={() => go('parts')}>
+                                Parts
+                            </button>
+                            <button role="tab" aria-selected={sub === 'containers'} onClick={() => go('containers')}>
+                                Containers{topCount ? ` (${topCount})` : ''}
+                            </button>
+                            <button role="tab" aria-selected={sub === 'tossed'} onClick={() => go('tossed')}>
+                                Tossed{tossed.length ? ` (${tossed.length})` : ''}
+                            </button>
+                            <span className="spacer" />
+                            {route.view === 'parts' && (
+                                <NavTools>
+                                    <div className="seg" role="group" aria-label="Layout">
+                                        <button
+                                            aria-pressed={layout === 'cards'}
+                                            aria-label="Card layout"
+                                            title="Cards"
+                                            onClick={() => setLayout('cards')}
+                                        >
+                                            <Icon.cards />
+                                        </button>
+                                        <button
+                                            aria-pressed={layout === 'table'}
+                                            aria-label="Table layout"
+                                            title="Table"
+                                            onClick={() => setLayout('table')}
+                                        >
+                                            <Icon.table />
+                                        </button>
+                                    </div>
+                                </NavTools>
+                            )}
+                        </nav>
+                    )}
+
+                    {loadError && (
+                        <div className="banner" role="alert">
+                            {loadError}{' '}
+                            <button className="ibtn" title="Try again" aria-label="Try again" onClick={refresh}>
+                                <Icon.forward />
+                            </button>
+                        </div>
+                    )}
+
+                    {page}
+
+                    <Modal open={!!modal} onClose={close} labelledBy="form-title">
+                        {modal?.type === 'key' && (
+                            <KeyForm
+                                readsLocked={Boolean(cfg?.keyRequiredForReads)}
+                                onCancel={cfg?.keyRequiredForReads ? null : close}
+                                onDone={() => {
+                                    setUnlocked(true);
+                                    close();
+                                    showToast('Unlocked.');
+                                    refresh();
+                                }}
+                            />
                         )}
-                    </nav>
-                )}
+                        {modal?.type === 'part' && (
+                            <PartForm
+                                part={modal.record}
+                                containers={containers}
+                                tagOptions={tagOptions}
+                                onCancel={close}
+                                onSaved={saved(modal.record ? 'Saved.' : 'Part added.', replacePart)}
+                            />
+                        )}
+                        {modal?.type === 'container' && (
+                            <ContainerForm
+                                container={modal.record}
+                                containers={containers}
+                                onCancel={close}
+                                onSaved={saved(modal.record ? 'Saved.' : 'Container added.', replaceContainer)}
+                            />
+                        )}
+                        {modal?.type === 'tossed' && (
+                            <TossedForm
+                                item={modal.record}
+                                onCancel={close}
+                                onSaved={saved(modal.record ? 'Saved.' : 'Logged.', replaceTossed)}
+                            />
+                        )}
+                        {modal?.type === 'toss' && (
+                            <TossPartForm
+                                part={modal.record}
+                                onCancel={close}
+                                onDone={() => {
+                                    close();
+                                    showToast(`Moved "${modal.record.label}" to Tossed.`);
+                                    if (route.view === 'part') go('parts');
+                                    refresh();
+                                }}
+                            />
+                        )}
+                        {modal?.type === 'task' && (
+                            <TaskForm
+                                task={modal.record}
+                                parts={parts}
+                                onCancel={close}
+                                onSaved={saved('Saved.', replaceTask)}
+                            />
+                        )}
+                        {modal?.type === 'expense' && (
+                            <ExpenseForm
+                                expense={modal.record}
+                                onCancel={close}
+                                onSaved={saved(modal.record ? 'Saved.' : 'Expense added.', replaceExpense)}
+                            />
+                        )}
+                    </Modal>
 
-                {loadError && (
-                    <div className="banner" role="alert">
-                        {loadError}{' '}
-                        <button className="ibtn" title="Try again" aria-label="Try again" onClick={refresh}>
-                            <Icon.forward />
-                        </button>
-                    </div>
-                )}
-
-                {page}
-
-                <Modal open={!!modal} onClose={close} labelledBy="form-title">
-                    {modal?.type === 'key' && (
-                        <KeyForm
-                            readsLocked={Boolean(cfg?.keyRequiredForReads)}
-                            onCancel={cfg?.keyRequiredForReads ? null : close}
-                            onDone={() => {
-                                setUnlocked(true);
-                                close();
-                                showToast('Unlocked.');
-                                refresh();
-                            }}
-                        />
+                    {toast && (
+                        <div className="toast" role="status">
+                            {toast}
+                        </div>
                     )}
-                    {modal?.type === 'part' && (
-                        <PartForm
-                            part={modal.record}
-                            containers={containers}
-                            tagOptions={tagOptions}
-                            onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Part added.', replacePart)}
-                        />
-                    )}
-                    {modal?.type === 'container' && (
-                        <ContainerForm
-                            container={modal.record}
-                            containers={containers}
-                            onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Container added.', replaceContainer)}
-                        />
-                    )}
-                    {modal?.type === 'tossed' && (
-                        <TossedForm
-                            item={modal.record}
-                            onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Logged.', replaceTossed)}
-                        />
-                    )}
-                    {modal?.type === 'toss' && (
-                        <TossPartForm
-                            part={modal.record}
-                            onCancel={close}
-                            onDone={() => {
-                                close();
-                                showToast(`Moved "${modal.record.label}" to Tossed.`);
-                                if (route.view === 'part') go('parts');
-                                refresh();
-                            }}
-                        />
-                    )}
-                    {modal?.type === 'task' && (
-                        <TaskForm
-                            task={modal.record}
-                            parts={parts}
-                            onCancel={close}
-                            onSaved={saved('Saved.', replaceTask)}
-                        />
-                    )}
-                    {modal?.type === 'expense' && (
-                        <ExpenseForm
-                            expense={modal.record}
-                            onCancel={close}
-                            onSaved={saved(modal.record ? 'Saved.' : 'Expense added.', replaceExpense)}
-                        />
-                    )}
-                </Modal>
-
-                {toast && (
-                    <div className="toast" role="status">
-                        {toast}
-                    </div>
-                )}
-            </div>
+                </div>
+            </ToolSlot.Provider>
         </TagFilter.Provider>
     );
 }

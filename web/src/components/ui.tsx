@@ -1,6 +1,7 @@
 // Small shared pieces: status badge, clickable tag pills, container link, icon action rows,
 // form buttons and the photo editor.
-import { createContext, useContext, useState, type MouseEvent, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type MouseEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon, BoxIcon } from './Icons';
 import { statusClass, isForSale, isOtherCar, phaseTags, FOR_SALE, href } from '../constants';
 import type { ContainerRef, FilterKey, Part, Photo } from '../types';
@@ -11,6 +12,28 @@ export type TagFilterFn = (key: FilterKey) => void;
 /** Clicking any tag shows only parts with that tag. Provided by the app. */
 export const TagFilter = createContext<TagFilterFn>(() => {});
 const useTagFilter = (): TagFilterFn => useContext(TagFilter);
+
+/** Where a page's tools (add, filter, layout) go in the main nav when it has room for them; null when it doesn't. */
+export const ToolSlot = createContext<HTMLElement | null>(null);
+
+/** A page's tools: in the main nav when it has room, otherwise here, in the page's own bar. */
+export function NavTools({ children }: { children: ReactNode }) {
+    const slot = useContext(ToolSlot);
+    return slot ? createPortal(children, slot) : children;
+}
+
+/** Whether a media query matches, following changes. */
+export function useMediaQuery(query: string): boolean {
+    const [matches, setMatches] = useState<boolean>(() => window.matchMedia(query).matches);
+    useEffect(() => {
+        const list = window.matchMedia(query);
+        const onChange = () => setMatches(list.matches);
+        onChange();
+        list.addEventListener('change', onChange);
+        return () => list.removeEventListener('change', onChange);
+    }, [query]);
+    return matches;
+}
 
 type StatusPart = Pick<Part, 'status' | 'tags'>;
 interface StatusInfo {

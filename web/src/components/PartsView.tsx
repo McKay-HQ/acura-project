@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import Gallery, { Thumb } from './Gallery';
 import { Icon } from './Icons';
-import { StatusBadge, FitsPill, TagPills, BoxLink, RowActions, AddButton } from './ui';
+import { StatusBadge, FitsPill, TagPills, BoxLink, RowActions, AddButton, NavTools } from './ui';
 import {
     STATUSES,
     OTHER_CARS,
@@ -306,9 +306,11 @@ export default function PartsView({ parts, layout, canEdit, filters, setFilters,
     }
 
     return (
-        <section className="view" style={{ display: 'grid', gap: 20 }}>
+        <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>
             <div className="bar">
-                <FilterMenu parts={parts} filters={filters} setFilters={setFilters} />
+                <NavTools>
+                    <FilterMenu parts={parts} filters={filters} setFilters={setFilters} />
+                </NavTools>
                 <div className="factive">
                     {[...filters].map((key) => (
                         <button
@@ -327,7 +329,11 @@ export default function PartsView({ parts, layout, canEdit, filters, setFilters,
                     ))}
                 </div>
                 <span className="spacer" />
-                {canEdit && <AddButton label="Add part" onClick={onAdd} />}
+                {canEdit && (
+                    <NavTools>
+                        <AddButton label="Add part" onClick={onAdd} />
+                    </NavTools>
+                )}
             </div>
             {body}
         </section>

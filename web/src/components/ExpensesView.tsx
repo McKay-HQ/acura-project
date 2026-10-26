@@ -2,7 +2,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { api, errorMessage, PreconditionFailedError } from '../api';
 import { useEditFields, clashText, CONFLICT_IN_FORM } from './forms';
-import { RowActions, AddButton, FormButtons } from './ui';
+import { RowActions, AddButton, FormButtons, NavTools } from './ui';
 import { Icon } from './Icons';
 import { money, fmtDate } from '../constants';
 import type { Expense, ExpenseInput } from '../types';
@@ -48,11 +48,15 @@ export function ExpensesView({ expenses, canEdit, onAdd, onEdit, onDelete }: Exp
         </button>
     );
     return (
-        <section className="view" style={{ display: 'grid', gap: 20 }}>
+        <section className="view" style={{ display: 'grid', gap: '1.25rem' }}>
             <div className="bar">
                 <span className="mini">Purchases and costs for the project. Unpaid ones are still to pay.</span>
                 <span className="spacer" />
-                {canEdit && <AddButton label="Add expense" onClick={onAdd} />}
+                {canEdit && (
+                    <NavTools>
+                        <AddButton label="Add expense" onClick={onAdd} />
+                    </NavTools>
+                )}
             </div>
             <div className="stats">
                 <div className="stat">

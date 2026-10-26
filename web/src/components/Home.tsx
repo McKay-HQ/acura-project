@@ -258,7 +258,7 @@ interface HomeProps {
 export default function Home({ parts, containers, tasks }: HomeProps) {
     const next = tasks.filter((task) => !task.done && task.phase === 1);
     return (
-        <section id="homeView" style={{ display: 'grid', gap: 16 }}>
+        <section id="homeView" style={{ display: 'grid', gap: '1rem' }}>
             <figure className="hero" style={{ margin: 0 }}>
                 <img
                     src="/home/hero.jpg"
