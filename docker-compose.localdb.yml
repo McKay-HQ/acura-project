@@ -1,0 +1,29 @@
+# Local development / testing database. Adds a Postgres container and points the
+# API at it. Enabled by COMPOSE_FILE in .env; remove it there to use a managed database.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-garage}
+      POSTGRES_USER: ${POSTGRES_USER:-garage}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-garage-local}
+    ports:
+      # Exposed on localhost so you can inspect it (psql, TablePlus, etc.).
+      - "127.0.0.1:${LOCAL_DB_PORT:-5432}:5432"
+    volumes:
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-garage}:${POSTGRES_PASSWORD:-garage-local}@db:5432/${POSTGRES_DB:-garage}
+      DATABASE_SSL: disable
+    depends_on:
+      db:
+        condition: service_healthy
