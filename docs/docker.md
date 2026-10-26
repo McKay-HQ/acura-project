@@ -30,7 +30,7 @@ docker compose up -d --build      # rebuild after changing code
 
 ## Node for development
 
-The `api` image has production dependencies only and the `web` image is nginx only, so `api-dev` and `web-dev` (the `dev` stage of each Dockerfile) run Node commands in development, through `./bin/api` and `./bin/web` ([node.md](node.md)).
+The `api` image has production dependencies only and the `web` image is nginx only, so `api-dev` and `web-dev` (the `dev` stage of each Dockerfile) run Node commands in development, through `./bin/api` and `./bin/web` ([node.md](node.md)). The `vite` service runs Vite's dev server in the `web-dev` container, which reloads the web app as files change; `./bin/up` starts it with the API and the database and `./bin/down` stops them ([up.md](up.md)).
 
 ## Using a managed database
 

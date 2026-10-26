@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Stops the dev stack that bin/up started, and the built app if it's running: every container in docker-compose.yml.
+# Help: ./bin/down -h (docs/up.md)
+source "$(dirname "$(readlink -f "$0")")/../lib/common.sh"
+
+while getopts ":h" opt; do
+    case $opt in
+        h) show_help up; exit 0 ;;
+        *) bad_option "$OPTARG" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+need docker "Docker Desktop with WSL integration, or Docker Engine with the compose plugin"
+cd "$ROOT"
+
+# Every profile: a plain `docker compose down` leaves vite (dev) running, and --profile dev alone would replace the
+# COMPOSE_PROFILES from .env and leave db (localdb) running. Data in data/ is kept.
+docker compose --profile '*' down
